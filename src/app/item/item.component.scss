@@ -1,0 +1,32 @@
+
+
+.copy-card {
+    padding: 1em;
+    margin-bottom: 0.5em;
+}
+.borrowing {
+    padding: 1em;
+    background: aliceblue;
+    color: black;
+    &.is-law-item {
+        button.return {
+            background: #f44336;
+            color: white;
+        }
+    }
+}
+.status {
+    font-size: smaller;
+    &.available {
+        color: green;
+    }
+    &.unavailable {
+        color: red;
+    }
+    &.checked-out-to-me {
+        color: lightskyblue;
+    }
+}
+#author-sub-heading {
+    margin-top: -1em;
+}

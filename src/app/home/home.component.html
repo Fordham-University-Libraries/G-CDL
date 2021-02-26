@@ -1,0 +1,220 @@
+<div *ngIf="isBusy" class="busy-dialog" role="alert">
+    <span *ngIf="busyAction == 'borrow'" class="cdk-visually-hidden">borrowing... please wait</span>
+    <span *ngIf="busyAction == 'return'" class="cdk-visually-hidden">returning... please wait</span>
+    <mat-spinner></mat-spinner>
+</div>
+<main id="main" [attr.aria-busy]="isBusy" *ngIf="config && lang && library" class="home">
+    <h1  *ngIf="lang[library].home.homeHead">{{ lang[library].home.homeHead }}</h1>
+    <!-- curr cehckout compo -->
+    <ng-container *ngIf="customization && customization[library]?.home?.showCurrentCheckoutSnippet">
+        <app-checked-out-item 
+            *ngIf="customization[library]?.home?.showCurrentCheckoutSnippet == 2 || (customization[library]?.home?.showCurrentCheckoutSnippet == 1 && userHasItemCheckedOut)" 
+            [library]="library" [lang]="lang"
+            [readClickedEvent]="readClickedSubject.asObservable()"
+            [refreshEvent]="checkedOutitemRefreshSubject.asObservable()"
+            (refreshParent)="onRefreshParent()"
+            (userHasItemCheckedOut)="onUserHasItemCheckedOutCheck($event)"></app-checked-out-item>
+    </ng-container>
+
+    <!-- about/reserve snippets -->
+    <div class="margin-top-default">
+        <mat-accordion>
+            <!-- about -->
+            <mat-expansion-panel *ngIf="customization && customization[library]?.home?.showAboutSnippet" [expanded]="false">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+                        <mat-icon role="presentation">info</mat-icon>
+                        <span fxLayoutAlign="start center">{{ lang[library].about.snippetHead }}</span>
+                    </mat-panel-title>
+                    <mat-panel-description>
+                        {{ lang[library].about.snippetDescription }}
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                <app-about [isAccessibleUser]="user.isAccessibleUser" [library]="library" [embed]="true"></app-about>
+            </mat-expansion-panel>
+            <!-- course reserves search -->
+            <mat-expansion-panel *ngIf="customization && customization[library].reserves?.enable && customization[library]?.home?.showCourseSearchSnippet && config.libraries[library].ilsApiEnabled">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+                        <mat-icon role="presentation">school</mat-icon>
+                        <span fxLayoutAlign="start center">{{ lang[library].reserves.snippetHead }}</span>
+                    </mat-panel-title>
+                    <mat-panel-description>
+                        {{ lang[library].reserves.snippetDescription }}
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                <div class="padding-default content">
+                    <app-reserves-search-bar [library]="library" [config]="config" [lang]="lang[library]?.reserves"></app-reserves-search-bar>
+                </div>
+            </mat-expansion-panel>
+        </mat-accordion>
+    </div>
+
+    <section aria-label="Digital Reserves Items">
+        <h2 *ngIf="lang[library].home.itemsHead">{{ lang[library].home.itemsHead }}</h2>
+        <div *ngIf="error && !isAllItemsLoading" class="err-msg">{{ error }}</div>
+        <div>
+            <!-- item filters -->
+            <div fxLayout="row">
+                <div id="title-author-search" class="items-filter margin-top-default" role="search"
+                    aria-label="search digital reserves items by title or author">
+                    <div fxLayout="row wrap" fxLayoutGap=".25em">
+                        <mat-form-field id="title-author" appearance="outline">
+                            <mat-label>Search By</mat-label>
+                            <mat-select [(ngModel)]="searchField">
+                                <mat-option value="title">Title</mat-option>
+                                <mat-option value="author">Author</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                            <mat-label>Search Term</mat-label>
+                            <input [(ngModel)]="searchTerm" matInput (keyup.enter)="search()">
+                        </mat-form-field>
+                        <button mat-raised-button color="accent" class="button-secondary" (click)="search();"
+                            [disabled]="!searchTerm && !titleFilter && !authorFilter">Search</button>
+                    </div>
+                </div>
+                <!-- sort -->
+                <div id="sort" fxHide.xs class="margin-top-default">
+                    <mat-form-field appearance="outline">
+                        <mat-label>Sort</mat-label>
+                        <mat-select [(ngModel)]="sort" (selectionChange)="onSortChange($event.value)">
+                            <mat-option value="default">Recently Added</mat-option>
+                            <mat-option value="title">Title</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="items" aria-live="polite" [attr.aria-busy]="isBusy">
+                <mat-spinner *ngIf="isAllItemsLoading"></mat-spinner>
+                <ng-container *ngIf="items && !isAllItemsLoading">
+                    <!-- filter logic -->
+                    <div *ngIf="titleFilter || authorFilter || realSearchTerm" class="filter-reminder">Filter <span
+                            class="cdk-visually-hidden">{{ searchField }} contains {{ searchTerm }}</span>Applied
+                        <button (click)="clearFilter()">remove<span class="cdk-visually-hidden"> filter</span></button>
+                    </div>
+                    <!-- <div *ngIf="isSearchDataCached && (titleFilter || authorFilter || realSearchTerm)" class="cached-search-reminder">
+                        <span>Items Availability Status might not be the most up-to-date</span>
+                    </div> -->
+                    <ng-container *ngFor="let item of items">
+                        <div *ngIf="(!titleFilter || item.items[0].title.toLowerCase().includes(titleFilter.toLowerCase())) && (!authorFilter || item.items[0].author.toLowerCase().includes(authorFilter.toLowerCase()))"
+                            class="item item-card mat-elevation-z2">
+                            <!-- has one copy -->
+                            <ng-container *ngIf="item.items.length == 1 && !item.totalCopies">
+                                <a [routerLink]="'item/' + item.bibId">
+                                    <span class="cdk-visually-hidden">title </span>
+                                    {{ item.items[0].title }}</a>
+                                <span class="author" *ngIf="item?.items[0]?.author">
+                                    <span aria-hidden="true"> / </span>
+                                    <span class="cdk-visually-hidden">author </span>
+                                    {{ item.items[0].author }}
+                                </span>
+                                <span *ngIf="userHasItemCheckedOut !== null" class="status"
+                                    [class.available]="item.items[0].available"
+                                    [class.unavailable]="!item.items[0].available"
+                                    [class.checked-out-to-me]="item.items[0].isCheckedOutToMe">
+                                    <!-- not checkout to me -->
+                                    <ng-container *ngIf="!item.items[0].isCheckedOutToMe">
+                                        <mat-icon *ngIf="item.items[0].available" role="presentation"
+                                            [matTooltip]="'Available'">check
+                                        </mat-icon>
+                                        <span *ngIf="item.items[0].available"
+                                            class="cdk-visually-hidden">Available</span>
+                                        <mat-icon *ngIf="!item.items[0].available" role="presentation"
+                                            [matTooltip]="item.items[0].due ? 'Unavailable - Checked Out (until: ' + (item.items[0].due | date:'medium') + ')' : 'Unavailable - Checked Out'">
+                                            event_busy
+                                        </mat-icon>
+                                        <span *ngIf="!item.items[0].available" class="cdk-visually-hidden">Unavailable
+                                            until {{ item.items[0].due | date:'medium' }}</span>
+                                        <span
+                                            [matTooltip]="userHasItemCheckedOut ? 'You can only borrow one item at a time!' : ''">
+                                            <button mat-raised-button color="primary" class="button-primary"
+                                                (click)="borrow(item.items[0].id, item.items[0].title)"
+                                                [attr.aria-label]="userHasItemCheckedOut ? 'Borrow - You can only borrow one item at a time!' : ''"
+                                                [disabled]="!item.items[0].available || userHasItemCheckedOut">Borrow</button>
+                                        </span>
+                                    </ng-container>
+                                    <!-- is checkout to me -->
+                                    <ng-container *ngIf="item.items[0].isCheckedOutToMe">
+                                        <mat-icon [matTooltip]="'This item is checked out to you'" role="presentation">
+                                            sentiment_satisfied_alt
+                                        </mat-icon>
+                                        <span class="cdk-visually-hidden">This item is checked out to you</span>
+                                        <button mat-raised-button color="primary" class="button-primary" (click)="read()">Read</button>
+                                    </ng-container>
+                                </span>
+                            </ng-container>
+                            <!-- has multiple copies -->
+                            <ng-container *ngIf="item.items.length > 1 || item.totalCopies">
+                                <a [routerLink]="'item/' + item.bibId">
+                                    <span class="cdk-visually-hidden">title </span>
+                                    {{ item.items[0].title }}</a>
+                                <small *ngIf="!item.items[0].part">
+                                    [{{item.totalCopies ? item.totalCopies : item.items.length}} copies]</small>
+                                <small *ngIf="item.items[0].part"> [multiple parts item]</small>
+                                <span class="author" *ngIf="item?.items[0]?.author">
+                                    <span aria-hidden="true"> / </span>
+                                    <span class="cdk-visually-hidden">author </span>
+                                    {{ item.items[0].author }}
+                                </span>
+                                <ul>
+                                    <li *ngFor="let copy of item.items; let i = index">
+                                        <span *ngIf="!copy.part"
+                                            [matTooltip]="'barcode: ' + copy?.itemId">{{ lang[library].home.copy }}
+                                            {{ i + 1 }}</span>
+                                        <span *ngIf="copy.part"
+                                            [matTooltip]="'barcode: ' + copy?.itemId">{{ lang[library].home.part }}
+                                            {{ copy?.part }} / {{ copy?.partTotal }}<span *ngIf="copy?.partDesc">
+                                                ({{copy?.partDesc}})</span></span>
+                                        <span class="status" [class.available]="copy.available"
+                                            [class.unavailable]="!copy.available"
+                                            [class.checked-out-to-me]="copy.isCheckedOutToMe">
+                                            <!-- not checkout to me -->
+                                            <ng-container *ngIf="!copy.isCheckedOutToMe">
+                                                <mat-icon *ngIf="copy.available" [matTooltip]="'Available'"
+                                                    role="presentation">check
+                                                </mat-icon>
+                                                <span *ngIf="copy.available"
+                                                    class="cdk-visually-hidden">Available</span>
+                                                <mat-icon *ngIf="!copy.available" role="presentation"
+                                                    [matTooltip]="item.items[0].due ? 'Unavailable - Checked Out (until: ' + (item.items[0].due | date:'medium') + ')' : 'Unavailable - Checked Out'">
+                                                    event_busy
+                                                </mat-icon>
+                                                <span *ngIf="!copy.available" class="cdk-visually-hidden">Unavailable
+                                                    until {{ copy.due | date:'medium' }}</span>
+                                                <span
+                                                    [matTooltip]="userHasItemCheckedOut ? 'You can only borrow one item at a time!' : ''">
+                                                    <button mat-raised-button color="primary" class="button-primary"
+                                                        (click)="borrow(copy.id, copy.title)"
+                                                        [attr.aria-label]="userHasItemCheckedOut ? 'Borrow - You can only borrow one item at a time!' : ''"
+                                                        [disabled]="!copy.available || userHasItemCheckedOut">Borrow</button>
+                                                </span>
+                                            </ng-container>
+                                            <!-- is checkout to me -->
+                                            <ng-container *ngIf="copy.isCheckedOutToMe">
+                                                <mat-icon [matTooltip]="'This item is checked out to you'"
+                                                    role="presentation">
+                                                    sentiment_satisfied_alt
+                                                </mat-icon>
+                                                <span class="cdk-visually-hidden">This item is checked out to you</span>
+                                                <button mat-raised-button color="primary" class="button-primary" (click)="read()">Read</button>
+                                            </ng-container>
+                                        </span>
+                                    </li>
+                                    <li *ngIf="item.totalCopies > item.items.length">
+                                        <a [routerLink]="'item/' + item.bibId">more...</a>
+                                    </li>
+                                </ul>
+                            </ng-container>
+                        </div>
+                    </ng-container>
+                </ng-container>
+            </div>
+        </div>
+        <!-- load more button -->
+        <div fxLayoutAlign="center center" *ngIf="!isAllItemsLoading">
+            <button *ngIf="nextPageToken" mat-stroked-button [disabled]="isLoadingMore"
+                (click)="loadMore(nextPageToken)">{{ !isLoadingMore ? 'Load More Items' : 'Loading...' }}</button>
+        </div>
+    </section>
+</main>

@@ -1,0 +1,158 @@
+<main id="main" class="reserves" *ngIf="config && lang && library">
+    <h1 *ngIf="lang[library].reserves.head">{{ lang[library].reserves.head }}</h1>
+    <div *ngIf="lang[library].reserves.subtitle" class="subtitle"><strong>{{ lang[library].reserves.subtitle }}</strong></div>
+    <div class="padding-default content mat-elevation-z10">
+        <app-reserves-search-bar [currentReserveMode]="browseMode" [currentReservesSearchTerm]="searchTerm"
+            [library]="library" [isUsersDefaultLibrary]="isUsersDefaultLibrary" [config]="config" [lang]="lang[library]?.reserves">
+        </app-reserves-search-bar>
+    </div>
+    <div aria-live="polite" [attr.aria-busy]="isLoading">
+        <div *ngIf="error" class="err-msg margin-top-default">{{ error }}</div>
+        <mat-spinner *ngIf="isLoading && !results" class="margin-top-default"></mat-spinner>
+        <!-- course search results -->
+        <div *ngIf="!courseDetailedView && results" class="content">
+            <h2>Search Results</h2>
+            <p>Searching for <strong>{{ searchTerm }}</strong> in <em>{{ lang[library].reserves.searchFields[browseMode].text }}</em></p>
+            <mat-spinner *ngIf="isLoading"></mat-spinner>
+            <div *ngIf="!isLoading && !results.courses?.length && !results.professors?.length" class="err-msg">No {{browseMode == 'courseProf' ? 'professor' : 'course'}} found</div>
+            <ul>
+                <ng-container *ngFor="let course of results.courses">
+                    <!-- course name/number -->
+                    <ng-container
+                        *ngIf="(browseMode == 'courseName' || browseMode == 'courseNumber') && (course.itemsCount || course.items?.length) && !isLoading">
+                        <li>
+                            <span class="cdk-visually-hidden">course name </span>
+                            <strong><a href="#"
+                                    (click)="getReserveCourseInfo(course); false">{{ course.courseName }}</a></strong>
+                            {{ course.courseNumber ? '(' + course.courseNumber + ')' : ''}}
+                            {{ course.professors?.length ? ' - ' + course.professors.join(', ') : ''}}
+                            <!-- <mat-chip-list><mat-chip>{{ course.numReservesForCourse }} item{{ course.numReservesForCourse > 1 ? 's' : ''}}</mat-chip></mat-chip-list> -->
+                            <div *ngIf="courseIdwithMultipleCourses[course.courseNumber]" class="course-chooser">
+                                <!-- <span>There's mulitple courses with this Course Name/Number</span> -->
+                                <ul>
+                                    <ng-container
+                                        *ngFor="let mcourse of courseIdwithMultipleCourses[course.courseNumber]">
+                                        <li>
+                                            <span class="cdk-visually-hidden">professor </span>
+                                            <a *ngIf="!mcourse.prof.includes('name_not_yet_supplied')" href="#"
+                                                (click)="getDetailedCourseReserve(mcourse); false">{{ mcourse.prof.replace(' .,', ',') }}</a>
+                                            <span *ngIf="mcourse.prof.includes('name_not_yet_supplied')">No
+                                                Professor Information</span>
+                                        </li>
+                                    </ng-container>
+                                </ul>
+                            </div>
+                        </li>
+                    </ng-container>
+                </ng-container>
+                <!-- profs -->
+                <ng-container *ngFor="let prof of results.professors">
+                    <li>
+                        <span class="cdk-visually-hidden">course name </span>
+                        <strong><a href="#"
+                                (click)="getReservesCoursesByUser(prof.profPk); false">{{ prof.profName.replace(' .,', ',') }}</a></strong>
+                        <div *ngIf="professorsCourses[prof.profPk]" class="course-chooser">
+                            <!-- <span>Courses</span> -->
+                            <ul>
+                                <ng-container *ngFor="let mcourse of professorsCourses[prof.profPk]">
+                                    <li>
+                                        <span class="cdk-visually-hidden">professor </span>
+                                        <a *ngIf="!mcourse.courseName.includes('name_not_yet_supplied')" href="#"
+                                            (click)="getDetailedCourseReserve(mcourse); false">
+                                            {{ mcourse.courseName }}
+                                            {{ mcourse.courseNumber ? '(' + mcourse.courseNumber + ')' : ''}}
+                                        </a>
+                                        <span *ngIf="mcourse.courseName.includes('name_not_yet_supplied')">No Course
+                                            Information</span>
+                                    </li>
+                                </ng-container>
+                            </ul>
+                        </div>
+                    </li>
+                </ng-container>
+                <div id="no-result" *ngIf="!results && !isLoading">
+                    No Results Found</div>
+                <div id="more-alert" *ngIf="more && !isLoading">Your search is generating too many results. Please
+                    refine
+                    your search to be more specific!</div>
+            </ul>
+        </div>
+        <!-- back button -->
+        <div *ngIf="courseDetailedView && results" class="margin-top-default">
+            <button mat-stroked-button (click)="backToResult()"><mat-icon>arrow_back_ios</mat-icon> Back</button>
+        </div>
+        <!-- course details -->
+        <div *ngIf="courseDetailedView && courseDetailedResult" class="content course-details mat-elevation-z2">
+            <h2>{{ lang[library].reserves.details }}</h2>
+            <h3><span class="fas fa-graduation-cap"></span> Course: {{ courseDetailedResult.courseName }}
+                {{ courseDetailedResult.courseNumber ? '(' + courseDetailedResult.courseNumber + ')' : '' }} </h3>
+            <p><span class="fas fa-user-tie"></span> Professor:
+                {{ courseDetailedResult.professors.join(',').replace(' .,', ',') }}</p>
+            <h4><strong>{{ lang[library].reserves.items }}</strong></h4>
+            <!-- CDL -->
+            <div class="margin-top-default margin-bottom-default padding-default mat-elevation-z3">
+                <p><strong>{{ lang[library].reserves.availDigitalHead }}</strong></p>
+                <mat-spinner *ngIf="isCheckingCdlItems"></mat-spinner>
+                <table *ngIf="!isCheckingCdlItems && courseDetailedResultCdl.length" class="mat-elevation-z4">
+                    <tr>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Call#</th>
+                    </tr>
+                    <tr *ngFor="let item of courseDetailedResultCdl">
+                        <td><a [routerLink]="'/item/' + item.catalogKey">{{ item.title }}</a></td>
+                        <td>{{ item.author }}</td>
+                        <td>{{ item.callNumber }}</td>
+                    </tr>
+                </table>
+                <!-- request button -->
+                <div
+                    *ngIf="!isCheckingCdlItems && !courseDetailedResultCdl.length && courseDetailedResultPhysical.length">
+                    <div class="alert alert-warning">
+                        <strong>{{ lang[library].reserves.unavailDigital }}</strong>
+                    </div>
+                </div>
+            </div>
+            <!-- traditional -->
+            <div class="margin-top-default margin-bottom-default padding-default mat-elevation-z2">
+                <p><strong>{{ lang[library].reserves.availPrintHead }}</strong></p>
+                <div *ngIf="courseDetailedResultPhysical.length" class="alert alert-warning">
+                    {{ lang[library].reserves.availPrintSubhead }}
+                </div>
+
+                <table *ngIf="courseDetailedResultPhysical.length" class="print-reserves mat-elevation-z3">
+                    <tr>
+                        <th class="title">Title</th>
+                        <th class="author">Author</th>
+                        <th>Call#</th>
+                        <th>Location</th>
+                        <th *ngIf="customizations[library].reserves.showSearchForEbooks || customizations[library].reserves.showRequestButton">Options</th>
+                    </tr>
+                    <tr *ngFor="let item of courseDetailedResultPhysical">
+                        <td class="title">
+                            <a *ngIf="customizations[library].reserves.catalogUrl" href="#" (click)="openInCatalog(library, item.bibId, item.itemId); false;">{{ item.title }}</a>
+                            <ng-container *ngIf="!customizations[library].reserves.catalogUrl">{{ item.title }}</ng-container>
+                        </td>
+                        <td class="author">{{ item.author }}</td>
+                        <td>{{ item.callNumber }}</td>
+                        <td>{{ locations && locations[item.location] ? locations[item.location] : item.location }}</td>
+
+                        <td *ngIf="customizations[library].reserves.showSearchForEbooks || customizations[library].reserves.showRequestButton" fxLayout="column" fxLayoutGap=".5em">
+                            <button *ngIf="customizations[library].reserves.showSearchForEbooks" mat-stroked-button
+                                (click)="searchEbook(library, item.title, item.author)">{{ (item.title.includes('[video') || item.title.includes('[audio')) ? 'Search for streaming' : 'Search for eBooks' }}</button>
+                            <button *ngIf="customizations[library].reserves.showRequestButton && courseDetailedResultPhysical.length"
+                                mat-stroked-button color="primary"
+                                [matTooltip]="'Request that this item becomes available as Digital Reserves'"
+                                (click)="digiReservesRequest(courseDetailedResult.courseName, courseDetailedResult.courseNumber, courseDetailedResult.professors.join(','), item)">
+                                Digital Reserves Request
+                            </button>
+                        </td>
+                    </tr>
+                </table>
+                <div *ngIf="!courseDetailedResultPhysical.length" class="alert alert-warning">
+                    {{ lang[library].reserves.unavailPrint }}
+                </div>
+            </div>
+        </div>
+    </div>
+</main>

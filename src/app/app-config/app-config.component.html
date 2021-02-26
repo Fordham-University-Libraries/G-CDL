@@ -1,0 +1,200 @@
+<div *ngIf="isBusy" class="busy-dialog" role="alert">
+    <mat-spinner></mat-spinner>
+</div>
+<main>
+    <div fxLayout="row">
+        <h1>CDL Application Config</h1>
+        <button id="btn-config" mat-stroked-button color="primary" [matMenuTriggerFor]="menu">
+            <mat-icon>settings_suggest</mat-icon>
+            <span> Config</span>
+        </button>
+        <mat-menu #menu="matMenu">
+            <button mat-menu-item disabled class="is-active">App & Library Configs</button>
+            <button mat-menu-item [routerLink]="'./customization'">Customizations</button>
+            <button mat-menu-item [routerLink]="'./lang'">Languages</button>
+        </mat-menu>
+    </div>
+    <div *ngIf="user?.isDriveOwner" class="alert alert-warning">WARNING: You're login as the Drive owner, therefore, you
+        CAN edit EVERYTHING. This is super dangerous. Please be careful.</div>
+    <mat-spinner *ngIf="!appConfig.length && !appConfigLibraries.length"></mat-spinner>
+    <mat-accordion [multi]="false">
+        <!-- global -->
+        <mat-expansion-panel *ngIf="appConfig.length" [expanded]="true">
+            <mat-expansion-panel-header>
+                <mat-panel-title>App Global</mat-panel-title>
+            </mat-expansion-panel-header>
+            <h1>Global App's Settings/Config</h1>
+            <mat-spinner *ngIf="appConfigDirtyCount.isLoading"></mat-spinner>
+            <div *ngIf="appConfigDirtyCount.count && !appConfigDirtyCount.isLoading" class="alert alert-warning">
+                <p><strong>Unsaved Changes</strong></p>
+                <button mat-raised-button color="primary" class="button-primary"
+                    (click)="updateConfig(appConfigCopy)">Save</button>
+            </div>
+            <ul *ngIf="!appConfigDirtyCount.isLoading" class="root">
+                <ng-template #recursiveList let-appConfigCopy>
+                    <li *ngFor="let item of appConfigCopy">
+                        <ng-container *ngIf="!item.children && item.editable != 'hide'">
+                            <!-- input -->
+                            <mat-form-field
+                                *ngIf="(item.type == 'string' || item.type == 'integer' || item.type == 'array') && !item.options"
+                                appearance="fill" [style.width.px]="(item.value?.length * 5) + 225">
+                                <mat-label>{{item.key}}</mat-label>
+                                <input matInput [disabled]="item.editable == 'warning'"
+                                    [type]="item.type == 'integer' ? 'number' : 'text'" [(ngModel)]="item.value"
+                                    (ngModelChange)="appConfigSubject.next(['appConfig'])">
+                                <mat-icon matSuffix [class.edited]="item.isDirty">{{ item.editable }}</mat-icon>
+                            </mat-form-field>
+                            <!-- bool -->
+                            <div *ngIf="item.type == 'boolean'" class="field">
+                                <mat-slide-toggle [(ngModel)]="item.value"
+                                    (ngModelChange)="appConfigSubject.next(['appConfig'])">{{item.key}}
+                                </mat-slide-toggle>
+                            </div>
+                            <!-- select -->
+                            <mat-form-field *ngIf="item.options" appearance="fill">
+                                <mat-label>{{ item.key }}</mat-label>
+                                <mat-select [(ngModel)]="item.value"
+                                    (ngModelChange)="appConfigSubject.next(['appConfig'])"
+                                    [disabled]="item.editable == 'warning'">
+                                    <mat-option *ngFor="let opt of item.options" [value]="opt">{{opt}}</mat-option>
+                                </mat-select>
+                                <mat-icon matSuffix [class.edited]="item.isDirty">{{ item.editable }}</mat-icon>
+                            </mat-form-field>
+                            <mat-hint>{{ item.desc }}</mat-hint>
+                        </ng-container>
+                        <ul *ngIf="item.children">
+                            <div class="sub-head" [class.edited]="item.isDirty">{{ item.key | titlecase }}</div>
+                            <div *ngIf="sectionDefinitions[item.key]" class="sec-def">
+                                <mat-icon>info</mat-icon> {{ sectionDefinitions[item.key] }}
+                            </div>
+                            <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: item.children }">
+                            </ng-container>
+                        </ul>
+                    </li>
+                </ng-template>
+                <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: appConfigCopy }"></ng-container>
+            </ul>
+            <button *ngIf="!appConfigDirtyCount.isLoading" mat-raised-button color="primary" class="button-primary"
+                [disabled]="!appConfigDirtyCount.count" (click)="updateConfig(appConfigCopy)">Save</button>
+        </mat-expansion-panel>
+
+        <!-- libraries -->
+        <mat-expansion-panel *ngIf="appConfigLibraries.length" [expanded]="!appConfig?.length">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    Libraries
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div class="padding-default content">
+                <button *ngIf="!newLib" mat-stroked-button (click)="addNewLib()">
+                    <mat-icon>add</mat-icon> Add New Library
+                </button>
+                <mat-card *ngIf="newLib">
+                    <mat-card-header>
+                        <mat-card-title>New Library</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <mat-form-field appearance="outline">
+                            <mat-label>Key</mat-label>
+                            <input #newLibKeyField="ngModel" matInput type="text" [(ngModel)]="newLib.key"
+                                pattern="[A-Za-z0-9]*" placeholder="e.g. downtown">
+                            <mat-hint *ngIf="newLibKeyField.invalid" class="error">Only Alphanumeric Characters Allowed
+                            </mat-hint>
+                        </mat-form-field>
+                        &nbsp;
+                        <mat-form-field appearance="outline" class="wider-field">
+                            <mat-label>Name</mat-label>
+                            <input matInput type="text" [(ngModel)]="newLib.name"
+                                placeholder="e.g. Downtown Campus Library">
+                        </mat-form-field>
+                        &nbsp;&nbsp;
+                        <button mat-raised-button [disabled]="!newLib.key || !newLib.name || newLibKeyField.invalid"
+                            color="primary" (click)="addNewLib(newLib)">Add</button>
+                        <button id="new-lib-cancel" mat-icon-button (click)="addNewLib()">
+                            <mat-icon>clear</mat-icon>
+                        </button>
+
+                    </mat-card-content>
+                </mat-card>
+                <mat-spinner *ngIf="!appConfigLibrariesCopy.length"></mat-spinner>
+                <mat-tab-group *ngIf="appConfigLibrariesCopy.length">
+                    <ng-container *ngFor="let library of appConfigLibrariesCopy; let i = index">
+                        <mat-tab *ngIf="appConfigLibrariesCopy[i].length"
+                            [label]="appConfigLibraries[i][1]?.value + ' (' + appConfigLibraries[i][0]?.value + ')'">
+                            <mat-spinner *ngIf="appConfigLibrariesDirtyCount[i].isLoading"></mat-spinner>
+                            <!-- unsaved banner -->
+                            <div *ngIf="appConfigLibrariesDirtyCount[i].count && !appConfigLibrariesDirtyCount[i].isLoading"
+                                class="alert alert-warning margin-top-default">
+                                <p><strong>Unsaved Changes</strong></p>
+                                <button mat-raised-button color="primary" class="button-primary"
+                                    (click)="updateConfig(appConfigLibrariesCopy[i])">Save</button>
+                            </div>
+                            <ul *ngIf="!appConfigLibrariesDirtyCount[i].isLoading" class="root">
+                                <ng-template #recursiveListLibrary let-library>
+                                    <li *ngFor="let item of library">
+                                        <ng-container *ngIf="!item.children && item.editable != 'hide'">
+                                            <!-- str/int -->
+                                            <mat-form-field
+                                                *ngIf="(item.type == 'string' || item.type == 'integer' || item.type == 'array') && !item.options"
+                                                appearance="fill" [style.width.px]="(item.value?.length * 5) + 225">
+                                                <mat-label>{{item.key}}</mat-label>
+                                                <input matInput [type]="item.type == 'integer' ? 'number' : 'text'"
+                                                    [disabled]="item.editable == 'warning'" [(ngModel)]="item.value"
+                                                    (ngModelChange)="appConfigSubject.next(['appConfigLibraries', i])">
+                                                <mat-icon matSuffix>{{ item.editable }}</mat-icon>
+                                            </mat-form-field>
+                                            <!-- bool -->
+                                            <div *ngIf="item.type == 'boolean'" class="field">
+                                                <mat-slide-toggle [(ngModel)]="item.value"
+                                                    [disabled]="item.editable == 'warning'"
+                                                    (ngModelChange)="appConfigSubject.next(['appConfigLibraries', i])">
+                                                    {{item.key}}</mat-slide-toggle>
+                                            </div>
+
+                                            <!-- select -->
+                                            <mat-form-field *ngIf="item.options" appearance="fill">
+                                                <mat-label>{{ item.key }}</mat-label>
+                                                <mat-select [(ngModel)]="item.value"
+                                                    [disabled]="item.editable == 'warning'"
+                                                    (ngModelChange)="appConfigSubject.next(['appConfigLibraries', i])">
+                                                    <mat-option *ngFor="let opt of item.options" [value]="opt">{{opt}}
+                                                    </mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                            <mat-hint>{{ item.desc }}</mat-hint>
+                                        </ng-container>
+                                        <ul *ngIf="item.children">
+                                            <div class="sub-head">{{ item.key | uppercase }}</div>
+                                            <div *ngIf="sectionDefinitions[item.key]" class="sec-def">
+                                                <mat-icon>info</mat-icon> {{ sectionDefinitions[item.key] }}
+                                            </div>
+                                            <ng-container
+                                                *ngTemplateOutlet="recursiveListLibrary; context:{ $implicit: item.children }">
+                                            </ng-container>
+                                        </ul>
+                                    </li>
+                                </ng-template>
+                                <ng-container *ngTemplateOutlet="recursiveListLibrary; context:{ $implicit: library }">
+                                </ng-container>
+                            </ul>
+                            <button mat-raised-button color="primary" class="button-primary"
+                                [disabled]="!appConfigLibrariesDirtyCount[i].count"
+                                (click)="updateConfig(appConfigLibrariesCopy[i])">Save</button>
+                            &nbsp;
+                            <!-- more menu -->
+                            <button *ngIf="!appConfigLibrariesDirtyCount[i].isDefault" mat-button
+                                [matMenuTriggerFor]="menu">
+                                <mat-icon>more_horiz</mat-icon>
+                            </button>
+                            <mat-menu #menu="matMenu">
+                                <button mat-menu-item color="warn" (click)="removeLibrary(i)">
+                                    <mat-icon>delete</mat-icon>REMOVE THIS LIBRARY
+                                </button>
+                            </mat-menu>
+                        </mat-tab>
+                    </ng-container>
+                </mat-tab-group>
+            </div>
+        </mat-expansion-panel>
+    </mat-accordion>
+</main>

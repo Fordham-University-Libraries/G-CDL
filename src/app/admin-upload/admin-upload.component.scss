@@ -1,0 +1,31 @@
+mat-form-field {
+    display: block;
+    margin-bottom: .5em;
+}
+mat-hint {
+    &.error { color: darkred; font-weight: bold; }
+}
+.required {
+    color: darkred;
+    font-weight: bold;
+}
+.indicator {
+    margin-top: 1em;
+}
+.indicator-text {
+    background: aliceblue;
+    padding: 1em;
+}
+.success {
+    color: green;
+}
+.fail {
+    color: darkred;
+}
+#file-input {
+    cursor: pointer;
+}
+#upload-success-message {
+    background: #d4edda;
+    padding: 1em;
+}

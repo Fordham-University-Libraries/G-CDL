@@ -1,0 +1,135 @@
+<div *ngIf="isBusy" class="busy-dialog" role="alert">
+    <span *ngIf="busyAction == 'borrow'" class="cdk-visually-hidden">borrowing... please wait</span>
+    <span *ngIf="busyAction == 'return'" class="cdk-visually-hidden">returning... please wait</span>
+    <mat-spinner></mat-spinner>
+</div>
+<main id="main" *ngIf="config && lang && library" class="item">
+    <h1 *ngIf="lang[library].item.item">{{ lang[library].item.item }}</h1>
+    <!-- curr cehckout compo -->
+    <ng-container *ngIf="customization && customization[library]?.item?.showCurrentCheckoutSnippet">
+        <app-checked-out-item 
+            *ngIf="customization[library]?.item?.showCurrentCheckoutSnippet == 2 || (customization[library]?.item?.showCurrentCheckoutSnippet == 1 && userHasItemCheckedOut)" 
+            [library]="library" [lang]="lang"
+            [readClickedEvent]="readClickedSubject.asObservable()"
+            [refreshEvent]="checkedOutitemRefreshSubject.asObservable()"
+            (refreshParent)="onRefreshParent()"
+            (userHasItemCheckedOut)="onUserHasItemCheckedOutCheck($event)"></app-checked-out-item>
+    </ng-container>
+    <!-- about/reserve snippets -->
+    <div class="margin-top-default">
+        <mat-accordion>
+            <!-- about -->
+            <mat-expansion-panel *ngIf="customization && customization[library]?.item?.showAboutSnippet" [expanded]="false">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+                        <mat-icon role="presentation">info</mat-icon>
+                        <span fxLayoutAlign="start center">{{ 'About Digital Reserves' }}</span>
+                    </mat-panel-title>
+                    <mat-panel-description>
+                        {{ 'e.g. borrowing rules' }}
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                <app-about [isAccessibleUser]="user.isAccessibleUser" [library]="library" [embed]="true"></app-about>
+            </mat-expansion-panel>
+            <!-- course -->
+            <mat-expansion-panel *ngIf="customization && customization[library].reserves?.enable && customization[library]?.item?.showCourseSearchSnippet && config.libraries[library].ilsApiEnabled">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+                        <mat-icon role="presentation">school</mat-icon>
+                        <span fxLayoutAlign="start center">Search by Course</span>
+                    </mat-panel-title>
+                    <mat-panel-description>
+                        find Digital Reserve items by course name and etc.
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                <div class="padding-default content">
+                    <app-reserves-search-bar [library]="library" [config]="config" [lang]="lang[library]?.reserves"></app-reserves-search-bar>
+                </div>
+            </mat-expansion-panel>
+        </mat-accordion>
+    </div>
+    <!-- item -->
+    <div *ngIf="error" class="err-msg margin-top-default">{{ error }}</div>
+    <mat-spinner *ngIf="isLoadingItems && !error"></mat-spinner>
+    <div *ngIf="items?.length">
+        <h2>{{ items[0].title }}</h2>
+        <div *ngIf="items?.length && items[0].author" id="author-sub-heading">Author: {{ items[0]?.author }}</div>
+        <div fxLayout="row" fxLayoutGap="1em" class="margin-top-default">
+            <div *ngIf="syndeticClientId && (catalogBib?.isbn || catalogBib?.oclc)" class="jacket" fxHide.lt-md
+                fxLayout="column">
+                <img [src]="'https://secure.syndetics.com/index.aspx?isbn=' + catalogBib.isbn +'&oclc=' + catalogBib.oclc +'/MC.GIF&client=' + syndeticClientId + '&type=unbound'"
+                    alt="Image of Book Jacket">
+            </div>
+            <!-- <div *ngIf="!syndeticClientId" class="no-syndetics">
+                <mat-icon>import_contacts</mat-icon>
+            </div> -->
+            <div *ngIf="catalogBib">
+                <table class="metadata">
+                    <tr *ngIf="catalogBib.author && (!items?.length || !items[0].author)">
+                        <td>Author</td>
+                        <td>{{ catalogBib.author }}</td>
+                    </tr>
+                    <tr *ngIf="catalogBib.edition">
+                        <td>Edition</td>
+                        <td>{{ catalogBib.edition }}</td>
+                    </tr>
+                    <tr *ngIf="catalogBib.publisher">
+                        <td>Publisher</td>
+                        <td>{{ catalogBib.publisher }}</td>
+                    </tr>
+                    <tr *ngIf="catalogBib.published">
+                        <td>Publication Date</td>
+                        <td>{{ catalogBib.published }}</td>
+                    </tr>
+                    <tr *ngIf="catalogBib.physDesc">
+                        <td>Pages</td>
+                        <td>{{ catalogBib.physDesc }}</td>
+                    </tr>
+                    <tr *ngIf="catalogBib.isbn">
+                        <td>ISBN</td>
+                        <td>{{ catalogBib.isbn }}</td>
+                    </tr>
+                    <tr *ngIf="catalogBib.callNumber">
+                        <td>Call#</td>
+                        <td>{{ catalogBib.callNumber }}</td>
+                    </tr>
+                </table>
+                <a *ngIf="customization && customization[library].item?.catalogUrl" href="#" (click)="openInCatalog(); false;">View in Library Catalog</a>
+            </div>
+        </div>
+        <!-- copies -->
+        <ng-container *ngIf="!error">
+            <section aria-label="digital reserves copies of this title" aria-live="polite" [attr.aria-busy]="isBusy">
+                <h3>Copies</h3>
+                <div *ngFor="let item of items; let i = index;" class="copy-card mat-elevation-z2"
+                    [class.busy]="isBusy">
+                    <div>
+                        <span *ngIf="!item.part" [matTooltip]="'item#: ' + item.itemId">{{ lang[library].item.copy }}
+                            {{ i + 1 }}</span>
+                        <span *ngIf="item.part" [matTooltip]="'item#: ' + item.itemId">{{ lang[library].item.part }}
+                            {{ item.part }} / {{ item.partTotal }}<span *ngIf="item?.partDesc">
+                                ({{item?.partDesc}})</span></span>
+
+                        <span> - </span>
+                        <small *ngIf="!item.isCheckedOutToMe && item.available"
+                            class="status available">Available</small>
+                        <small *ngIf="!item.isCheckedOutToMe && !item.available" class="status unavailable">Unavailable
+                            (until:
+                            {{ item.due | date:'medium' }} or sooner) </small>
+                        <small *ngIf="item.isCheckedOutToMe" class="status checked-out-to-me">Checked out to you</small>
+                    </div>
+                    <div *ngIf="!item.isCheckedOutToMe && item.available" class="margin-top-default">
+                        <span [matTooltip]="userHasItemCheckedOut ? 'You can only borrow one item at a time!' : ''">
+                            <button mat-raised-button color="primary" class="button-primary" (click)="borrow(item.id, item.title)"
+                                [attr.aria-label]="userHasItemCheckedOut ? 'Borrow - You can only borrow one item at a time!' : ''"
+                                [disabled]="userHasItemCheckedOut">Borrow</button>
+                        </span>
+                    </div>
+                    <div *ngIf="item.isCheckedOutToMe" class="margin-top-default">
+                        <button mat-raised-button color="primary" class="button-primary" (click)="read()">Read</button>
+                    </div>
+                </div>
+            </section>
+        </ng-container>
+    </div>
+</main>

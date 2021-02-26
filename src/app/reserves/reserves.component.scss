@@ -1,0 +1,28 @@
+.subtitle {
+    margin-top: -1em;
+    margin-bottom: 1em;
+}
+table {
+    tr:nth-child(odd) {
+        background-color: #f1f1f1;
+    }
+    th {
+        background:lightgray;
+        padding: 1em;
+        &.author {
+            width: 15%;
+        }
+    }
+    td {
+        padding: .5em;
+        &.author {
+            width: 15%;
+        }
+    }
+}
+.course-details {
+    padding: 0 1em 1em 1em;
+    margin-top: 1em;
+    background-color: white;
+    border-top: solid slategrey;
+}

@@ -1,0 +1,85 @@
+<main id="main">
+    <div>
+        <mat-form-field appearance="fill">
+            <mat-label>From</mat-label>
+            <input matInput [matDatepicker]="fromPicker" [(ngModel)]="fromDate">
+            <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+            <mat-datepicker #fromPicker></mat-datepicker>
+        </mat-form-field>
+        &nbsp;
+        <mat-form-field appearance="fill">
+            <mat-label>To</mat-label>
+            <input matInput [matDatepicker]="toPicker" [(ngModel)]="toDate">
+            <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+            <mat-datepicker #toPicker></mat-datepicker>
+        </mat-form-field>
+        &nbsp;
+        <button mat-raised-button color="primary" class="button-primary" (click)="filter()">Filter!</button>
+        &nbsp;&nbsp;
+        <button mat-stroked-button color="warn" (click)="clearFilter()">Clear</button>
+    </div>
+    <h1>Stats!</h1>
+    <div fxLayout="row">
+        <h2>{{ config?.libraries[library]?.name }}</h2>
+        <button id="export-btn" mat-stroked-button (click)="export()"><mat-icon>download_for_offline</mat-icon>Export</button>
+    </div>
+    <div *ngIf="error" class="err-msg">{{ error }}</div>
+    <div *ngIf="!error" id="stats-table-container" class="margin-top-default mat-elevation-z8">
+        <table mat-table [dataSource]="stats" matSort>
+            <ng-container matColumnDef="title">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
+                <td mat-cell *matCellDef="let item">{{item.title}}<span *ngIf="item.part"> (part: {{item.part}} /
+                        {{item.partTotal}})</span></td>
+                        <td mat-footer-cell *matFooterCellDef><strong>Total</strong></td>
+
+            </ng-container>
+
+            <ng-container matColumnDef="itemId">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Item ID</th>
+                <td mat-cell *matCellDef="let item"> {{item.itemId}} </td>
+                <td mat-footer-cell *matFooterCellDef>-</td>
+
+            </ng-container>
+
+            <ng-container matColumnDef="borrow">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>#Borrow</th>
+                <td mat-cell *matCellDef="let item"> {{item.borrow }} </td>
+                <td mat-footer-cell *matFooterCellDef>{{ totalBorrow | number }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="auto_return">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>#Auto Return</th>
+                <td mat-cell *matCellDef="let item"> {{item.auto_return}} </td>
+                <td mat-footer-cell *matFooterCellDef>{{ totalAutoReturn | number }}</td>
+
+            </ng-container>
+
+            <ng-container matColumnDef="manual_return">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>#Manual Return</th>
+                <td mat-cell *matCellDef="let item">{{ item.manual_return }}</td>
+                <td mat-footer-cell *matFooterCellDef>{{ totalManualReturn | number }}</td>
+
+            </ng-container>
+
+            <ng-container matColumnDef="avg_mins">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>#Avg Manual Return (minutes)</th>
+                <td mat-cell *matCellDef="let item">{{ item.avg_manual_return_seconds / 60 | number }}</td>
+                <td mat-footer-cell *matFooterCellDef>-</td>
+
+            </ng-container>
+
+            <ng-container matColumnDef="last_borrow_tstamp">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Last Borrowed</th>
+                <td mat-cell *matCellDef="let item">{{ item.last_borrow_tstamp | date:'medium' }}</td>
+                <td mat-footer-cell *matFooterCellDef>-</td>
+
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            <tr mat-footer-row *matFooterRowDef="displayedColumns"></tr>
+
+        </table>
+        <mat-paginator [pageSizeOptions]="[50, 100, 500, 1000]" showFirstLastButtons></mat-paginator>
+    </div>
+</main>

@@ -1,0 +1,131 @@
+
+
+.mat-toolbar {
+    &.first {
+        font-family: "Helvetica Neue",Helvetica,Helvetica,Arial,sans-serif;
+        font-size: 2.25em;
+        font-weight: 300;
+        letter-spacing: .5px;
+        background-color: white;
+        .logo {
+            max-height: 50px;
+        }
+    }
+    &.second {
+        font-family: "Helvetica Neue",Helvetica,Helvetica,Arial,sans-serif;
+        font-size: 2em;
+        font-weight: 200;
+        letter-spacing: .5px;
+        background-color: #900028;
+        color: white;
+        .logo {
+            max-height: 50px;
+        }
+    }
+    &.third {
+        background: #333;
+        color: white;
+        height: 2.1em;
+    }
+}
+.user {
+    margin-left: auto;
+    font-size: smaller;
+    button {
+        background: gray;
+        line-height: 2em;
+        &:focus {
+            background: white;
+            color: black;
+        }
+    }
+}
+.is-active {
+    //color: mediumslateblue;
+    color: #f2edd6;
+    cursor: default;
+}
+.badge {
+    margin-left: .25em;
+    &.law-user {
+        color: antiquewhite;
+    }
+    &.accessible-user {
+        color: antiquewhite;
+    }
+    mat-icon {
+        font-size: 18px;
+    }
+}
+.heads-up {
+    display: block;
+    height: 20em;
+    padding: 2em 1em;
+    background: pink;
+    font-family: serif;
+    font-size: 12pt;
+    white-space: normal;
+}
+
+.bread {
+    padding: .1em 0;
+    font-size: smaller;
+    ol {
+        padding-inline-start: 1em;
+        list-style: none;
+        li {
+            display: inline-block;
+            &:not(:first-child):before {
+                content: "";
+                display: inline-block;
+                margin: 0 1em;
+                border-top: .75ch solid transparent;
+                border-bottom: .75ch solid transparent;
+                border-left: .75ch solid lightgray;
+            }
+            a {
+                text-decoration: none;
+                color: cornflowerblue;
+                &:visited {
+                    color: cornflowerblue;
+                }
+            }
+            .active {
+                color: blue;
+            }
+        }
+        
+    }
+
+}
+
+.skip-to-content-link {
+    background: #e77e23;
+    height: 30px;
+    left: 50%;
+    padding: 8px;
+    position: absolute;
+    transform: translateY(-100%);
+    transition: transform 0.3s;
+  }
+  
+  .skip-to-content-link:focus {
+    transform: translateY(0%);
+  }
+
+.logo-clickable {
+    cursor: pointer;
+    transition: all .2s ease-in-out;
+    &:hover {
+        transform: scale(1.05);
+    }
+}
+
+// XS
+@media only screen and (max-width: 599px) {
+    .mat-toolbar {
+        &.second {
+            font-size: 1em;
+        }
+    }
+}

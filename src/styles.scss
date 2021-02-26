@@ -1,0 +1,101 @@
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+main {
+        padding: 0em 1em 1em 1em;
+}
+.err-msg {
+        padding: 1em;
+        background: lightcoral;
+}
+.vis-hidden { visibility: hidden !important; }
+.hidden { display: none !important; }
+.margin-top-default { margin-top: 1em;}
+.margin-left-default { margin-left: 1em;}
+.margin-bottom-default { margin-bottom: 1em;}
+.padding-default { padding: 1em; }
+.busy-dialog {
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        top:0;
+        left:0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, .25);
+        z-index: 2;
+        transition: 0.5s;
+}
+button {
+        &:focus{
+               border: solid 1px blue;
+        }
+        &.return, &.download {
+                background: white;
+        }
+}               
+mat-select, input {
+        &:focus{
+                background: aliceblue;
+         }
+}
+
+.alert {
+        position: relative;
+        padding: .75rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid transparent;
+        border-radius: .25rem;
+        &.alert-warning {
+                color: #856404;
+                background-color: #fff3cd;
+                border-color: #ffeeba;
+        }
+        &.alert-info {
+                color: #004085;
+                background-color: #cce5ff;
+                border-color: #b8daff;
+        }
+        &.alert-success {
+                color: #155724;
+                background-color: #d4edda;
+                border-color: #c3e6cb;
+        }
+}
+
+.badge {
+        display: inline-block;
+        padding: .25em .4em;
+        font-size: 75%;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: .25rem;
+        &.badge-primary {
+                color: #fff;
+                background-color: #007bff;
+        }
+}
+
+.wells {
+        min-height: 20px;
+        padding: 19px;
+        margin-bottom: 20px;
+        background-color: #f5f5f5;
+        border: 1px solid #e3e3e3;
+        border-radius: 4px;
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.05);      
+}
+
+mat-expansion-panel {
+        mat-expansion-panel-header {
+                mat-panel-title {
+                        mat-icon {
+                                margin-right: 1em;
+                                color: lightslategrey;
+                        }
+                }
+        }
+}

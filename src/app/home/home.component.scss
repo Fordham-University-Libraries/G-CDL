@@ -1,0 +1,64 @@
+
+
+main {
+    #title-author-search {
+        #title-author {     
+            width: 8em;
+        }
+    }
+    #sort {
+        margin-left: auto;
+        mat-form-field {
+            width: 10em;
+        }
+    }
+
+    .items {
+        min-height: 10em;
+        &.busy {
+            .item {
+                display: none;
+            }
+        }
+        .item {
+            padding: 1em;
+            margin: 0.5em;
+            mat-icon {
+                vertical-align: middle;
+                margin: 0 0.25em;
+                cursor: help;
+            }
+            li {
+                margin-bottom: 0.25em;
+            }
+            .author {
+                font-size: small;
+                color: gray;
+            }
+        }
+    }
+    .filter-reminder {
+        font-size: smaller;
+        color: brown;
+        font-family: monospace;
+    }
+
+    .status {
+        font-size: smaller;
+        &.available {
+            color: green;
+        }
+        &.unavailable {
+            color: red;
+        }
+        &.checked-out-to-me {
+            color: lightskyblue;
+        }
+    }
+    #title-author-search {
+        button {
+            margin-top: 0.275em;
+            margin-bottom: 1.8em;
+        }
+    }
+}

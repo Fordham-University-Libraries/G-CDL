@@ -1,0 +1,36 @@
+<div *ngIf="isBusy" class="busy-dialog" role="alert">
+    <span *ngIf="busyAction == 'borrow'" class="cdk-visually-hidden">borrowing... please wait</span>
+    <span *ngIf="busyAction == 'return'" class="cdk-visually-hidden">returning... please wait</span>
+    <mat-spinner></mat-spinner>
+</div>
+<section *ngIf="lang && library && !isCheckedOutItemLoading" class="borrowing"
+    aria-label="Item you are borrowing" aria-live="polite" [attr.aria-busy]="isCheckedOutItemLoading">
+    <ng-container *ngIf="checkedOutItem">
+        <h2>{{ lang[checkedOutItem.library]?.currentCheckout?.head }}</h2>
+        <mat-spinner *ngIf="isCheckedOutItemLoading"></mat-spinner>
+        <ng-container *ngIf="checkedOutItem && !isCheckedOutItemLoading">
+            <ng-container *ngIf="checkedOutItem.library == parentLibrary && checkedOutItem.bibId == parentBibId; else elseTitle">
+                <span>You're borrowing <strong>this</strong> item!</span><br>
+            </ng-container>
+            <ng-template #elseTitle>
+            Title: {{ checkedOutItem.title }} <span *ngIf="checkedOutItem.part"> (part: {{checkedOutItem.part}} /
+                {{checkedOutItem.partTotal}})</span><br>
+            <span *ngIf="library != checkedOutItem.library">Library: {{ checkedOutItem.libraryName }}<br></span>
+            </ng-template>
+            <ng-container *ngIf="checkedOutItem.due">Due back: {{ checkedOutItem.due | date:'medium' }} <br></ng-container>
+            <br>
+            <div fxLayoutGap=".5em">
+                <button id="main-read-button" mat-raised-button color="primary" class="button-primary"
+                    (click)="read(checkedOutItem.id)" [class.hidden]="mode == 'return'" [class.embiggen]="mode == 'read'">Read</button>
+                <button *ngIf="isAccessibleUser" class="download" mat-stroked-button color="primary"
+                    (click)="download(checkedOutItem.id)" [class.hidden]="mode == 'return'" [class.embiggen]="mode == 'read'">Download</button>
+                <button mat-stroked-button color="warn" class="return" (click)="return(checkedOutItem.id)" [class.hidden]="mode == 'read'" [class.embiggen]="mode == 'return'">Return
+                    now</button>
+            </div>
+        </ng-container>
+    </ng-container>
+    <div *ngIf="!checkedOutItem && !isCheckedOutItemLoading">
+        <h2>{{ lang[library]?.currentCheckout?.head }}</h2>
+        <p>{{ lang[library].currentCheckout.noItem }}</p>
+    </div>
+</section>

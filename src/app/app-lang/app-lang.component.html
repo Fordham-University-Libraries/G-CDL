@@ -1,0 +1,119 @@
+<main>
+    <div fxLayout="row">
+        <h1>CDL Application Languages Config</h1>
+        <button id="btn-config" mat-stroked-button color="primary" [matMenuTriggerFor]="menu">
+            <mat-icon>settings_suggest</mat-icon>
+            <span> Config</span>
+        </button>
+        <mat-menu #menu="matMenu">
+            <button mat-menu-item [routerLink]="'../'">App & Library Configs</button>
+            <button mat-menu-item [routerLink]="'../customization'">Customizations</button>
+            <button mat-menu-item disabled class="is-active">Languages</button>
+        </mat-menu>
+    </div>
+    <mat-spinner *ngIf="!appLangLibraries"></mat-spinner>
+    <div *ngIf="availableTokens" class="alert alert-info">
+        Tokens
+        <ul>
+            <li *ngFor="let token of availableTokens | keyvalue">{{ token.key }} -- {{ token.value }}</li>
+        </ul>
+    </div>
+    <mat-accordion *ngIf="appLangLibraries" [multi]="false">
+        <!-- libraries -->
+        <mat-expansion-panel [expanded]="true">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    Libraries
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <mat-spinner *ngIf="!appLangLibrariesCopy.length"></mat-spinner>
+            <mat-tab-group *ngIf="appLangLibrariesCopy.length">
+                <ng-container *ngFor="let library of appLangLibrariesCopy; let libIndex = index">
+                    <mat-tab *ngIf="appLangLibrariesCopy[libIndex].length"
+                        [label]="config.libraries[appLangLibrariesDirtyCount[libIndex]?.libKey].name + ' (' + appLangLibrariesDirtyCount[libIndex]?.libKey  + ')'">
+                        <mat-spinner *ngIf="appLangLibrariesDirtyCount[libIndex].isLoading"></mat-spinner>
+                        <!-- unsaved banner -->
+                        <div *ngIf="appLangLibrariesDirtyCount[libIndex].count && !appLangLibrariesDirtyCount[libIndex].isLoading"
+                            class="alert alert-warning margin-top-default">
+                            <p>
+                                <strong *ngIf="appLangLibrariesDirtyCount[libIndex].count == 1">Unsaved Change</strong>
+                                <strong *ngIf="appLangLibrariesDirtyCount[libIndex].count > 1">{{ appLangLibrariesDirtyCount[libIndex].count }} Unsaved Changes</strong>
+                            </p>
+                            <button mat-raised-button color="primary" class="button-primary"
+                                (click)="updateLang(appLangLibrariesCopy[libIndex], i)">Save</button>
+                        </div>
+                        <ul *ngIf="!appLangLibrariesDirtyCount[libIndex].isLoading" class="root">
+                            <ng-template #recursiveListLibrary let-library>
+                                <li *ngFor="let item of library; let i = index">
+                                    <ng-container *ngIf="!item.children && item.editable != 'hide'">
+                                        <!-- str/int -->
+                                        <mat-form-field
+                                            *ngIf="(item.type == 'string' || item.type == 'integer' || item.type == 'array') && (!item.options || item.options != 'htmlOk')"
+                                            appearance="fill" [style.width.px]="(item.value?.length * 5) + 225">
+                                            <mat-label>{{item.key}}</mat-label>
+                                            <input matInput [type]="item.type == 'integer' ? 'number' : 'text'"
+                                                [disabled]="item.editable == 'warning'" [(ngModel)]="item.value"
+                                                (ngModelChange)="appLangSubject.next(libIndex)">
+                                            <mat-icon matSuffix *ngIf="item.isDefault && !item.isDirty"
+                                                [matTooltip]="'Default'">build_circle</mat-icon>
+                                            <mat-icon matSuffix *ngIf="!item.isDefault || item.isDirty"
+                                                [matTooltip]="item.isDirty ? 'Edited - unsaved' : 'Custom'"
+                                                [class.is-dirty]="item.isDirty">{{ item.editable }}</mat-icon>
+                                            <mat-hint>{{ item.desc }}</mat-hint>
+                                        </mat-form-field>
+                                        <!-- html editor -->
+                                        <div *ngIf="item.options == 'htmlOk'">
+                                            <mat-label>{{item.key}}</mat-label>
+                                            <angular-editor [id]="item.key + i" [config]="editorConfig" [(ngModel)]="item.value" (ngModelChange)="appLangSubject.next(libIndex)"></angular-editor>
+                                            <mat-hint>{{ item.desc }}</mat-hint>
+                                        </div>
+                                        <!-- bool -->
+                                        <mat-slide-toggle *ngIf="item.type == 'boolean'" [(ngModel)]="item.value"
+                                            [disabled]="item.editable == 'warning'"
+                                            (ngModelChange)="appLangSubject.next(libIndex)">
+                                            {{item.key}}</mat-slide-toggle>
+                                        <!-- select -->
+                                        <mat-form-field *ngIf="item.options && isArray(item.options)" appearance="fill">
+                                            <mat-label>{{ item.key }}</mat-label>
+                                            <mat-select [(ngModel)]="item.value" [disabled]="item.editable == 'warning'"
+                                                (ngModelChange)="appLangSubject.next(libIndex)">
+                                                <mat-option *ngFor="let opt of item.options" [value]="opt">{{opt}}
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </ng-container>
+                                    <ul *ngIf="item.children">
+                                        <div class="sub-head">{{item.key | uppercase}}</div>
+                                        <div *ngIf="sectionDefinitions[item.key]" class="sec-def">
+                                            <mat-icon>info</mat-icon> {{ sectionDefinitions[item.key] }}
+                                        </div>
+                                        <ng-container
+                                            *ngTemplateOutlet="recursiveListLibrary; context:{ $implicit: item.children }">
+                                        </ng-container>
+                                    </ul>
+                                </li>
+                            </ng-template>
+                            <ng-container *ngTemplateOutlet="recursiveListLibrary; context:{ $implicit: library }">
+                            </ng-container>
+                        </ul>
+                        <button mat-raised-button color="primary" class="button-primary"
+                            [disabled]="!appLangLibrariesDirtyCount[libIndex].count"
+                            (click)="updateLang(appLangLibrariesCopy[libIndex], i)">Save</button>
+                        &nbsp;
+                        <br><br>
+                        <hr>
+                        <div>
+                            <h3>About Page</h3>
+                            <div class="alert alert-warning">This WYSITYG HTML editor is not that great, if you're having trouble with it, just edit raw HTML for now!</div>
+                            <angular-editor id="about-page-editor" [config]="editorConfig" [placeholder]="'Enter about text for this library here...'" [(ngModel)]="aboutLibrariesCopy[appLangLibrariesDirtyCount[libIndex].libKey]"></angular-editor>
+                            <br>
+                            <button mat-raised-button color="primary" [disabled]="aboutLibrariesCopy[appLangLibrariesDirtyCount[libIndex].libKey] == aboutLibraries[appLangLibrariesDirtyCount[libIndex].libKey]" (click)="updateAboutPage(appLangLibrariesDirtyCount[libIndex]?.libKey)">Save About Page</button>
+                            <br>
+                        </div>
+
+                    </mat-tab>
+                </ng-container>
+            </mat-tab-group>
+        </mat-expansion-panel>
+    </mat-accordion>
+</main>

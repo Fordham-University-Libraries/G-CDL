@@ -1,0 +1,32 @@
+
+
+.badge {
+    font-size: smaller;
+    margin: 0 .5em;
+    background: lightcyan;
+    padding: .25em;
+    mat-icon {
+        font-size: 14px;
+        width: 18px;
+    }
+}
+
+.borrowing {
+    margin-top: 1em;
+    padding: 1em;
+    background: aliceblue;
+    color: black;
+    &.is-law-item {
+        button.return {
+            background: #f44336;
+            color: white;
+        }
+    }
+}
+
+.read-return {
+    .error {
+        padding: 1em;
+        background: lightcoral;
+    }
+}

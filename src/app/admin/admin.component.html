@@ -1,0 +1,100 @@
+<main *ngIf="isStaff">
+    <div fxLayout="row">
+        <h1>CDL Library Items Admin -- {{ config?.libraries[library].name }}</h1>
+        <button id="btn-config" mat-stroked-button color="primary" *ngIf="user.isAdminOfLibraries?.includes(library)" [matMenuTriggerFor]="menu">
+            <mat-icon>settings_suggest</mat-icon>
+            <span> Config</span>
+        </button>
+        <mat-menu #menu="matMenu">
+            <button mat-menu-item [routerLink]="'/admin/config'" [matTooltip]="'edit settings of this library e.g. loan period and etc.'">App & Library Configs</button>
+            <button mat-menu-item [routerLink]="'/admin/config/customization'">Customizations</button>
+            <button mat-menu-item [routerLink]="'/admin/config/lang'">Languages</button>
+        </mat-menu>
+    </div>
+    <mat-accordion>
+        <mat-expansion-panel>
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    Admin Info
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div class="padding-default content">
+                <strong>Basic App Configs</strong>
+                <ul>
+                    <li *ngFor="let config of adminConfig | keyvalue">{{ config.key }}: {{ config.value }}</li>
+                </ul>
+                <strong>Staff <small>(can access this page, stats, and add files)</small></strong>
+                <ng-container *ngIf="staff">
+                    <div>
+                        <ul>
+                            <li *ngFor="let user of staff">{{ user }}</li>
+                        </ul>
+                    </div>
+                </ng-container>
+                <strong>Admins <small>(souped up staff of this library, can do the all staff stuff and can also configure settings for this library e.g. loan period, customizations, languages)</small></strong>
+                <ng-container *ngIf="admins">
+                    <div>
+                        <ul>
+                            <li *ngFor="let admin of admins">{{ admin }}</li>
+                        </ul>
+                    </div>
+                </ng-container>
+            </div>
+        </mat-expansion-panel>
+    </mat-accordion>
+    <div class="wells margin-top-default">
+        <button mat-raised-button routerLink="./upload"><mat-icon>cloud_upload</mat-icon><span> Upload Item</span></button>
+        &nbsp;&nbsp;
+        <button mat-raised-button routerLink="./accessible"><mat-icon>accessible_forward</mat-icon><span> Manage Accessible Users</span></button>        
+    </div>
+    <h2>Items</h2>
+    <mat-form-field>
+        <mat-label>Filter by Title</mat-label>
+        <input matInput (keyup)="applyFilter($event)" #input>
+      </mat-form-field>
+    <div class="mat-elevation-z8">
+    <table mat-table [dataSource]="items" matSort>
+        <ng-container matColumnDef="title">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+            <td mat-cell *matCellDef="let item"> {{item.title}}<span *ngIf="item.part"> (part: {{item.part}} / {{item.partTotal}})</span></td>
+        </ng-container>
+
+        <ng-container matColumnDef="itemId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Item ID</th>
+            <td mat-cell *matCellDef="let item"> {{item.itemId}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="createdTime">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Added</th>
+            <td mat-cell *matCellDef="let item"> {{item.createdTime | date:'shortDate'}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="lastBorrowed">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Last Borrowed</th>
+            <td mat-cell *matCellDef="let item"> {{item.lastBorrowed | date:'short'}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="isSuspended">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let item">
+                <span *ngIf="item.isSuspended" class="suspend">Suspended</span>
+                <span *ngIf="!item.isSuspended" class="active">Active</span>
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef> Action </th>
+            <td mat-cell *matCellDef="let item" class="action">
+                <button *ngIf="!item.isSuspended" mat-icon-button color="warn" [disabled]="isLoading" (click)="suspend(item.id)" [matTooltip]="'suspend'"><mat-icon>pause_circle_outline</mat-icon></button>
+                <button *ngIf="item.isSuspended" mat-icon-button color="primary" [disabled]="isLoading" (click)="unsuspend(item.id)" [matTooltip]="'unsuspend'"><mat-icon>play_circle_outline</mat-icon></button>
+                <button mat-icon-button color="primary" [disabled]="isLoading" (click)="editItem(item.id)" [matTooltip]="'edit'"><mat-icon>edit</mat-icon></button>
+                <button *ngIf="item.isSuspended" mat-icon-button color="warn" [disabled]="isLoading" (click)="trash(item.id)" [matTooltip]="'DELETE!'"><mat-icon>delete_forever</mat-icon></button>
+            </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+    <mat-paginator [pageSizeOptions]="[50, 100, 500, 1000]" showFirstLastButtons></mat-paginator>
+    </div>
+</main>

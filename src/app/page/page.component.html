@@ -1,0 +1,6 @@
+<main id="main">
+    <ng-container *ngIf="library && lang">
+        <h1>{{ mode }}</h1>
+        <div>{{ lang[library]?.error[mode] }}</div>
+    </ng-container>
+</main>

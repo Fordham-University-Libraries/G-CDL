@@ -1,0 +1,13 @@
+.mat-dialog-container {
+    padding: 2em;
+}
+
+.mat-dialog-content {
+    padding: 1em;
+    .item {
+        padding: 1em;
+        mat-icon {
+            margin-right: .25em;
+        }
+    }
+}

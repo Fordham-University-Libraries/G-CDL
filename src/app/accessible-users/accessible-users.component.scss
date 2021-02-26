@@ -1,0 +1,68 @@
+.users-list {
+    // ul {
+    //     height: 25vh;
+    //     min-height: 10vh;
+    //     resize: vertical;
+    //     overflow: auto;
+    //     display: flex;
+    //     flex-direction: column;
+    //     flex-wrap: wrap;
+    //     li {
+    //         cursor: pointer;
+    //         &.to-be-rem {
+    //             color: darkred;
+    //         }
+    //     }
+    //   }
+    &.multi-cols {
+        columns: 4;
+    }
+}
+.remove-users-list {
+    li {
+        list-style: none;
+    }
+}
+.next-prev-buttons {
+    margin-top: 2em;
+    background: ghostwhite;
+    padding: .5em;
+    width: fit-content;
+}
+mat-form-field {
+    min-width: 25em;
+}
+.em-warn {
+    font-weight: bolder;
+    color: darkred;
+}
+.em-success {
+    font-weight: bolder;
+    color: darkgreen;
+}
+.sub {
+    font-size: smaller;
+    color: gray;
+}
+table#invalid-users {
+    font-family: Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+    td,th {
+        border: 1px solid #ddd;
+        padding: 8px;  
+    }
+    tr:nth-child(even){background-color: #f2f2f2;}
+    tr:hover {background-color: #ddd;}
+    th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: left;
+        background-color: brown;
+        color: white;
+      }
+}
+#users-lookup-result {
+    padding: 1em;
+    background: aliceblue;
+}

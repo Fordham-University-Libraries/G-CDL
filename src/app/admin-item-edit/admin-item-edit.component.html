@@ -1,0 +1,51 @@
+<h1 mat-dialog-title>Edit Item: {{ item?.name }}</h1>
+<div mat-dialog-content>
+    <mat-spinner *ngIf="!item"></mat-spinner>
+    <table *ngIf="item">
+        <tr>
+            <td>File name:</td>
+            <td> {{ item.name }}</td>
+        </tr>
+        <tr>
+            <td>Title:</td>
+            <td>{{ item.title }}</td>
+        <tr>
+            <td>Added:</td>
+            <td>{{ item.createdTime | date:'medium' }}</td>
+        <tr>
+            <td>File ID:</td>
+            <td>{{ item.id }} <button mat-icon-button (click)="adminDownloadFile(item.id)"><mat-icon>cloud_download</mat-icon></button></td>
+        <tr>
+            <td>Accessible (With OCR) File ID: </td>
+            <td>{{ item.fileWithOrcId }} <button mat-icon-button (click)="adminDownloadFile(item.id, true)"><mat-icon>cloud_download</mat-icon></button></td>
+        <tr>
+            <td>Biblographic Record ID: </td>
+            <td>{{ item.bibId }}</td>
+        <tr>
+            <td>Item ID: </td>
+            <td>{{ item.itemId }}</td>
+        </tr>
+        <tr *ngIf="!item.part" class="row-gap">
+            <td colspan="2">This item is NOT a multi-part item. You can make it so by editing the 3 fields below</td>
+        </tr>
+        <tr *ngIf="item.part" class="row-gap">
+            <td colspan="2">This item IS a multi-part item.</td>
+        </tr>
+        <ng-container>
+            <tr>
+                <td>Part: </td>
+                <td><input type="number" [(ngModel)]="part"></td>
+            <tr>
+                <td>of Total Part:</td>
+                <td><input type="number" [(ngModel)]="partTotal"></td>
+            <tr>
+                <td>Part Description:</td>
+                <td><input [(ngModel)]="partDesc" placeholder="e.g. Chapter 1 - 6"></td>
+            </tr>
+        </ng-container>
+    </table>
+</div>
+<div mat-dialog-actions>
+    <button mat-raised-button color="primary" class="button-primary" (click)="save()" [disabled]="!partDesc || !part || !partTotal">Save</button>
+    <button mat-stroked-button (click)="close()">Cancel</button>
+</div>

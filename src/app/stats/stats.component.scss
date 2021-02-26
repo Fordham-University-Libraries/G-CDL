@@ -1,0 +1,15 @@
+h2 {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+#stats-table-container {
+    max-height: 75vh;
+    overflow: auto;
+    table {
+        width: 100%;
+        th, td { padding: 0 1em !important}
+    }
+}
+#export-btn {
+    margin-left: auto;
+}

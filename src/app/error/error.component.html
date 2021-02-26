@@ -1,0 +1,17 @@
+<main id="main" *ngIf="library">
+    <h1>Error</h1>
+    <div>{{ lang[library]?.error[mode] }}</div>
+    <div *ngIf="mode == '404'" class="margin-top-default"><button mat-raised-button [routerLink]="'/'">Back to Home Page</button></div>
+
+    <ng-container *ngIf="mode == 'apiError'">
+        <div class="down">
+            <h1>The Application is currently unavailable</h1>
+            <p *ngIf="!reason">This could be because the app is down for scheduled maintenace, or something just went horribly wrong!</p>
+            <p *ngIf="reason">ISSUE: <strong>{{ reason | uppercase }}</strong></p>
+            <br>
+            <p><small>*if you're the administrator of the application, you might want to look at the API setttings!</small></p>
+        </div>
+        <br>
+        <div><button mat-raised-button [routerLink]="'/'">Back to Home Page</button></div>
+    </ng-container>
+</main>

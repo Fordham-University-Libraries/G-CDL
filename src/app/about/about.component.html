@@ -1,0 +1,4 @@
+<div [attr.role]="!embed ? 'main' : null" [class.main]="!embed" [class.embed]="embed">
+    <h1 *ngIf="!embed && lang?.about.aboutHead">{{ lang.about.aboutHead }}</h1>
+    <div class="container" [innerHtml]="html"></div>
+</div>

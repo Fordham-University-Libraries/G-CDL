@@ -1,0 +1,35 @@
+<div *ngIf="isBusy" class="busy-dialog" role="alert">
+    <span *ngIf="busyAction == 'borrow'" class="cdk-visually-hidden">borrowing... please wait</span>
+    <span *ngIf="busyAction == 'return'" class="cdk-visually-hidden">returning... please wait</span>
+    <mat-spinner></mat-spinner>
+</div>
+<main id="main">
+    <h1>My Account / Item</h1>
+    <div *ngIf="!isLoadingUser">
+        <span>Hi {{ user.fullName }} ({{ user.userName }})!</span>
+        <span *ngIf="user?.isAccessibleUser" class="badge">
+            <mat-icon role="presentation">accessible_forward</mat-icon>
+             Accessible User
+        </span>
+        <span *ngIf="user?.homeLibrary == 'law'" class="badge">
+            <mat-icon role="presentation">gavel</mat-icon>
+            Law Library User
+        </span>
+    </div>
+
+    <h2 *ngIf="mode == 'my'">Item you're borrowing</h2>
+    <h2 *ngIf="mode == 'read'">Read</h2>
+    <h2 *ngIf="mode == 'return'">Return</h2>
+    <app-checked-out-item
+        [lang]="lang"
+        (userHasItemCheckedOut)="onUserHasItemCheckedOutCheck($event)"
+        (refreshParent)="onRefreshParent($event)"></app-checked-out-item>
+
+    <div *ngIf="justReturned" class="alert alert-success">
+        Your item has been returned successfully!
+    </div>
+
+    <div *ngIf="userHasItemCheckedOut === false && !justReturned" class="borrowing" [class.error]="mode == 'read' || mode =='return'">
+        You don't have any item checked out at the moment
+    </div>
+</main>

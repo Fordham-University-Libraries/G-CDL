@@ -1,0 +1,16 @@
+<h1 mat-dialog-title>Term of Service: Accessible Copy for Item: {{ title }}</h1>
+<div mat-dialog-content>
+    <p>This work has been made available through the Marrakesh Treaty Act for use by an individual user who has the
+        appropriate eligibility. </p>
+    <p>By accessing this content you agree that:</p>
+    <ul>
+        <li>You will not redistribute it to any other person or entity.
+        </li>
+        <li>You will not make reproductions of the content for entities other than yourself.
+        </li>
+    </ul>
+</div>
+<div mat-dialog-actions>
+    <button mat-raised-button color="primary" class="button-primary" (click)="onAccept()">I Agree & Borrow</button>
+    <button mat-stroked-button (click)="onDecline()">Decline</button>
+</div>

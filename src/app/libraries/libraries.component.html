@@ -1,0 +1,6 @@
+<main id="main" *ngIf="libraries" class="item">
+    <h1>Libraries</h1>
+    <ul>
+        <li *ngFor="let library of libraries"><a [routerLink]="'/library/' + library.key">{{ library.name }}</a></li>
+    </ul>
+</main>

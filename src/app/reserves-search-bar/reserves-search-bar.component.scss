@@ -1,0 +1,22 @@
+mat-form-field {
+    min-width: 50%;
+}
+button {
+    margin-top: .275em;
+    margin-bottom: 1.8em; 
+}
+#browse-type {
+    height: fit-content;
+}
+.hint {
+    font-size: small;
+    color: gray;
+}
+.field-button {
+    cursor: pointer;
+    color: lightgray;
+    &:hover {
+        color: gray;
+    }
+
+}

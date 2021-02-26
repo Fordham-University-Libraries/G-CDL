@@ -1,0 +1,122 @@
+<header *ngIf="config && lang && library && customization && (user || unauthedMode)" class="header">
+    <a [href]="skipLinkPath" class="skip-to-content-link">
+        Skip to main content
+    </a>
+    <!-- 1st -->
+    <mat-toolbar *ngIf="customization[library].header.first.display" class="first">
+        <div fxLayoutAlign="center center" [class.logo-clickable]="customization[library].header.first.link" (click)="openNewWindow(customization[library].header.first.link)">
+            <img *ngIf="customization[library].header.first.logo" [src]="customization[library].header.first.logo" [alt]="customization[library].header.first.logoAltText" class="logo">
+            <span *ngIf="customization[library].header.first.text">{{ customization[library].header.first.text }}</span>
+        </div>
+    </mat-toolbar>
+    <!-- 2nd -->
+    <mat-toolbar *ngIf="customization[library].header.second.display" class="second">
+        <div fxLayoutAlign="center center" [class.logo-clickable]="customization[library].header.second.link" (click)="openNewWindow(customization[library].header.second.link)">
+            <img *ngIf="customization[library].header.second.logo" [src]="customization[library].header.second.logo" [alt]="customization[library].header.second.logoAltText" class="logo">
+            <span>{{ customization[library].header.second.text? customization[library].header.second.text : config.appName }}</span>
+        </div>
+    </mat-toolbar>
+    <!-- 3rd -->
+    <mat-toolbar *ngIf="customization[library].header.third.display && !unauthedMode" class="third">
+        <button mat-icon-button [class.is-active]="appPath == 'home'" aria-label="Home" [routerLink]="isUsersDefaultLibrary ? '/' : '/library/' + library"
+            [matTooltip]="'Home'">
+            <mat-icon role="presentation">home</mat-icon>
+            <span class="cdk-visually-hidden">Home</span>
+        </button>
+        <button *ngIf="customization[library].reserves?.enable && config.libraries[library].ilsApiEnabled" mat-icon-button [class.is-active]="appPath == 'reserves'"
+            [matTooltip]="'Search Course'" [routerLink]="isUsersDefaultLibrary ? '/search/reserves' : '/library/' + library + '/search/reserves'">
+            <mat-icon role="presentation">search</mat-icon>
+            <span class="cdk-visually-hidden">Course Search</span>
+        </button>
+        <button mat-icon-button [class.is-active]="appPath == 'about'"
+            [matTooltip]="'About'" [routerLink]="isUsersDefaultLibrary ? '/about' : '/library/' + library + '/about'">
+            <mat-icon role="presentation">info</mat-icon>
+            <span class="cdk-visually-hidden">About</span>
+        </button>
+        <button *ngIf="isStaff" mat-icon-button [class.is-active]="appPath == 'stats'"
+            aria-label="Statistics" [routerLink]="isUsersDefaultLibrary ? '/stats' : '/library/' + library + '/stats'" [matTooltip]="'statistics'">
+            <mat-icon role="presentation">assessment</mat-icon>
+            <span class="cdk-visually-hidden">Statistics</span>
+        </button>
+        <button *ngIf="isStaff" mat-icon-button [class.is-active]="appPath == 'admin'"
+            aria-label="Admin" [routerLink]="isUsersDefaultLibrary ? '/admin' : '/library/' + library + '/admin'" [matTooltip]="'admin'">
+            <mat-icon role="presentation">settings</mat-icon>
+            <span class="cdk-visually-hidden">Admin</span>
+        </button>
+
+        <div *ngIf="user" class="user" [class.is-active]="appPath == 'my'">
+            <button class="user-button" mat-stroked-button [matMenuTriggerFor]="userMenu">
+                <mat-icon role="presentation">account_circle</mat-icon>
+                <span class="cdk-visually-hidden">Log in as</span>
+                {{ user.userName }}
+                <!-- <span class="law-user badge" *ngIf="isLawUser" [matTooltip]="'Law Library User'">
+                    <mat-icon role="presentation">gavel</mat-icon>
+                    <span class="cdk-visually-hidden">Law Library User</span>
+                </span> -->
+                <span class="accessible-user badge" *ngIf="user.isAccessibleUser" [matTooltip]="'Accessible User'">
+                    <mat-icon role="presentation">accessible_forward</mat-icon>
+                    <span class="cdk-visually-hidden">Accessible User</span>
+                </span>
+            </button>
+            <mat-menu #userMenu="matMenu">
+                <button mat-menu-item routerLink="/my" [class.is-active]="appPath == 'my'">My Account</button>
+                <button mat-menu-item (click)="logOut()">Log out</button>
+            </mat-menu>
+        </div>
+    </mat-toolbar>
+</header>
+<nav *ngIf="lang && library && customization" class="bread" aria-label="Breadcrumb" fxLayoutGap=".5em">
+    <!-- <span>{{ appPath }}</span> -->
+    <ol>
+        <li *ngIf="customization[library]?.bread?.libHomeLink && customization[library]?.bread?.libName">
+            <a [href]="customization[library].bread.libHomeLink" class="bread-link">{{ customization[library].bread.libName }}</a>
+        </li>
+        <li>
+            <a *ngIf="appPath == 'home'" class="active" aria-current="true">Digital Reserves</a>
+            <a *ngIf="appPath != 'home'" [routerLink]="isUsersDefaultLibrary ? '/' : '/library/' + library" class="bread-link">Digital Reserves</a>
+        </li>
+    <li *ngIf="appPath == 'item'">
+        <span class="active" aria-current="page">Item</span>
+    </li>
+    <li *ngIf="appPath == 'my'">
+        <span class="active" aria-current="page">My Account</span>
+    </li>
+    <li *ngIf="appPath == 'reader'">
+        <span class="active" aria-current="page">Read</span>
+    </li>
+    <li *ngIf="appPath == 'reserves'">
+        <span class="active" aria-current="page">Course Search</span>
+    </li>
+    <li *ngIf="appPath == 'about'">
+        <span class="active" aria-current="page">About</span>
+    </li>
+    <li *ngIf="appPath == 'libraries'">
+        <span class="active" aria-current="page">Libraries</span>
+    </li>
+    <li *ngIf="appPath == 'stats'">
+        <span class="active" aria-current="page">Statistics</span>
+    </li>
+    <li *ngIf="appPath == 'admin'">
+        <a *ngIf="!mode" class="active" aria-current="true">Admin</a>
+        <a *ngIf="mode" class="bread-link" [routerLink]="isUsersDefaultLibrary ? '/admin' : '/library/' + library + '/admin'">Admin</a>
+    </li>
+    <li *ngIf="appPath == 'admin' && (mode == 'config' || mode == 'lang' || mode == 'cust')">
+        <span *ngIf="mode == 'config'" class="active" aria-current="page">Config</span>
+        <a *ngIf="mode != 'config'" class="bread-link" [routerLink]="'/admin/config'">Config</a>
+    </li>
+    <li *ngIf="appPath == 'admin' && mode == 'lang'">
+        <span class="active" aria-current="page">Languages</span>
+    </li>
+    <li *ngIf="appPath == 'admin' && mode == 'cust'">
+        <span class="active" aria-current="page">Customizations</span>
+    </li>
+    <li *ngIf="appPath == 'admin' && mode == 'accessible'">
+        <span class="active" aria-current="page">Accessible Users</span>
+    </li>
+    <li *ngIf="appPath == 'admin' && mode == 'upload'">
+        <span class="active" aria-current="page">Upload</span>
+    </li>
+    </ol>
+</nav>
+<!-- <div *ngIf="user?.isDriveOwner" class="alert alert-warning">HEADS UP: You're login as the Drive owner, if you try to borrow something, it'll NOT work, since you're already the owner of the file.</div> -->
+<router-outlet></router-outlet>

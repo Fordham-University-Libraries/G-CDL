@@ -1,0 +1,283 @@
+<main id="main">
+    <h1>Admin: Accessible Users</h1>
+    <p>Manage which users are considered an accessible user -- will get a PDF with OCR data and can also download when
+        they borrow an item, so it can be used with accessibility software e.g. screenreader</p>
+    <mat-accordion>
+        <!-- current -->
+        <mat-expansion-panel [expanded]="false">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    <mat-icon role="presentation">info</mat-icon>
+                    <span fxLayoutAlign="start center">{{ 'Current Accessible Users' }}</span>
+                </mat-panel-title>
+                <mat-panel-description>
+                    {{ accessbileUsers ? (accessbileUsers.length | number) : 'loading...' }}
+                </mat-panel-description>
+            </mat-expansion-panel-header>
+            <mat-spinner *ngIf="!accessbileUsers"></mat-spinner>
+            <div *ngIf="accessbileUsers" class="users-list" [class.multi-cols]="accessbileUsers.length > 10">
+                <ul>
+                    <li *ngFor="let user of accessbileUsers">{{ user }}</li>
+                </ul>
+            </div>
+        </mat-expansion-panel>
+    </mat-accordion>
+    <br><br>
+
+    <mat-tab-group>
+        <mat-tab label="Upload">
+
+            <mat-horizontal-stepper *ngIf="!usersAddedViaExcel" [linear]="true" #stepper class="margin-top-default">
+                <!-- 1: upload -->
+                <mat-step label="Upload Excel">
+                    <p>Upload Excel file with at least on of these columns:</p>
+                    <ul>
+                        <li>username</li>
+                        <ul>
+                            <li class="sub">BEST: if you have a list of usernames (without @domain.com), just put it in a
+                                column with a header (row1) = username, the app will add users that's not aready in the
+                                system</li>
+                        </ul>
+                        <li>email</li>
+                        <ul *ngIf="config">
+                            <li class="sub">Better: if you have a list of emails, just put it in a column with a header
+                                (row1) = email, the app will strip out the @domain.com part of users that's not aready in
+                                the system. If the @domain.com is not euqal to {{config.emailDomain }} the email will be
+                                ignored</li>
+                        </ul>
+                        <li>fullname, firstname, lastname</li>
+                        <ul>
+                            <li class="sub">Ok: last resort, if you only have first and last name of users, you can put
+                                it in one or more column with a header (row1) = fullname, firstname, lastname the app will try look up the name from your
+                                GSuites directory, if there's no match, or there's more than one matched, the name will
+                                be ignored</li>
+                        </ul>
+                    </ul>
+                    <div class="wells">
+                        <input type="file" style="display: inline-block;" (change)="onFileChange($event)"
+                            placeholder="Upload file" accept=".xlsx">
+                    </div>
+                    <mat-spinner *ngIf="isAnalyzing"></mat-spinner>
+                    <div *ngIf="(usersAlreadyInSystem?.length || newUsers?.length || invalidUsers?.length) && !isAnalyzing" class="alert alert-success">
+                        <strong>Excel File Processed - Number of Users in Uploaded File: {{ usersAlreadyInSystem?.length + newUsers?.length + invalidUsers?.length | number }}</strong>
+                        <br><br>
+                        Please proceed to the next step!
+                    </div>
+                    <div *ngIf="error" class="err-msg">ERROR: {{ error }}</div>
+                    <div class="next-prev-buttons">
+                        <button mat-button color="primary" matStepperNext
+                            [disabled]="!newUsers.length && !invalidUsers.length">
+                            <ng-container *ngIf="!isAnalyzing">Next <mat-icon>navigate_next</mat-icon>
+                            </ng-container>
+                            <mat-icon *ngIf="isAnalyzing">hourglass_empty</mat-icon>
+                        </button>
+                    </div>
+                </mat-step>
+                <!-- 2: analyze -->
+                <mat-step label="Analysis">
+                    <h2>Upload Accessible Users - Analysis</h2>
+                    <div class="wells">
+                        <p>
+                            Number of Users in Uploaded File:
+                            {{ usersAlreadyInSystem?.length + newUsers?.length + invalidUsers?.length | number }}
+                        </p>
+                        <mat-accordion>
+                            <!-- new -->
+                            <mat-expansion-panel *ngIf="newUsers.length" [expanded]="false">
+                                <mat-expansion-panel-header>
+                                    <mat-panel-title>
+                                        <mat-icon role="presentation">fiber_new</mat-icon>
+                                        <span fxLayoutAlign="start center">{{ 'New Accessible Users'}}</span>
+                                    </mat-panel-title>
+                                    <mat-panel-description>
+                                        {{ !isLookingUp ? (newUsers.length | number) : 'updating...' }}
+                                    </mat-panel-description>
+                                </mat-expansion-panel-header>
+                                <div class="users-list">
+                                    <ul>
+                                        <li *ngFor="let user of newUsers">{{ user }}</li>
+                                    </ul>
+                                </div>
+                            </mat-expansion-panel>
+                            <!-- alredy in system -->
+                            <mat-expansion-panel *ngIf="usersAlreadyInSystem.length" [expanded]="false">
+                                <mat-expansion-panel-header>
+                                    <mat-panel-title>
+                                        <mat-icon role="presentation">supervisor_account</mat-icon>
+                                        <span fxLayoutAlign="start center">{{ 'Users Already in the Sysyem' }}</span>
+                                    </mat-panel-title>
+                                    <mat-panel-description>
+                                        {{ !isLookingUp ? (usersAlreadyInSystem.length | number) : 'updating...' }}
+                                    </mat-panel-description>
+                                </mat-expansion-panel-header>
+                                <div class="users-list">
+                                    <ul>
+                                        <li *ngFor="let user of usersAlreadyInSystem">{{ user }}</li>
+                                    </ul>
+                                </div>
+                            </mat-expansion-panel>
+                            <!-- invalid email -->
+                            <mat-expansion-panel *ngIf="invalidUsers.length" [expanded]="false">
+                                <mat-expansion-panel-header>
+                                    <mat-panel-title>
+                                        <mat-icon role="presentation">error</mat-icon>
+                                        <span fxLayoutAlign="start center">Invalid Users (no username, email) </span>
+                                    </mat-panel-title>
+                                    <mat-panel-description>
+                                        {{ !isLookingUp ? (invalidUsers.length | number) : 'updaing...'}}
+                                    </mat-panel-description>
+                                </mat-expansion-panel-header>
+                                <div *ngIf="usersLookupResult" class="alert alert-warning">Users still invalid after looked up by name</div>
+                                <table id="invalid-users">
+                                    <tr>
+                                        <th>First/Lastname</th>
+                                        <th>Email (invalid -- expecting {{ config?.emailDomain }})</th>
+                                    </tr>
+                                    <tr *ngFor="let user of invalidUsers">
+                                        <td>{{ user.name }}</td>
+                                        <td>{{ user.email }}</td>
+                                    </tr>
+                                </table>
+                                <div id="users-lookup-result" class="margin-top-default">
+                                    <mat-spinner *ngIf="isLookingUp"></mat-spinner>
+                                    <div *ngIf="usersLookupResult">
+                                        <h3>RESULT: Lookup Invalid Users by Names</h3>
+                                        <h4>Found: {{ usersLookupResult.foundUsers.users.length }}</h4>
+
+                                        <div class="margin-left-default">
+                                            <p>Is New Users: {{ usersLookupResult.foundUsers.newUsers.length }}</p>
+                                            <ul *ngIf="usersLookupResult.foundUsers.newUsers.length">
+                                                <li *ngFor="let user of usersLookupResult.foundUsers.newUsers">{{ user
+                                                    }}</li>
+                                            </ul>
+                                            <p>Already in the System: {{
+                                                usersLookupResult.foundUsers.alreadlyInSystemUsers.length }}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <h4>NOT Found:
+                                                {{usersLookupResult.notFoundUsers.multipleMatches.length +
+                                                usersLookupResult.notFoundUsers.zeroMatches.length}}
+                                            </h4>
+                                            <div class="margin-left-default">
+                                                <p>Found more than one person: {{
+                                                    usersLookupResult.notFoundUsers.multipleMatches.length }}
+                                                </p>
+                                                <p>Not Found: {{ usersLookupResult.notFoundUsers.zeroMatches.length }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button *ngIf="!isLookingUp && !usersLookupResult" mat-stroked-button color="accent"
+                                        (click)="lookupUsers()" [disabled]="!invalidUsers.length">Lookup invalid users
+                                        by names</button>
+                                </div>
+                            </mat-expansion-panel>
+                        </mat-accordion>
+                    </div>
+                    <br>
+                    <br><br>
+                    <div class="next-prev-buttons">
+                        <button mat-button matStepperPrevious [disabled]="!newUsers && !invalidUsers">
+                            <mat-icon>navigate_before</mat-icon> Previous
+                        </button>
+                        &nbsp;&nbsp;
+                        <button mat-button color="primary" matStepperNext [disabled]="!newUsers && !invalidUsers">Next
+                            <mat-icon>navigate_next</mat-icon>
+                        </button>
+                    </div>
+                </mat-step>
+                <!-- 3: process -->
+                <mat-step label="Process">
+                    <div *ngIf="!newUsers.length" class="alert alert-info">There's NO new accessible users to add</div>
+                    <div *ngIf="newUsers.length">
+                        <h2>These users will be added to the accessible users list</h2>
+                        <mat-expansion-panel [expanded]="false">
+                            <mat-expansion-panel-header>
+                                <mat-panel-title>
+                                    <mat-icon role="presentation">fiber_new</mat-icon>
+                                    <span fxLayoutAlign="start center">{{ 'New Accessible Users'}}</span>
+                                </mat-panel-title>
+                                <mat-panel-description>
+                                    {{ !isLookingUp ? newUsers.length : 'updating...' }}
+                                </mat-panel-description>
+                            </mat-expansion-panel-header>
+                            <ul>
+                                <li *ngFor="let user of newUsers">{{ user }}</li>
+                            </ul>
+                        </mat-expansion-panel>
+                    </div>
+                    <br>
+                    <div *ngIf="invalidUsers.length && !usersLookupResult" class="alert alert-info">
+                        There're invalid users with first/lastname, you can try clicking the <em>Lookup invalid users by names</em> button in the previous step to try to lookup their username from their
+                        names
+                    </div>
+                    <mat-spinner *ngIf="isProcessing"></mat-spinner>
+                    <div *ngIf="!isProcessing">
+                        <button mat-raised-button color="primary" class="button-primary" (click)="process()"
+                            [disabled]="!newUsers.length">Submit</button>
+                        <br><br>
+                        <div class="next-prev-buttons">
+                            <button mat-button matStepperPrevious>
+                                <mat-icon>navigate_before</mat-icon> Previous
+                            </button>
+                        </div>
+                    </div>
+                </mat-step>
+            </mat-horizontal-stepper>
+        </mat-tab>
+        <!-- tab 2: manual  -->
+        <mat-tab label="Add Manually">
+            <div class="padding-default">
+                <div *ngIf="user" class="wells">
+                    <mat-spinner *ngIf="isProcessingToggle"></mat-spinner>
+                    <div *ngIf="!isProcessingToggle">
+                        <div *ngIf="!user.isAccessibleUser">
+                            <p>You (<em>{{ user.userName}}</em>) are <span class="em-warn">NOT</span> an accessible user
+                            </p>
+                            <button mat-raised-button (click)="toggleCurrentUser()">Make me an Accessible User!</button>
+                        </div>
+                        <div *ngIf="user.isAccessibleUser">
+                            <p>You (<em>{{ user.userName }}</em>) <span class="em-success">ARE</span> an accessible user
+                            </p>
+                            <button mat-raised-button (click)="toggleCurrentUser()">Remove me from the Accessible Users
+                                List</button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4>Add user(s) manually</h4>
+                    <mat-form-field appearance="fill">
+                        <mat-label>username(s)</mat-label>
+                        <input matInput [(ngModel)]="manuallyAddedUsers" placeholder="jdoe12, dschrute66">
+                        <mat-hint>Separate multiple users with a comma</mat-hint>
+                    </mat-form-field>
+                    <br><br>
+                    <button mat-raised-button (click)="addManuallyAddedUsers(manuallyAddedUsers)" color="primary"
+                        [disabled]="!manuallyAddedUsers || isProcessing">Submit</button>
+                    <mat-spinner *ngIf="isProcessing && !isProcessingToggle"></mat-spinner>
+                    <div *ngIf="usersNotAdded?.length" class="alert alert-info margin-top-default">
+                        <strong>Users NOT added:</strong>
+                        <ul>
+                            <li *ngFor="let user of usersNotAdded">{{ user }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </mat-tab>
+        <!-- tab 3: remove  -->
+        <mat-tab label="Remove Accessible Users">
+            <div class="padding-default mat-elevation-z2">
+                <mat-spinner *ngIf="!accessbileUsers"></mat-spinner>
+                <div *ngIf="accessbileUsers" class="remove-users-list wells" [class.multi-cols]="accessbileUsers.length > 10">
+                    <h2>Current Accessible Users</h2>
+                    <ul>
+                        <li *ngFor="let user of accessbileUsers"><mat-checkbox (change)="markUserToBeRemoved(user)">{{ user }}</mat-checkbox></li>
+                    </ul>
+                </div>
+                <div *ngIf="usersToBeRemoved.length">
+                    <button mat-raised-button color="warn" (click)="removeSelectedUsers()">Remove {{ usersToBeRemoved.length }} selected user{{usersToBeRemoved.length > 1 ? 's' : ''}}</button>
+                </div>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+</main>

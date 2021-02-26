@@ -1,0 +1,141 @@
+<div *ngIf="isBusy" class="busy-dialog" role="alert">
+    <mat-spinner></mat-spinner>
+</div>
+<main *ngIf="isStaff">
+    <h1>CDL Library Items Upload -- {{ config?.libraries[library].name }}</h1>
+    <!-- help -->
+    <mat-expansion-panel *ngIf="lang?.helpText">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                Help
+            </mat-panel-title>
+            <mat-panel-description>
+                More info about uploading/adding a file to CDL collection
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+        <div [innerHTML]="lang.helpText"></div>
+    </mat-expansion-panel>
+    <!-- indicator -->
+    <!-- regex itemid -->
+    <button *ngIf="itemIdInFilenameRegexPattern && !isIlsApiEnabled" id="regex-itemid-indicator" class="indicator"
+        mat-stroked-button [matMenuTriggerFor]="regexItemId"
+        [matTooltip]="'Good news! this library has automatically get item ID forom filename enabled! click for more info!'">
+        <mat-icon *ngIf="getItemIdFromFilename" class="success">check</mat-icon><mat-icon *ngIf="!getItemIdFromFilename" class="fail">close</mat-icon> Get Item ID from filename
+    </button>
+    <mat-menu #regexItemId="matMenu">
+        <div id="regex-itemid-indicator-text" class="indicator-text">
+            <p>This Library has automatical extraction of Item ID from filename setup, we you upload the file named with
+                an itemId in a correct format <span class="badge badge-primary">{{ itemIdInFilenameRegexPattern
+                    }}</span> and it'll auto populate the item ID field the form! see Help for more info!</p>
+            <a class="btn btn-secondary" target="_blank" [href]="regEx101Url">
+                What does this <span class="badge badge-primary">{{ itemIdInFilenameRegexPattern }}</span> mean?
+            </a>
+        </div>
+        <div>
+            <p>You can enable/disable it here (for this session)</p>
+            <mat-slide-toggle [(ngModel)]="getItemIdFromFilename">Enable</mat-slide-toggle>
+        </div>
+    </mat-menu>
+    <!-- ils api -->
+    <button *ngIf="itemIdInFilenameRegexPattern && isIlsApiEnabled" id="ils-api-indicator" class="indicator"
+        mat-stroked-button [matMenuTriggerFor]="ilsEnabled"
+        [matTooltip]="'Good news! this library has ILS API enabled! click for more info!'">
+        <mat-icon *ngIf="getBibFromILS" class="success">check</mat-icon><mat-icon *ngIf="!getBibFromILS" class="fail">close</mat-icon> Get Metadata from ILS API
+    </button>
+    <mat-menu #ilsEnabled="matMenu">
+        <div id="ils-api-indicator-text" class="indicator-text">
+            <p>This Library has ILS' API setup, you can just upload the file named with an itemId in a correct format
+                <span class="badge badge-primary">{{ itemIdInFilenameRegexPattern }}</span> and it'll auto populate the
+                form! see Help for more info!
+            </p>
+            <a class="btn btn-secondary" target="_blank" [href]="regEx101Url">
+                What does this <span class="badge badge-primary">{{ itemIdInFilenameRegexPattern }}</span> mean?
+            </a>
+            <div>
+                <p>You can enable/disable it here (for this session)</p>
+                <mat-slide-toggle [(ngModel)]="getBibFromILS" (ngModelChange)="onToggleChange('getBibFromILS', $event)">Enable</mat-slide-toggle>
+            </div>
+        </div>
+
+    </mat-menu>
+    <!-- form -->
+    <div *ngIf="pdfItem && !uploadedFileInfo">
+        <!-- err -->
+        <div *ngIf="error" class="err-msg">ERROR: {{ error }}</div>
+        <div *ngIf="warning && !pdfItem.part.value" class="alert alert-warning margin-top-default">{{ warning }}</div>
+
+        <!-- bib -->
+        <h2>Bibliographic Info</h2>
+        <ng-container *ngFor="let field of pdfItem | keyvalue: noSort">
+            <mat-form-field *ngIf="field.value?.group == 'item'" appearance="fill">
+                <mat-label>{{field.value.label}}<span *ngIf="field.value.required" class="required"> *</span>
+                </mat-label>
+                <input matInput type="text" [(ngModel)]="field.value.value" (ngModelChange)="fieldSubject.next(field)">
+                <mat-hint *ngIf="field.value.hint || field.value.error" [class.error]="field.value.error">
+                    <span *ngIf="!field.value.error">{{ field.value.hint }}</span>
+                    <span *ngIf="field.value.error">{{ field.value.error }}</span>
+                </mat-hint>
+
+            </mat-form-field>
+        </ng-container>
+        <!-- part -->
+        <h2>Multiple Parts Info</h2>
+        <div class="alert alert-info">
+            This is for a case where
+            <ul>
+                <li>you need to break a single item into multiple files (most likely because the filesize is too large
+                    for Google PDF viewer)</li>
+                <li>you have multiple items that share the same bib record, but each items is different e.g.
+                    Encyclopedia with 26 books for each alphabets</li>
+            </ul>
+            <p>Just leave these blanks if the above two scenarios do not apply. e.g. if you're uploading the 4th copy of
+                the same book, just leave it blank, the app can tell it's a copy from existing bibIds in the system
+            </p>
+            <p ng-non-bindable>
+                p.s. you can also named the file like this {{ '{barcode}[{part}of{total}]' }}.pdf e.g.
+                "myfile123456[1of3].pdf" and it'll auto populate the part fields for you!
+            </p>
+        </div>
+        <ng-container *ngFor="let field of pdfItem | keyvalue: noSort">
+            <mat-form-field *ngIf="field.value?.group == 'part'" appearance="fill">
+                <mat-label>{{field.value.label}}</mat-label>
+                <input matInput type="text" [(ngModel)]="field.value.value">
+                <mat-hint *ngIf="field.value.hint">{{ field.value.hint }}</mat-hint>
+            </mat-form-field>
+        </ng-container>
+        <!-- file -->
+        <h2>File</h2>
+        <ng-container *ngFor="let field of pdfItem | keyvalue: noSort">
+            <mat-form-field *ngIf="field.value?.group == 'file'" appearance="fill">
+                <mat-label>{{field.value.label}}</mat-label>
+                <input readonly matInput type="text" [(ngModel)]="field.value.value">
+                <mat-hint *ngIf="field.value.hint">{{ field.value.hint }}</mat-hint>
+            </mat-form-field>
+        </ng-container>
+        <div>
+            <label for="file-input">Choose a PDF file to add to collection</label>
+            <br><br>
+            <input id="file-input" class="wells" type="file" accept="application/pdf"
+                (change)="handleFileInput($event.target.files)" />
+        </div>
+        <!-- err -->
+        <div *ngIf="error" class="err-msg">ERROR: {{ error }}</div>
+        <div *ngIf="warning && !pdfItem.part.value" class="alert alert-warning">{{ warning }}</div>
+        <br>
+        <!-- submit -->
+        <button [disabled]="error || fieldError || !formWasTouched" mat-raised-button color="primary"
+            (click)="upload()">Upload</button>
+    </div>
+    <!-- success message -->
+    <div *ngIf="uploadedFileInfo" id="upload-success-message" class="margin-top-default">
+        <h2>Success!</h2>
+        <p>The file <em>{{ uploadedFileInfo.fileName }}</em> has been upload!</p>
+        <p>A No-OCR version of the file has been automatically generated, you can <button mat-stroked-button
+                (click)="downLoadNoOcrVersion()">download it</button> to make sure everything looks ok!</p>
+        <div>
+            <button mat-raised-button color="primary" (click)="resetForm()">Upload another one</button>
+            &nbsp;&nbsp;
+            <button mat-stroked-button (click)="resetForm(true)">Upload another one (keep metadata)</button>
+        </div>
+    </div>
+</main>

@@ -1,0 +1,19 @@
+
+
+.borrowing {
+    padding: 0.25em 1em 1em 1em;
+    background: aliceblue;
+    color: black;
+    &.is-law-item {
+        button.return {
+            background: #f44336;
+            color: white;
+        }
+    }
+}
+
+.embiggen {
+    width: 10em;
+    height: 5em;
+    font-size: larger;
+}
