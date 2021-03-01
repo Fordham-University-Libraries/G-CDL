@@ -4,27 +4,27 @@ This is a [CDL](https://controlleddigitallending.org/) application that uses Goo
 
 ## Overview
 
-This application automates the manual process of using Google Drive's share with “[Prevent commenters and viewers from downloading, printing, or copying files](https://support.google.com/a/users/answer/9308868?hl=en)”, and "[Share with expiration](https://support.google.com/a/users/answer/9308784?hl=en)" to provide access to a pdf to users using the [Controlled Digital Lending](https://controlleddigitallending.org/whitepaper) principles
+This application automates the manual process of using Google Drive's share with “[Prevent commenters and viewers from downloading, printing, or copying files](https://support.google.com/a/users/answer/9308868?hl=en)”, and "[Share with expiration](https://support.google.com/a/users/answer/9308784?hl=en)" with the goal of providing access to a PDF to specified users using the [Controlled Digital Lending](https://controlleddigitallending.org/whitepaper) principles.
 
-Exmaple of Manual Process  
+Example of the Manual Process  
 
-- We put a bunch of PDFs on GDrive
-- User Jane found the item (somehow) and email library staff “hey, I want to borrow book ‘Foo’”
-- library staff share the Foo Pdf to the user Jane as a ‘Viewer’ with auto expired set to in x hours then reply the user with the ‘access link’ to the pdf
-- 5 minutes later, User John, ask to borrow book ‘Foo’
-- library staff check that book ‘Foo’ is being shared to other users, reply ‘nope the book is not available, please ask again later’ 
+- We have uploaded many PDFs to GDrive.
+- User *Jane* finds the item (somehow) and emails library staff to request access. “Hey, I want to borrow the book ‘History of Pi Day’.”
+- Library staff shares the 'History of Pi' PDF with the user Jane as a ‘Viewer’ with auto expired set to in x hours. The library then replies to the user with the ‘access link’ to the PDF.
+- 5 minutes later, User *John*, ask to borrow book ‘History of Pi.’
+- Library staff checks the status of book ‘History of Pi’ and sees that it is being shared with a different user and denies access to User *John*. "This book is not available, please ask again later." 
 
 Example of App/GDrive Interactions  
 
 | User                                                                 | App                                                                                                                                                       | Note |
 |----------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|------|
 | Library staff upload PDF                                             | gets item's info via ILS's API, generates a second copy of the pdf with NO-OCR data                                                                         |      |
-| Users log to to app and see all the item with its availability info | app gets all the files in Google Drive, process it (e.g. being borrowed by someone), and return the data                                                   |      |
-| User A borrow item 'foo'                                             | app checks the file on GDrive, found that it has no 'viewer' (therefore available), add user A as a 'viewer' and set the share expiration for e.g. 2 hours |      |
-| User A click the 'Read' button                                       | app sends user A to the "Google Docs/Drive Viewer" ([drive#file->webContentLink](https://developers.google.com/drive/api/v3/reference/files#webContentLink)) since user A is a viewer of that file, s/he can read it                    |      |
-| 5 minutes later, user B tried to borrow item 'foo'                        | app checks the file on GDrive, notice that it already has a 'viewer', return error                                                                         |      |
-| 2 Hours later, item 'foo' expires                                    | app removes user A from item 'foo' file's permission                                                                                                                 |      |
-| User A try to read item 'foo' again                                  | since user A is no longer a viewer, s/he will see the GDrive's "request access screen"                                                                        |      |
+| Users log to to app and see all the items with availability info | app gets all the files in Google Drive, processes it (e.g. being borrowed by someone), and returns the data                                                   |      |
+| User A borrow item 'History of Pi'                                             | app checks the file on GDrive, found that it has no 'viewer' (therefore available), add user A as a 'viewer' and set the share expiration for e.g. 2 hours |      |
+| User A clicks the 'Read' button                                       | app sends user A to the "Google Docs/Drive Viewer" ([drive#file->webContentLink](https://developers.google.com/drive/api/v3/reference/files#webContentLink)) since user A is a viewer of that file, s/he can read it                    |      |
+| 5 minutes later, user B tries to borrow item 'History of Pi'                        | app checks the file on GDrive, notices that it already has a 'viewer', returns error                                                                         |      |
+| 2 Hours later, item 'History of Pi' expires                                    | app removes user A from item 'History of Pi' file's permission                                                                                                                 |      |
+| User A tries to read item 'History of Pi' again                                  | since user A is no longer a viewer, s/he will see the GDrive's "request access screen"                                                                        |      |
 
 
   
