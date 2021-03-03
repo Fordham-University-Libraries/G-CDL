@@ -8,11 +8,13 @@ import { DriveService } from '../drive.service';
 import { AuthenticationService } from '../auth.service';
 import { ConfigService } from '../config.service';
 import { GaService, ACTIONS, CATEGORIES } from '../ga.service';
-import { environment } from 'src/environments/environment';
 import { SubscriptionLike } from 'rxjs';
 import { EbookSearchComponent } from '../ebook-search/ebook-search.component'
 import { User } from '../models/user.model';
-import { Item } from '../models/item.model';
+//import { Item } from '../models/item.model';
+import { Config } from '../models/config.model';
+import { Language } from '../models/language.model';
+import { Customization } from '../models/customization.model';
 
 @Component({
   selector: 'app-catalog-reserves',
@@ -32,7 +34,7 @@ export class ReservesComponent implements OnInit {
   results: any;
   more: boolean;
   library: string;
-  isUsersDefaultLibrary: boolean;
+  isDefaultLibraryRoute: boolean;
   courseIdwithMultipleCourses: any[] = [];
   professorsCourses: any[] = [];
   courseDetailedView: boolean;
@@ -42,9 +44,9 @@ export class ReservesComponent implements OnInit {
   isCheckingCdlItems: boolean = true;
   error: string;
   user: User;
-  lang: any;
-  config: any;
-  customizations: any;
+  lang: Language;
+  config: Config;
+  customizations: Customization;
   //ils location
   locations: any;
 
@@ -79,7 +81,7 @@ export class ReservesComponent implements OnInit {
       this.lang = res;
       this.configService.getCustomization().subscribe(res => {
         this.customizations = res;
-        console.log(this.customizations);
+        //console.log(this.customizations);
         this.configService.getConfig().subscribe(res => {
           this.config = res;
           this.authService.getUser().subscribe(res => {
@@ -89,10 +91,7 @@ export class ReservesComponent implements OnInit {
               this.titleService.setTitle(this.pageTitle);
               this.gaService.logPageView(this.pageTitle, location.pathname);
               this.mode = this.route.snapshot.data.mode;
-              if (paramMap.get('library') && !this.config.libraries[paramMap.get('library')]) {
-                this.router.navigate(['/error-no-library'], { skipLocationChange: true });
-                return;
-              } else if (paramMap.get('library')) {
+              if (paramMap.get('library')) {
                 this.library = paramMap.get('library');
               } else if (this.user.homeLibrary != this.config.defaultLibrary) {
                 this.router.navigate(['/library', this.user.homeLibrary]);
@@ -130,9 +129,9 @@ export class ReservesComponent implements OnInit {
   }
 
   search() {
-    console.log('search');
+    //console.log('search');
     this.isLoading = true;
-    console.log(this.library);
+    //console.log(this.library);
     this.catalogService.searchReservesCourses(this.library, this.browseMode, this.searchTerm).subscribe(res => {
       //console.log(res);
       if (!res.error) {
@@ -141,10 +140,10 @@ export class ReservesComponent implements OnInit {
         this.error = res.error;
       }
       this.isLoading = false;
-      console.log(this.results);
+      //console.log(this.results);
     }, error => {
       console.error(error);
-      this.error = this.lang[this.library].error.genericError;
+      this.error = this.lang.libraries[this.library].error.genericError;
       this.isLoading = false;
     });
   }
@@ -159,8 +158,8 @@ export class ReservesComponent implements OnInit {
     } else {
       //has to make another call to get actual course(s)
       this.catalogService.getReserveCourseInfo(this.library, course).subscribe(res => {
-        console.log('catalogService.getReserveCourseInfo');
-        console.log(res);
+        //console.log('catalogService.getReserveCourseInfo');
+        //console.log(res);
         if (!res.error) {
           if (res.sections?.length == 1) {
             let course = res.sections[0];
@@ -187,7 +186,7 @@ export class ReservesComponent implements OnInit {
         }
       }, error => {
         console.error(error);
-        this.error = this.lang[this.library].error.genericError;
+        this.error = this.lang.libraries[this.library].error.genericError;
         this.isLoading = false;
       });
     }
@@ -205,7 +204,7 @@ export class ReservesComponent implements OnInit {
       //console.log(this.professorsCourses);
     }, error => {
       console.error(error);
-      this.error = this.lang[this.library].error.genericError;
+      this.error = this.lang.libraries[this.library].error.genericError;
       this.isLoading = false;
     });
   }
@@ -216,7 +215,7 @@ export class ReservesComponent implements OnInit {
 
     let bibIds = [];
     this.catalogService.getDetailedCourseReserve(this.library, course).subscribe(res => {
-      if (this.isUsersDefaultLibrary) {
+      if (this.isDefaultLibraryRoute) {
         this.location.go(`/search/reserves/course/${course.id}`);
       } else {
         this.location.go(`/library/${this.library}/search/reserves/course/${course.id}`);
@@ -237,7 +236,6 @@ export class ReservesComponent implements OnInit {
         if (!res.error) {
           this.courseDetailedResult.items.forEach(item => {
             //console.log(item);
-            //cast to string cuz Law bib e.g. '.b12355'          
             if (res.results.includes('' + item.bibId)) {
               this.courseDetailedResultCdl.push(item);
             } else {
@@ -252,7 +250,7 @@ export class ReservesComponent implements OnInit {
         }
       }, error => {
         console.error(error);
-        this.error = this.lang[this.library].error.genericError;
+        this.error = this.lang.libraries[this.library].error.genericError;
         this.isLoading = false;
       });
     });

@@ -4,11 +4,11 @@
     <mat-spinner></mat-spinner>
 </div>
 <main id="main" *ngIf="config && lang && library" class="item">
-    <h1 *ngIf="lang[library].item.item">{{ lang[library].item.item }}</h1>
+    <h1 *ngIf="lang.libraries[library].item.item">{{ lang.libraries[library].item.item }}</h1>
     <!-- curr cehckout compo -->
-    <ng-container *ngIf="customization && customization[library]?.item?.showCurrentCheckoutSnippet">
+    <ng-container *ngIf="customization && customization.libraries[library]?.item?.showCurrentCheckoutSnippet">
         <app-checked-out-item 
-            *ngIf="customization[library]?.item?.showCurrentCheckoutSnippet == 2 || (customization[library]?.item?.showCurrentCheckoutSnippet == 1 && userHasItemCheckedOut)" 
+            [parent]="'item'"
             [library]="library" [lang]="lang"
             [readClickedEvent]="readClickedSubject.asObservable()"
             [refreshEvent]="checkedOutitemRefreshSubject.asObservable()"
@@ -19,7 +19,7 @@
     <div class="margin-top-default">
         <mat-accordion>
             <!-- about -->
-            <mat-expansion-panel *ngIf="customization && customization[library]?.item?.showAboutSnippet" [expanded]="false">
+            <mat-expansion-panel *ngIf="customization && customization.libraries[library]?.item?.showAboutSnippet" [expanded]="false">
                 <mat-expansion-panel-header>
                     <mat-panel-title>
                         <mat-icon role="presentation">info</mat-icon>
@@ -32,7 +32,7 @@
                 <app-about [isAccessibleUser]="user.isAccessibleUser" [library]="library" [embed]="true"></app-about>
             </mat-expansion-panel>
             <!-- course -->
-            <mat-expansion-panel *ngIf="customization && customization[library].reserves?.enable && customization[library]?.item?.showCourseSearchSnippet && config.libraries[library].ilsApiEnabled">
+            <mat-expansion-panel *ngIf="customization && customization.libraries[library].reserves?.enable && customization.libraries[library]?.item?.showCourseSearchSnippet && config.libraries[library].ilsApiEnabled">
                 <mat-expansion-panel-header>
                     <mat-panel-title>
                         <mat-icon role="presentation">school</mat-icon>
@@ -43,7 +43,7 @@
                     </mat-panel-description>
                 </mat-expansion-panel-header>
                 <div class="padding-default content">
-                    <app-reserves-search-bar [library]="library" [config]="config" [lang]="lang[library]?.reserves"></app-reserves-search-bar>
+                    <app-reserves-search-bar [library]="library" [config]="config" [lang]="lang.libraries[library]?.reserves"></app-reserves-search-bar>
                 </div>
             </mat-expansion-panel>
         </mat-accordion>
@@ -94,7 +94,7 @@
                         <td>{{ catalogBib.callNumber }}</td>
                     </tr>
                 </table>
-                <a *ngIf="customization && customization[library].item?.catalogUrl" href="#" (click)="openInCatalog(); false;">View in Library Catalog</a>
+                <a *ngIf="customization && customization.libraries[library].item?.catalogUrl" href="#" (click)="openInCatalog(); false;">View in Library Catalog</a>
             </div>
         </div>
         <!-- copies -->
@@ -104,9 +104,9 @@
                 <div *ngFor="let item of items; let i = index;" class="copy-card mat-elevation-z2"
                     [class.busy]="isBusy">
                     <div>
-                        <span *ngIf="!item.part" [matTooltip]="'item#: ' + item.itemId">{{ lang[library].item.copy }}
+                        <span *ngIf="!item.part" [matTooltip]="'item#: ' + item.itemId">{{ lang.libraries[library].item.copy }}
                             {{ i + 1 }}</span>
-                        <span *ngIf="item.part" [matTooltip]="'item#: ' + item.itemId">{{ lang[library].item.part }}
+                        <span *ngIf="item.part" [matTooltip]="'item#: ' + item.itemId">{{ lang.libraries[library].item.part }}
                             {{ item.part }} / {{ item.partTotal }}<span *ngIf="item?.partDesc">
                                 ({{item?.partDesc}})</span></span>
 

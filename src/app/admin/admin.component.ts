@@ -8,6 +8,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { User } from '../models/user.model';
 import { Item } from '../models/item.model';
+import { Config } from '../models/config.model';
 import { AuthenticationService } from '../auth.service';
 import { DriveService } from '../drive.service';
 import { ConfigService } from '../config.service';
@@ -31,7 +32,7 @@ export class AdminComponent implements OnInit {
   staff: string[];
   admins: string[];
   itemEditDialogRef: any;
-  config: any;
+  config: Config;
   adminConfig: any;
   uploadUrl: string;
 
@@ -119,7 +120,7 @@ export class AdminComponent implements OnInit {
   trash(fileId: string) {
     this.isLoading = true;
     this.driveService.trashItem(fileId).subscribe(res => {
-      console.log(res);
+      //console.log(res);
       this._getItems();
     })
   }
@@ -133,7 +134,7 @@ export class AdminComponent implements OnInit {
     this.itemEditDialogRef = this.dialog.open(AdminItemEditComponent, { data: { fileId: fileId }, panelClass: 'accessible-user-dialog' });
     this.itemEditDialogRef.afterClosed().subscribe(data => {
       if (data) {
-        console.log(data);
+        //console.log(data);
         this.driveService.editItemAdmin(fileId, data.partDesc, data.part, data.partTotal).subscribe(res => {
           if (res) {
             this.snackBar.open('Item Updated!', 'Dismiss', {

@@ -4,7 +4,7 @@
 <main *ngIf="isStaff">
     <h1>CDL Library Items Upload -- {{ config?.libraries[library].name }}</h1>
     <!-- help -->
-    <mat-expansion-panel *ngIf="lang?.helpText">
+    <mat-expansion-panel *ngIf="uploadLang.helpText">
         <mat-expansion-panel-header>
             <mat-panel-title>
                 Help
@@ -13,7 +13,7 @@
                 More info about uploading/adding a file to CDL collection
             </mat-panel-description>
         </mat-expansion-panel-header>
-        <div [innerHTML]="lang.helpText"></div>
+        <div [innerHTML]="uploadLang.helpText"></div>
     </mat-expansion-panel>
     <!-- indicator -->
     <!-- regex itemid -->

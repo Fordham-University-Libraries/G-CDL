@@ -197,7 +197,6 @@ function updateConfigAdmin($properties, $kind, $libKey = null)
     global $config;
     global $user;
 
-    //TODO
     if (!count($user->isAdminOfLibraries)) {
         respondWithError(401, 'Not Authorized');
         die();
@@ -267,7 +266,7 @@ function addNewLibrary(string $libKey, string $libName)
     global $user;
 
     if (!$user->isSuperAdmin) {
-        respondWithError(401, 'Not Authorized to edit app global config');
+        respondWithError(401, 'Not Authorized');
         die();
     }
 
@@ -291,7 +290,7 @@ function removeLibrary($libKey)
     global $user;
 
     if (!$user->isSuperAdmin) {
-        respondWithError(401, 'Not Authorized to edit app global config');
+        respondWithError(401, 'Not Authorized');
         die();
     }
 

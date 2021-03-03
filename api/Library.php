@@ -8,6 +8,7 @@ class Library {
     public string $statsSheetId = '';
     public int $borrowingPeriod = 3; //hours
     public int $backToBackBorrowCoolDown = 60; //minutes
+    public array $customUserHomeLibrary = []; //manually put username here to make the user has this library as her home library
     public array $admins = []; //can edit config of this library
     public array $staff = []; //can manage/upload items of this library
     public array $ils = [
@@ -33,7 +34,6 @@ class Library {
     //but since most gSuites impementation don't include users info, we'll need to authenticate with local system to be able to tell which kind of users are and etc.
     public array $authorization = [
         'enable' => false,
-        'customUserHomeLibrary' => [], //manually put username here
         'auth' => [
             'kind' => 'CAS', //CAS
             'CAS' => [

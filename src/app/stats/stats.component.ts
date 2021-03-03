@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { User } from '../models/user.model';
+import { Config } from '../models/config.model';
 import { StatsService } from '../stats.service';
 import { AuthenticationService } from '../auth.service';
 import { ConfigService } from '../config.service';
@@ -29,7 +30,7 @@ export class StatsComponent implements OnInit {
   fromDate: any;
   library: string;
   user: User;
-  config: any;
+  config: Config;
 
   constructor(
     private route: ActivatedRoute,
@@ -73,10 +74,6 @@ export class StatsComponent implements OnInit {
   }
 
   getStats(from?: number, to?: number) {
-    if (!this.config.libraries[this.library]) {
-      this.router.navigate(['/error-no-library'], { skipLocationChange: true });
-      return;
-    }
     this.isLoading = true;
     this.statsService.getStats(from, to).subscribe(res => {
       if (res[this.library]) {
@@ -116,14 +113,14 @@ export class StatsComponent implements OnInit {
   }
 
   export() {
-    console.log(this.statsRaw);
+    //console.log(this.statsRaw);
     let data = [];
     if (this.fromDate || this.toDate) data.push([`CDL Stats for ${this.library} [${this.fromDate} - ${this.toDate}]`]);
     data.push(['Title', 'Item ID', '#Borrow', '#Auto Return','#Manual Return', '#Avg Manual Result (minutes)', 'Last Borrowed']);
     this.statsRaw.forEach(item => {
       data.push([item.title, item.itemId, +item.borrow, +item.auto_return, item.manual_return ? +item.manual_return : 0, item.avg_manual_return_seconds ? +item.avg_manual_return_seconds / 60 : '-', item.last_borrow_tstamp])
     });
-    console.log(this.fromDate);
+    //console.log(this.fromDate);
     var wb = XLSX.utils.book_new();
     var ws_name = `Stats-${this.library}`;
     var ws = XLSX.utils.aoa_to_sheet(data);

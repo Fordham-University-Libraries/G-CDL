@@ -30,6 +30,14 @@
             font-size: small;
             font-family: monospace;
         }
+        em.code {
+            padding: .2em .4em;
+            margin: 0;
+            font-size: 85%;
+            background-color: #e1e4e8;
+            border-radius: 6px;
+        }
+        
     </style>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
         integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
@@ -38,6 +46,9 @@
 <body>
     <div class="container">
         <h1>Initialize API</h1>
+        <?php if ($userName) : ?>
+            Hello <?= $userName ?>!
+        <?php endif ?>
         <?php if ($step == 1) : ?>
         <div class="row align-items-start step">
             <div class="col-8">
@@ -53,7 +64,7 @@
                 <li>Ideally, you probably want to pick a 'coprate account' e.g. library@myuniv.edu so it won't
                             get deleted if staff leaves and etc.</li>
                 </ul>
-                <li>Go to Google's API console (<a href="https://console.developers.google.com/">https://console.developers.google.com/</a>) -- and login with/swtich to account you picked in
+                <li>Go to Google's API console (<a href="https://console.developers.google.com/" target="_blank">https://console.developers.google.com/</a>) -- and login with/swtich to account you picked in
                     step above</li>
                 <ul>
                     <li>create a new project</li>
@@ -69,10 +80,10 @@
                     <li>Setup OAuth consent screen</li>
                     <ul>
                         <li>under 'Api & Services' -> 'Oauth consent screen'</li>
-                        <li>User type: internal</li>
+                        <li>User type: <em>Internal</em> (to allow only user within your GSuites domain)</li>
                         <li>enter app's name (end users will see the first fime they login) and other required fields</li>
                         <li>add Authorized domains (domain that you plan to host the app on e.g. https://cdl.library.myuniv.edu) - you'll need to verify that you own the domain, see on-screen instructions (verify by URL prefix is simpler)</li>
-                        <li>you can skip the "Scopes" step (scopes the app will request end users are non-senstivie e.g. get theri uesrname and email)</li>
+                        <li>you can skip the "Scopes" step (the app will only request non-sensitive data from end users e.g. get their username and email)</li>
                     </ul>
                     <li>Add OAuth 2.0 Client ID</li>
                     <ul>
@@ -124,7 +135,7 @@
             <!-- "log in" -->
             <?php if (!$authed && $hasCreds) : ?>
                 <div class="container-fluid justify-content-center" style="margin-top: 1em; padding:1em; background:white">
-                    <p>To proceed to the next step, let's make sure it's really you. Please enter the value of the "project_id" of the credentials.json file. This is ID of the project you created on <em>console.cloud.google.com</em></p>
+                    <p>Since you're not accessing this on localhost, to proceed to the next step, let's make sure it's really you. Please enter the value of the "project_id" of the credentials.json file. This is ID of the project you created on <em>console.cloud.google.com</em></p>
                     <?php if ($errMsg) : ?>
                         <div class="alert alert-danger" role="alert">
                             <?= $errMsg ?>
@@ -143,7 +154,7 @@
             <?php if ($authed) : ?>
                 <div class="container-fluid justify-content-center" style="margin-top: 1em">
                     <div class="alert alert-success" role="alert">
-                        project_id verified! you can proceed to the next step!
+                        You can proceed to the next step!
                     </div>
                 </div>
             <?php endif; ?>
@@ -277,19 +288,20 @@
                     <p>If you're running this on local machine</p>
                     <ul>
                         <li>open a new termial/command line windows/tab</li>
-                        <li>cd into the {{CDL}} directory</li>
-                        <li>Make sure you did run the <em>npn install</em></li>
-                        <li>issue a command <em>ng serve</em></li>
-                        <li>the frontend will be avaiable at http://localhost:4200</li>
+                        <li>cd into the /G-CDL directory</li>
+                        <li>Make sure you have <a href="https://nodejs.org/en/download/" target="_blank">Node.js</a> and <a href="https://cli.angular.io/" target="_blank">Angualar CLI</a> installed</li>
+                        <li>Make sure you did run the <em class="code">npm install</em></li>
+                        <li>issue a command <em class="code">ng serve</em></li>
+                        <li>the frontend will be avaiable at <a href="http://localhost:4200" target="_blank">http://localhost:4200</a></li>
                     </ul>
                     <h3>Deployment</h3>
                     <ul>
                         <li>Build & Deploy frontend</li>
                             <ul>
-                                <li>on command line, issue a command <em>ng build --prod</em></li>
+                                <li>on command line, issue a command <em class="code">ng build --prod</em></li>
                                     <ul>
                                         <li>NOTE! if you plan to put your app in a sub directory e.g. https://library.myuniv.edu/mycdlapp also add a param --base-href /{dirName}/ to the build command</li>
-                                        <li>e.g. <em>ng build --prod --base-href /mycdlapp/</em></li>
+                                        <li>e.g. <em class="code">ng build --prod --base-href /mycdlapp/</em></li>
                                     </ul>
                                 <li>Once the build is done, you'll see a directory <em>dist</em> on your local machine</li>
                                 <ul>
@@ -304,9 +316,17 @@
                         </ul>
                         <li>Server Configs</li>
                             <ul>
-                                <li>make sure the dir /api/private_data is <strong>NOT</strong> accesssible to the public (Cannot Stress This Enough) try access it from your browser e.g. https://library.myuniv.edu/mycdlapp/api/private_data/credentails.json it MUST NOT be accessible</li>
+                                <li>make sure the dir /api/private_data is <strong>NOT</strong> accesssible to the public (Cannot Stress This Enough) try access it from your browser e.g.</li>
+                                    <ul><li>CLICK ME ==> <a href="<?= $host ?>/private_data/credentials.json" target="_blank"><?= $host ?>/private_data/credentials.json</a> it MUST NOT be accessible</li></ul>
                                 <li>make sure the dir /api/private_data and /api/private_temp are <strong>WRITABLE</strong> by your webserver</li>
+                                    <ul>
+                                            <li>/api/private_data : <?= $privateDataWritable ? '<span style="color:green">OK! WRITABLE</span>' : '<span style="color:red">NOT WRITABLE</span>' ?>
+                                            <li>/api/private_temp : <?= $privateTempWritable ? '<span style="color:green">OK! WRITABLE</span>' : '<span style="color:red">NOT WRITABLE</span>' ?>
+                                    </ul>
                                 <li>the app uses PHP's shell_exec() funtion to call <a href="https://github.com/coherentgraphics/cpdf-binaries" target="_blank">cpdf</a> (For non-commercial use only) to create a NO-OCR version (remove all text), so your php.ini must enable it</li>
+                                    <ul>
+                                        <li><?= $shellExecEnable ? '<span style="color:green">OK! Enabled & Callable</span>' : '<span style="color:red">NOT ENABLED / NOT CALLABLE</span>' ?></li>
+                                    </ul>
                             </ul>
                     </ul>
                 </div>

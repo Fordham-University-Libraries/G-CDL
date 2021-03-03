@@ -61,6 +61,7 @@ class CdlItem
             }
         }
         $this->checkPerms($driveFile);
+        //find default library & library of this item
         foreach ($config->libraries as $key => $library) {
             if (isset($library->isDefault) && $library->isDefault) $defaultLibrary = $key;
             if ($library->noOcrFolderId == $this->parentId) {
@@ -71,13 +72,13 @@ class CdlItem
             }
         }
         if (!isset($this->library)) {
-            respondWithError(401, $lang[$defaultLibrary]['error']['item']['notPartOfCollecton']);
+            respondWithError(401, $lang['libraries'][$defaultLibrary]['error']['item']['notPartOfCollecton']);
             die();
         }
 
         //check that the app is the owner of the file -- needs to be to be able to setCopyRequiresWriterPermission()
         if (!$this->driveFile->getOwnedByMe()) {
-            respondWithError(401, $lang[$this->library]['error']['item']['notOwnedByMe']);
+            respondWithError(401, $lang['libraries'][$this->library]['error']['item']['notOwnedByMe']);
             die();
         }
         //$this->ilsMetadata = $driveFile->getId();
@@ -127,12 +128,12 @@ class CdlItem
         
         //check that file don't already have a viewer
         if (!$this->available) {
-            respondWithError(401, $lang[$this->library]['error']['borrow']['notAvailHaveOtherViewer']);
+            respondWithError(401, $lang['libraries'][$this->library]['error']['borrow']['notAvailHaveOtherViewer']);
             die();
         }
         //check that the file is net trashed or being suspended
         if ($this->isSuspended || $this->isTrashed) {
-            respondWithError(401, $lang[$this->library]['error']['borrow']['notAvailGeneric']);
+            respondWithError(401, $lang['libraries'][$this->library]['error']['borrow']['notAvailGeneric']);
             die();
         }
         //check if user is drive owner
@@ -159,10 +160,10 @@ class CdlItem
                 if (isset($eachAppProps['lastViewer']) && $eachAppProps['lastViewer'] == $user->email) {
                     if (isset($eachAppProps['lastReturned']) && (time() - $eachAppProps['lastReturned']) < ($this->backToBackBorrowCoolDown * 60)) {
                         if ($eachFile->getId() == $this->id) {
-                            $errMsg = str_replace('{{$backToBackBorrowCoolDown}}', $this->backToBackBorrowCoolDown, $lang[$this->library]['error']['borrow']['backToBack']);
+                            $errMsg = str_replace('{{$backToBackBorrowCoolDown}}', $this->backToBackBorrowCoolDown, $lang['libraries'][$this->library]['error']['borrow']['backToBack']);
                             respondWithError(401, $errMsg);
                         } else {
-                            $errMsg = str_replace('{{$backToBackBorrowCoolDown}}', $this->backToBackBorrowCoolDown, $lang[$this->library]['error']['borrow']['backToBackCopy']);
+                            $errMsg = str_replace('{{$backToBackBorrowCoolDown}}', $this->backToBackBorrowCoolDown, $lang['libraries'][$this->library]['error']['borrow']['backToBackCopy']);
                             respondWithError(401, $errMsg);
                         }
                         die();
@@ -173,10 +174,10 @@ class CdlItem
                 if (isset($eachAppProps['lastViewer']) && $eachAppProps['lastViewer'] == $user->email && $appProps['part'] == $eachAppProps['part']) {
                     if (isset($eachAppProps['lastReturned']) && (time() - $eachAppProps['lastReturned']) < ($this->backToBackBorrowCoolDown * 60)) {
                         if ($eachFile->getId() == $this->id) {
-                            $errMsg = str_replace('{{$backToBackBorrowCoolDown}}', $this->backToBackBorrowCoolDown, $lang[$this->library]['error']['borrow']['backToBack']);
+                            $errMsg = str_replace('{{$backToBackBorrowCoolDown}}', $this->backToBackBorrowCoolDown, $lang['libraries'][$this->library]['error']['borrow']['backToBack']);
                             respondWithError(401, $errMsg);
                         } else {
-                            $errMsg = str_replace('{{$backToBackBorrowCoolDown}}', $this->backToBackBorrowCoolDown, $lang[$this->library]['error']['borrow']['backToBackCopy']);
+                            $errMsg = str_replace('{{$backToBackBorrowCoolDown}}', $this->backToBackBorrowCoolDown, $lang['libraries'][$this->library]['error']['borrow']['backToBackCopy']);
                             respondWithError(401, $errMsg);
                         }
                         die();
@@ -408,7 +409,7 @@ class CdlItem
                 respondWithData($respond);
             }
         } else {
-            respondWithError(400, $lang[$this->library]['error']['return']['userDoesNotHaveItemCheckedOut']);
+            respondWithError(400, $lang['libraries'][$this->library]['error']['return']['userDoesNotHaveItemCheckedOut']);
         }
 
         //if user is in accessible users list

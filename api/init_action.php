@@ -34,26 +34,34 @@ function init($step = 1, $authCode = null)
         $view->data['creds'] = $creds['web'];
         $view->data['creds']['project_id'] = '🤐 ⬛⬛⬛⬛⬛ 🕵️';
         $view->data['creds']['client_secret'] = '🤐 ⬛⬛⬛⬛⬛ 🕵️';
-
-        $cookie_name = "cdl_app_init_project_id";
-        if($_POST['project_id']) {
-            if ($_POST['project_id'] == $creds['web']['project_id']) {
-                setcookie($cookie_name, $_POST['project_id'], 0, "/");
-                $authed = true;
-                $view->data['authed'] = $authed;
-                $view->data['showNext'] = true;
-            } else {
-                $view->data['errMsg'] = "That's not a correct project_id, may be just go open up the credentails.json file that you've just added to the app and copy that value and paste it here?";
-            }
-        } else if (isset($_COOKIE[$cookie_name])) {
-            if ($_COOKIE[$cookie_name] == $creds['web']['project_id']) {
-                $authed = true;
-                $view->data['authed'] = $authed;
-                $view->data['showNext'] = true;
+        //if it's local 
+        if (in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1','::1'])) {
+            $authed = true;
+            $view->data['authed'] = $authed;
+            $view->data['showNext'] = true;
+        } else {
+            //if it's not local, ask for project_id
+            $cookie_name = "cdl_app_init_project_id";
+            if ($_POST['project_id']) {
+                if ($_POST['project_id'] == $creds['web']['project_id']) {
+                    setcookie($cookie_name, $_POST['project_id'], 0, "/");
+                    $authed = true;
+                    $view->data['authed'] = $authed;
+                    $view->data['showNext'] = true;
+                } else {
+                    $view->data['errMsg'] = "That's not a correct project_id, may be just go open up the credentials.json file that you've just added to the app and copy that value and paste it here?";
+                }
+            } elseif (isset($_COOKIE[$cookie_name])) {
+                if ($_COOKIE[$cookie_name] == $creds['web']['project_id']) {
+                    $authed = true;
+                    $view->data['authed'] = $authed;
+                    $view->data['showNext'] = true;
+                }
             }
         }
     }
     $hasToken = file_exists('./private_data/token.json');
+
     $view->data['hasToken'] = $hasToken;
     $view->data['showRefresh'] = false;
 
@@ -64,7 +72,6 @@ function init($step = 1, $authCode = null)
     $view->data['scopeDefinitions'] = [
         Google_Service_Oauth2::USERINFO_EMAIL => 'View your email address',
         Google_Service_Oauth2::USERINFO_PROFILE => 'View your personal info, including any personal info you\'ve made publicly available',
-        Google_Service_Oauth2::OPENID => 'Associate you with your personal info on Google', //do we need this?
         Google_Service_PeopleService::DIRECTORY_READONLY => 'read your org GSuites\' directory (to get end users info)',
         Google_Service_Drive::DRIVE_FILE => 'Allow app the create files on your Drive (the app only have access to files it created)',
         Google_Service_Drive::DRIVE_APPDATA => 'Allows access to the Application Data folder. (for storing app\'s config)',
@@ -74,7 +81,9 @@ function init($step = 1, $authCode = null)
 
     if ($authCode) { //redirect back from Google login, generate token and init folders and etc.
         $client = getClient($authCode);  //gen token
-        initFolders($client);
+        if(!initFolders($client)) {
+            die('Error: this application is designed to be used with G Suite (now Google Workspace) only i.e. you log in to your work Gmail as jdoe@myinstitution.edu. You tried to login with @gmail.com account.');
+        }
     } else if ($step == 1) { //create creds
         if (!$hasCreds) $view->data['showRefresh'] = true;
     } else if ($step == 2) { //gen token
@@ -94,9 +103,17 @@ function init($step = 1, $authCode = null)
           $view->data['showNext'] = false;
       } 
     } else if ($step == 3) { //add first library
+        global $user;
         $config = new Config();
-        
+        try {
+            $user = new User(true);
+            if (!$user->isDriveOwner) die("only drive owner can init stuff! please log in with the account " . $config->driveOwner . '@' . $config->gSuitesDomain);
+        } catch (Exception $e) {
+            endUserGoogleLogin(null,null,'init&step=3');
+        }
+        //GET        
         if (!$_POST['libKey'] && !$_POST['libName']) {
+            $view->data['userName'] = $user->userName;
             $view->data['libKey'] = array_key_first((array) $config->libraries) ?? 'main';
             $view->data['libName'] = $config->libraries[$view->data['libKey']]->name;
             $view->data['borrowPeriod'] =  $config->libraries[$view->data['libKey']]->borrowingPeriod ?? 2;
@@ -106,6 +123,8 @@ function init($step = 1, $authCode = null)
             if (count($config->libraries)) {
                 $view->data['admins'] = implode(',', $config->libraries[$view->data['libKey']]->admins);
                 $view->data['staff'] = implode(',', $config->libraries[$view->data['libKey']]->staff);
+            } else {
+                $view->data['showNext'] = false;
             }
         } elseif ($_POST['libKey'] && $_POST['libName']) {
             $libKey = $_POST['libKey'];
@@ -125,16 +144,37 @@ function init($step = 1, $authCode = null)
             die();
         } 
     } else if ($step == 4) { //next step info
+        global $user;
+        try {
+            $user = new User(true);
+            if (!$user->isDriveOwner) die("only drive owner can init stuff! please log in with the account " . $config->driveOwner . '@' . $config->gSuitesDomain);
+        } catch (Exception $e) {
+            endUserGoogleLogin(null,null,'init&step=4');
+        }
+        $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
+        $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
+        $view->data['privateDataWritable'] = is_writable('./private_data');
+        $view->data['privateTempWritable'] = is_writable('./private_temp');
+        $view->data['shellExecEnable'] = is_callable('shell_exec') && false === stripos(ini_get('disable_functions'), 'shell_exec');
+
         $config = new Config();
-        $view->data['libKey'] = array_key_first((array) $config->libraries) ?? 'main';
-        $view->data['libName'] = $config->libraries[$view->data['libKey']]->name;
-        $view->data['mainFolderId'] = $config->mainFolderId;
-        $view->data['borrowPeriod'] =  2;
-        $view->data['cooldown'] = 60;
-        $view->data['staff'] = implode(',', $config->libraries[$view->data['libKey']]->staff);
-        $view->data['driveOwner'] = $config->driveOwner;
-        $view->data['gSuitesDomain'] = $config->gSuitesDomain;
-        $view->data['showNext'] = $false;
+        if (!count($config->libraries)) {
+            header("location: ./?action=init&step=3");
+            die();
+        } else {
+            $view->data['host'] = $host . $baseDir;
+            $view->data['libKey'] = array_key_first((array) $config->libraries);
+            $view->data['libName'] = $config->libraries[$view->data['libKey']]->name;
+            $view->data['mainFolderId'] = $config->mainFolderId;
+            $view->data['borrowPeriod'] =  2;
+            $view->data['cooldown'] = 60;
+            if ($config->libraries[$view->data['libKey']]->staff) {
+                $view->data['staff'] = implode(',', $config->libraries[$view->data['libKey']]->staff);
+            }
+            $view->data['driveOwner'] = $config->driveOwner;
+            $view->data['gSuitesDomain'] = $config->gSuitesDomain;
+            $view->data['showNext'] = $false;
+        }
     } else {
         header("location: ./?action=init&step=1");
         die();
@@ -149,6 +189,14 @@ function initFolders($client)
     //create main folder and config
     $config = new Config();
     if (!$config || !isset($config->mainFolderId)) {
+        //get user info
+        $oauth2 = new \Google_Service_Oauth2($client);
+        $userInfo = $oauth2->userinfo->get();
+        //only allow GSuites account
+        if (strpos($userInfo->email, '@gmail.com') !== false) {
+            return false;
+        }
+
         $client = getClient();
         $driveService = new Google_Service_Drive($client);
         $driveFile = new Google_Service_Drive_DriveFile;
@@ -173,14 +221,11 @@ function initFolders($client)
             die('failed');
         }
 
-        //save mainFolder id to AppConfig
+        //save mainFolder id and etc.to AppConfig
         $configDriveFileMetadata = new Google_Service_Drive_DriveFile([
             'name' => 'config.json',
             'parents' => ['appDataFolder']
         ]);
-        //get user info
-        $oauth2 = new \Google_Service_Oauth2($client);
-        $userInfo = $oauth2->userinfo->get();
         $config = [
             'driveOwner' => $userInfo->email,
             'gSuitesDomain' => preg_replace('/.*@/', '', $userInfo->email),

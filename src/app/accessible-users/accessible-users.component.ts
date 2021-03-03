@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Config } from '../models/config.model';
 import { ConfigService } from '../config.service';
 import { AdminService } from '../admin.service';
 import { AuthenticationService } from '../auth.service';
@@ -14,7 +15,7 @@ import { Observable, Subject } from 'rxjs';
   styleUrls: ['./accessible-users.component.scss']
 })
 export class AccessibleUsersComponent implements OnInit {
-  config: any;
+  config: Config;
   userNameColIndex: number;
   emailColIndex: number;
   nameColsIndexes: number[] = [];
@@ -73,7 +74,7 @@ export class AccessibleUsersComponent implements OnInit {
   }
 
   onFileChange(event: any) {
-    console.log('file change');
+    //console.log('file change');
 
     this._reset();
     this.isAnalyzing = true;
@@ -166,9 +167,9 @@ export class AccessibleUsersComponent implements OnInit {
         r++;
       }
 
-      // console.log(this.userNameColIndex);
-      // console.log(this.emailColIndex);
-      // console.log(this.nameColsIndexes.length);
+      //console.log(this.userNameColIndex);
+      //console.log(this.emailColIndex);
+      //console.log(this.nameColsIndexes.length);
       if (this.userNameColIndex === null && this.emailColIndex === null && !this.nameColsIndexes.length) this.error = 'No column headers found in Excel file!'
       this.isAnalyzing = false;
       //console.log(this.invalidUsers);
@@ -185,7 +186,7 @@ export class AccessibleUsersComponent implements OnInit {
     });
 
     this.adminService.lookupUsersByNames(names).subscribe(res => {
-      console.log(res);
+      //console.log(res);
       this.usersLookupResult = {
         foundUsers: { users: [], newUsers: [], alreadlyInSystemUsers: [] },
         notFoundUsers: { multipleMatches: [], zeroMatches: [] }
@@ -209,7 +210,7 @@ export class AccessibleUsersComponent implements OnInit {
         this.invalidUsers.push({ name: user, email: null });
       });
       this.isLookingUp = false;
-      console.log(this.usersLookupResult);
+      //console.log(this.usersLookupResult);
     });
 
   }
@@ -218,7 +219,7 @@ export class AccessibleUsersComponent implements OnInit {
   process() {
     this.isProcessing = true;
     this.adminService.addAccessibleUsers(this.newUsers).subscribe(res => {
-      console.log(res);
+      //console.log(res);
       //refresh
       this.accessbileUsers = null;
       this._getCurrentAccessibleUser(true);
@@ -267,11 +268,11 @@ export class AccessibleUsersComponent implements OnInit {
       const index = this.usersToBeRemoved.findIndex(u => { return u == userName });
       if (index > -1) this.usersToBeRemoved.splice(index, 1);
     }
-    console.log(this.usersToBeRemoved);
+    //console.log(this.usersToBeRemoved);
   }
 
   removeSelectedUsers() {
-    console.log('removeSelectedUsers');
+    //console.log('removeSelectedUsers');
     this._removeUsers(this.usersToBeRemoved).subscribe(success => {
       if (success) this.usersToBeRemoved = [];
     });
@@ -306,7 +307,7 @@ export class AccessibleUsersComponent implements OnInit {
     this.usersNotAdded = [];
     this.isProcessing = true;
     this.adminService.addAccessibleUsers(userNames).subscribe(res => {
-      console.log(res);
+      //console.log(res);
       this.usersAdded = res.usersAdded;
       this.usersNotAdded = res.usersNotAdded;
       if (userNames.includes(this.user.userName)) {

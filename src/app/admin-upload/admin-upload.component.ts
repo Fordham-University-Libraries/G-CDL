@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { User } from '../models/user.model';
-import { Item } from '../models/item.model';
+//import { Item } from '../models/item.model';
+import { Config } from '../models/config.model';
+import { Language } from '../models/language.model';
 import { AuthenticationService } from '../auth.service';
 import { DriveService } from '../drive.service';
 import { ConfigService } from '../config.service';
@@ -28,8 +29,9 @@ export class AdminUploadComponent implements OnInit {
   isLoading: boolean;
   staff: string[];
   admins: string[];
-  config: any;
-  lang: any;
+  config: Config;
+  lang: Language;
+  uploadLang: any;
   uploadUrl: string;
   pdfItem: {
     file?: File,
@@ -64,7 +66,6 @@ export class AdminUploadComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private dialog: MatDialog,
     private driveService: DriveService,
     private configService: ConfigService,
     private authService: AuthenticationService,
@@ -105,7 +106,8 @@ export class AdminUploadComponent implements OnInit {
             }
             if (this.config.libraries[this.library]?.ilsApiEnabled) this.isIlsApiEnabled = true;
             this.configService.getLang().subscribe(res => {
-              this.lang = res[this.library].upload;              
+              this.lang = res;   
+              this.uploadLang = this.lang.libraries[this.library].upload   
             });
             this.uploadUrl = this.adminService.uploadUrl + "&libKey=" + this.library;
             this.generateForm();
@@ -167,7 +169,7 @@ export class AdminUploadComponent implements OnInit {
   }
 
   handleFileInput(file: any) {
-    console.log(file);
+    //console.log(file);
     this.formWasTouched = true;
     if (file.length) {
       this.error = null;
@@ -254,7 +256,7 @@ export class AdminUploadComponent implements OnInit {
     this.isBusy = true;
     this.uploadedFileInfo = null;
     this.driveService.uploadAdmin(this.pdfItem, this.library).subscribe(res => {
-        console.log(res);
+        //console.log(res);
         if (res?.success) {
           if(res.uploadedNoOcrFileId) this.uploadedFileInfo = res;          
         } else if (res?.error) {
@@ -271,7 +273,7 @@ export class AdminUploadComponent implements OnInit {
   }
 
   downLoadNoOcrVersion() {
-    console.log('downLoadNoOcrVersion: ' + this.uploadedFileInfo.uploadedNoOcrFileId);
+    //console.log('downLoadNoOcrVersion: ' + this.uploadedFileInfo.uploadedNoOcrFileId);
     if (this.uploadedFileInfo.uploadedNoOcrFileId) this.driveService.downloadFileAdmin(this.uploadedFileInfo.uploadedNoOcrFileId, false);
   }
 

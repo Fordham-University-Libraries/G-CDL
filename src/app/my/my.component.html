@@ -4,24 +4,29 @@
     <mat-spinner></mat-spinner>
 </div>
 <main id="main">
-    <h1>My Account / Item</h1>
-    <div *ngIf="!isLoadingUser">
-        <span>Hi {{ user.fullName }} ({{ user.userName }})!</span>
-        <span *ngIf="user?.isAccessibleUser" class="badge">
-            <mat-icon role="presentation">accessible_forward</mat-icon>
-             Accessible User
-        </span>
-        <span *ngIf="user?.homeLibrary == 'law'" class="badge">
-            <mat-icon role="presentation">gavel</mat-icon>
-            Law Library User
-        </span>
+    <h1>My Account</h1>
+    <div *ngIf="!isLoadingUser" fxLayout="row" fxLayoutGap="1em">
+        <div *ngIf="user.photoUrl"><img [src]="user.photoUrl"></div>
+        <div>
+            <div><span class="label">Username: </span><span class="value">{{ user.userName }}</span></div>
+            <div><span class="label">Name: </span><span class="value">{{ user.fullName }}</span></div>
+            <div *ngIf="config && hasMultiLibraries"><span class="label">Library: </span><span class="value"><a [routerLink]="'/library/' + user.homeLibrary">{{ config.libraries[user.homeLibrary].name }}</a></span></div>
+            <div *ngIf="user?.isAccessibleUser">
+                <span class="label">Type: </span>
+                <span class="badge">
+                    <mat-icon role="presentation">accessible_forward</mat-icon>
+                    Accessible User
+                </span>
+            </div>
+        </div>
     </div>
 
     <h2 *ngIf="mode == 'my'">Item you're borrowing</h2>
     <h2 *ngIf="mode == 'read'">Read</h2>
     <h2 *ngIf="mode == 'return'">Return</h2>
     <app-checked-out-item
-        [lang]="lang"
+        *ngIf="user"
+        [lang]="lang" [library]="user.homeLibrary"
         (userHasItemCheckedOut)="onUserHasItemCheckedOutCheck($event)"
         (refreshParent)="onRefreshParent($event)"></app-checked-out-item>
 
@@ -29,7 +34,7 @@
         Your item has been returned successfully!
     </div>
 
-    <div *ngIf="userHasItemCheckedOut === false && !justReturned" class="borrowing" [class.error]="mode == 'read' || mode =='return'">
+    <!-- <div *ngIf="userHasItemCheckedOut === false && !justReturned" class="borrowing" [class.error]="mode == 'read' || mode =='return'">
         You don't have any item checked out at the moment
-    </div>
+    </div> -->
 </main>

@@ -32,7 +32,7 @@ export class EbookSearchComponent implements OnInit {
     this.catalogService.searchForOnline(this.library, this.title, this.author).subscribe(res => {
       this.items = res;
       this.isLoading = false;
-      console.log(res);
+      //console.log(res);
     })
   }
 

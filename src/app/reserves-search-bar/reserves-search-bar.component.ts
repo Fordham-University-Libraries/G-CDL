@@ -1,5 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { Router } from '@angular/router';
+import { Config } from '../models/config.model';
+import { Language } from '../models/language.model';
 
 @Component({
   selector: 'app-reserves-search-bar',
@@ -7,12 +9,12 @@ import { Router } from '@angular/router';
   styleUrls: ['./reserves-search-bar.component.scss']
 })
 export class ReservesSearchBarComponent implements OnInit {
-  @Input() config: any;
-  @Input() lang: any;
+  @Input() config: Config;
+  @Input() lang: Language;
   @Input() currentReserveMode: string;
   @Input() currentReservesSearchTerm: string;
   @Input() library: string;
-  @Input() isUsersDefaultLibrary: boolean;
+  @Input() isDefaultLibraryRoute: boolean;
   reserveMode: string;
   reservesSearchTerm: string;
  
@@ -29,7 +31,7 @@ export class ReservesSearchBarComponent implements OnInit {
     
     this.currentReservesSearchTerm = this.reservesSearchTerm;
     this.currentReserveMode = this.reserveMode;
-    if (this.isUsersDefaultLibrary) {
+    if (this.isDefaultLibraryRoute) {
       this.router.navigate([`/search/reserves/${this.reserveMode}/${this.reservesSearchTerm}`]);
     } else {
       this.router.navigate([`/library/${this.library}/search/reserves/${this.reserveMode}/${this.reservesSearchTerm}`]);

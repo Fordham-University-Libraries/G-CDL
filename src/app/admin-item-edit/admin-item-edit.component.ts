@@ -10,7 +10,6 @@ import { DriveService } from '../drive.service';
 })
 export class AdminItemEditComponent implements OnInit {
   @Input() fileId: string;
-  @Input() isLawItem: boolean;
   dialogRef = null;
   item: any;
   partDesc: string;

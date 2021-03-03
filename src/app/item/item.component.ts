@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { AuthenticationService } from '../auth.service';
@@ -8,12 +9,13 @@ import { CatalogService } from '../catalog.service';
 import { DriveService } from '../drive.service';
 import { Item } from '../models/item.model';
 import { User } from '../models/user.model';
+import { Config } from '../models/config.model';
+import { Language } from '../models/language.model';
+import { Customization } from '../models/customization.model';
 import { TermOfServiceComponent } from '../term-of-service/term-of-service.component';
 import { GaService, ACTIONS, CATEGORIES } from '../ga.service';
-import { environment } from 'src/environments/environment';
 import { ConfigService } from '../config.service';
 import { Subject } from 'rxjs';
-
 
 @Component({
   selector: 'app-item',
@@ -40,13 +42,13 @@ export class ItemComponent implements OnInit {
   isLoadingItems: boolean;
   accessibleUserDialogRef: MatDialogRef<TermOfServiceComponent, boolean>;
   syndeticClientId: string;
-  lang:any;
-  config: any;
-  customization: any;
+  lang: Language;
+  config: Config;
+  customization: Customization;
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
+    private liveAnnouncer: LiveAnnouncer,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private catalogService: CatalogService,
@@ -76,13 +78,9 @@ export class ItemComponent implements OnInit {
       this.bibId = paramMap.get('bibId') ?? null;
       this.itemId = paramMap.get('itemId') ?? null;
       this.library = paramMap.get('library') ?? this.config.defaultLibrary;
-      if (!this.config.libraries[this.library]) {
-        this.router.navigate(['/error-no-library'], {skipLocationChange: true});
-        return;
-      }
       this.configService.getCustomization().subscribe(custRes => { 
         this.customization = custRes;         
-        this.syndeticClientId = this.customization[this.library].item.syndeticClientId;
+        this.syndeticClientId = this.customization.libraries[this.library].item.syndeticClientId;
         this._getItem();
       });
     });
@@ -92,7 +90,7 @@ export class ItemComponent implements OnInit {
   private _getItem() {    
     this.isLoadingItems = true;
     this._getDriveItem(this.bibId ? this.bibId : this.itemId, this.bibId ? 'bibId' : 'itemId');
-    if (this.config.libraries[this.library].ilsApiEnabled && this.customization[this.library].item.useIlsApiForMetadataEnhancement) {
+    if (this.config.libraries[this.library].ilsApiEnabled && this.customization.libraries[this.library].item.useIlsApiForMetadataEnhancement) {
       this.catalogService.getBib(this.bibId ? this.bibId : this.itemId, this.library).subscribe(res => {        
         if (res) { this.catalogBib = res; }
       });
@@ -132,6 +130,7 @@ export class ItemComponent implements OnInit {
       return;
     }
     this.gaService.logEvent(ACTIONS.borrow, CATEGORIES.item, id);
+    this.liveAnnouncer.announce('borrowing an item');
     this.busyAction = 'borrow';
     this.isBusy = true;
     this.driveService.borrowItem(id).subscribe(res => {
@@ -151,7 +150,7 @@ export class ItemComponent implements OnInit {
     }, (error) => {
       console.error(error);
       this.isBusy = false;
-      this.snackBar.open(this.lang.error.borrow.unknownError, 'Dismiss', {
+      this.snackBar.open(this.lang.libraries[this.library].error.borrow.unknownError, 'Dismiss', {
         duration: 3000,
       });
     });
@@ -161,7 +160,7 @@ export class ItemComponent implements OnInit {
     this.readClickedSubject.next();
   }
 
-  onUserHasItemCheckedOutCheck(event: boolean) {
+  onUserHasItemCheckedOutCheck(event: boolean) {    
     this.userHasItemCheckedOut = event;
   }
 
@@ -171,30 +170,21 @@ export class ItemComponent implements OnInit {
   }
 
   openInCatalog() {
-    if (!this.customization[this.library].item.catalogUrl) return;
+    if (!this.customization.libraries[this.library].item.catalogUrl) return;
 
-    let url = `${this.customization[this.library].item.catalogUrl}`;
-    if (this.customization[this.library].item.catalogUrl.includes('{{$bibId}}')) {
-      url = this.customization[this.library].item.catalogUrl.replace('{{$bibId}}', this.bibId)
+    let url = `${this.customization.libraries[this.library].item.catalogUrl}`;
+    if (url.includes('{{$bibId}}') && this.bibId) {
+      url = url.replace('{{$bibId}}', this.bibId)
     }
-    if (this.customization[this.library].item.catalogUrl.includes('{{$itemId}}')) {
-      url = this.customization[this.library].item.catalogUrl.replace('{{$itemId}}', this.itemId)
+    if (url.includes('{{$itemId}}')) {
+      if (this.itemId) {
+        url = url.replace('{{$itemId}}', this.itemId)
+      } else if (this.items?.length && this.items[0].itemId) {
+        url = url.replace('{{$itemId}}', this.items[0].itemId)
+      }
     }
+
     this.gaService.logEvent(ACTIONS.openInCatalog, CATEGORIES.item, '' + this.bibId);
     window.open(url, '_blank');
-  }
-
-  getSierraCheckDigit(recordNumber: string) {
-    let m = 2;
-    let x = 0;
-    let i = +recordNumber;
-    while (i > 0) {
-      let a = i % 10;
-      i = Math.floor(i / 10);
-      x += a * m;
-      m += 1;
-    }
-    let r = x % 11;
-    return r === 10 ? 'x' : r;
   }
 }

@@ -1,3 +1,6 @@
+<div *ngIf="isBusy" class="busy-dialog" role="alert">
+    <mat-spinner></mat-spinner>
+</div>
 <main>
     <div fxLayout="row">
         <h1>CDL Application Languages Config</h1>
@@ -13,7 +16,7 @@
     </div>
     <mat-spinner *ngIf="!appLangLibraries"></mat-spinner>
     <div *ngIf="availableTokens" class="alert alert-info">
-        Tokens
+        Global Language Tokens
         <ul>
             <li *ngFor="let token of availableTokens | keyvalue">{{ token.key }} -- {{ token.value }}</li>
         </ul>
@@ -30,21 +33,18 @@
             <mat-tab-group *ngIf="appLangLibrariesCopy.length">
                 <ng-container *ngFor="let library of appLangLibrariesCopy; let libIndex = index">
                     <mat-tab *ngIf="appLangLibrariesCopy[libIndex].length"
-                        [label]="config.libraries[appLangLibrariesDirtyCount[libIndex]?.libKey].name + ' (' + appLangLibrariesDirtyCount[libIndex]?.libKey  + ')'">
+                        [label]="appLangLibrariesDirtyCount[libIndex].name + ' (' + appLangLibrariesDirtyCount[libIndex]?.libKey  + ')'">
                         <mat-spinner *ngIf="appLangLibrariesDirtyCount[libIndex].isLoading"></mat-spinner>
                         <!-- unsaved banner -->
                         <div *ngIf="appLangLibrariesDirtyCount[libIndex].count && !appLangLibrariesDirtyCount[libIndex].isLoading"
                             class="alert alert-warning margin-top-default">
-                            <p>
-                                <strong *ngIf="appLangLibrariesDirtyCount[libIndex].count == 1">Unsaved Change</strong>
-                                <strong *ngIf="appLangLibrariesDirtyCount[libIndex].count > 1">{{ appLangLibrariesDirtyCount[libIndex].count }} Unsaved Changes</strong>
-                            </p>
+                            <p><strong>{{ appLangLibrariesDirtyCount[libIndex].count }} Unsaved Change(s)</strong></p>
                             <button mat-raised-button color="primary" class="button-primary"
-                                (click)="updateLang(appLangLibrariesCopy[libIndex], i)">Save</button>
+                                (click)="updateLang(appLangLibrariesCopy[libIndex], libIndex)">Save Languages for Library {{appLangLibrariesDirtyCount[libIndex].name}}</button>
                         </div>
                         <ul *ngIf="!appLangLibrariesDirtyCount[libIndex].isLoading" class="root">
                             <ng-template #recursiveListLibrary let-library>
-                                <li *ngFor="let item of library; let i = index">
+                                <li *ngFor="let item of library">
                                     <ng-container *ngIf="!item.children && item.editable != 'hide'">
                                         <!-- str/int -->
                                         <mat-form-field
@@ -62,11 +62,18 @@
                                             <mat-hint>{{ item.desc }}</mat-hint>
                                         </mat-form-field>
                                         <!-- html editor -->
-                                        <div *ngIf="item.options == 'htmlOk'">
-                                            <mat-label>{{item.key}}</mat-label>
-                                            <angular-editor [id]="item.key + i" [config]="editorConfig" [(ngModel)]="item.value" (ngModelChange)="appLangSubject.next(libIndex)"></angular-editor>
-                                            <mat-hint>{{ item.desc }}</mat-hint>
-                                        </div>
+                                        <ng-container *ngIf="item.options == 'htmlOk'">
+                                            <mat-form-field *ngIf="!item.editing" appearance="fill" style="min-width: 50vw" (click)="item.editing = true" class="clickable">
+                                                <mat-label>{{item.key}}</mat-label>
+                                                <textarea [matTooltip]="'click to edit!'" readonly matInput cdkTextareaAutosize [ngModel]="item.value"></textarea>
+                                                <mat-hint>{{ item.desc }}</mat-hint>
+                                            </mat-form-field>
+                                            <div *ngIf="item.editing" >
+                                                <label [for]="item.key + libIndex" (click)="item.editing = false" class="clickable">{{item.key}}</label>
+                                                <angular-editor [id]="item.key + libIndex" [config]="editorConfig" [(ngModel)]="item.value" (ngModelChange)="appLangSubject.next(libIndex)"></angular-editor>
+                                                <div class="hint">{{ item.desc }}</div>
+                                            </div>
+                                        </ng-container>
                                         <!-- bool -->
                                         <mat-slide-toggle *ngIf="item.type == 'boolean'" [(ngModel)]="item.value"
                                             [disabled]="item.editable == 'warning'"
@@ -98,18 +105,24 @@
                         </ul>
                         <button mat-raised-button color="primary" class="button-primary"
                             [disabled]="!appLangLibrariesDirtyCount[libIndex].count"
-                            (click)="updateLang(appLangLibrariesCopy[libIndex], i)">Save</button>
+                            (click)="updateLang(appLangLibrariesCopy[libIndex], libIndex)">Save Languages for Library {{appLangLibrariesDirtyCount[libIndex].name}}</button>
                         &nbsp;
-                        <br><br>
-                        <hr>
-                        <div>
-                            <h3>About Page</h3>
-                            <div class="alert alert-warning">This WYSITYG HTML editor is not that great, if you're having trouble with it, just edit raw HTML for now!</div>
-                            <angular-editor id="about-page-editor" [config]="editorConfig" [placeholder]="'Enter about text for this library here...'" [(ngModel)]="aboutLibrariesCopy[appLangLibrariesDirtyCount[libIndex].libKey]"></angular-editor>
-                            <br>
-                            <button mat-raised-button color="primary" [disabled]="aboutLibrariesCopy[appLangLibrariesDirtyCount[libIndex].libKey] == aboutLibraries[appLangLibrariesDirtyCount[libIndex].libKey]" (click)="updateAboutPage(appLangLibrariesDirtyCount[libIndex]?.libKey)">Save About Page</button>
-                            <br>
-                        </div>
+                        <hr class="margin-top-default">
+                        <mat-expansion-panel class="margin-top-default" [expanded]="false">
+                            <mat-expansion-panel-header>
+                                <mat-panel-title>
+                                    About Page
+                                </mat-panel-title>
+                            </mat-expansion-panel-header>
+                                <div>
+                                    <h3>Edit content of the About Page of this library</h3>
+                                    <div class="alert alert-warning">This WYSITYG HTML editor is not that great, if you're having trouble with it, just edit raw HTML for now!</div>
+                                    <angular-editor [id]="'about-page-editor-lib-' + libIndex" [config]="editorConfig" [placeholder]="'Enter about text for this library here...'" [(ngModel)]="aboutLibrariesCopy[appLangLibrariesDirtyCount[libIndex].libKey]"></angular-editor>
+                                    <br>
+                                    <button mat-raised-button color="primary" [disabled]="aboutLibrariesCopy[appLangLibrariesDirtyCount[libIndex].libKey] == aboutLibraries[appLangLibrariesDirtyCount[libIndex].libKey]" (click)="updateAboutPage(appLangLibrariesDirtyCount[libIndex]?.libKey)">Save About Page</button>
+                                    <br>
+                                </div>
+                        </mat-expansion-panel>
 
                     </mat-tab>
                 </ng-container>

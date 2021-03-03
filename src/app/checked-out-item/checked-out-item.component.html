@@ -3,23 +3,25 @@
     <span *ngIf="busyAction == 'return'" class="cdk-visually-hidden">returning... please wait</span>
     <mat-spinner></mat-spinner>
 </div>
-<section *ngIf="lang && library && !isCheckedOutItemLoading" class="borrowing"
+<section *ngIf="lang && library && !isCheckedOutItemLoading && !shouldHide" class="borrowing"
     aria-label="Item you are borrowing" aria-live="polite" [attr.aria-busy]="isCheckedOutItemLoading">
     <ng-container *ngIf="checkedOutItem">
-        <h2>{{ lang[checkedOutItem.library]?.currentCheckout?.head }}</h2>
+        <h2>{{ lang.libraries[checkedOutItem.library]?.currentCheckout?.head }}</h2>
         <mat-spinner *ngIf="isCheckedOutItemLoading"></mat-spinner>
+        <!-- has item -->
         <ng-container *ngIf="checkedOutItem && !isCheckedOutItemLoading">
-            <ng-container *ngIf="checkedOutItem.library == parentLibrary && checkedOutItem.bibId == parentBibId; else elseTitle">
-                <span>You're borrowing <strong>this</strong> item!</span><br>
+            <!-- if embeded on item page -->
+            <p *ngIf="parent && parent == 'item'">
+                {{ checkedOutItem.library == parentLibrary && checkedOutItem.bibId == parentBibId ? lang.libraries[library].currentCheckout.itemHeadThis : lang.libraries[library].currentCheckout.itemHead }}<br>
+            </p>   
+            <!-- everywhere -->
+            <ng-container>
+                Title: {{ checkedOutItem.title }} <span *ngIf="checkedOutItem.part"> (part: {{checkedOutItem.part}} /
+                    {{checkedOutItem.partTotal}})</span><br>
+                <span *ngIf="library != checkedOutItem.library">Library: {{ checkedOutItem.libraryName }}<br></span>
             </ng-container>
-            <ng-template #elseTitle>
-            Title: {{ checkedOutItem.title }} <span *ngIf="checkedOutItem.part"> (part: {{checkedOutItem.part}} /
-                {{checkedOutItem.partTotal}})</span><br>
-            <span *ngIf="library != checkedOutItem.library">Library: {{ checkedOutItem.libraryName }}<br></span>
-            </ng-template>
-            <ng-container *ngIf="checkedOutItem.due">Due back: {{ checkedOutItem.due | date:'medium' }} <br></ng-container>
-            <br>
-            <div fxLayoutGap=".5em">
+            <ng-container *ngIf="checkedOutItem.due">Due back: {{ checkedOutItem.due | date:'medium' }}</ng-container>
+            <div class="margin-top-default" fxLayoutGap=".5em">
                 <button id="main-read-button" mat-raised-button color="primary" class="button-primary"
                     (click)="read(checkedOutItem.id)" [class.hidden]="mode == 'return'" [class.embiggen]="mode == 'read'">Read</button>
                 <button *ngIf="isAccessibleUser" class="download" mat-stroked-button color="primary"
@@ -29,8 +31,9 @@
             </div>
         </ng-container>
     </ng-container>
+    <!-- no item -->
     <div *ngIf="!checkedOutItem && !isCheckedOutItemLoading">
-        <h2>{{ lang[library]?.currentCheckout?.head }}</h2>
-        <p>{{ lang[library].currentCheckout.noItem }}</p>
+        <h2>{{ lang.libraries[library]?.currentCheckout?.head }}</h2>
+        <p>{{ lang.libraries[library].currentCheckout.noItem }}</p>
     </div>
 </section>

@@ -2,6 +2,8 @@ import { Component, OnInit, Input } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthenticationService } from '../auth.service';
+import { Config } from '../models/config.model';
+import { Language } from '../models/language.model';
 import { ConfigService } from '../config.service';
 import { PageService } from '../page.service';
 
@@ -17,8 +19,9 @@ export class AboutComponent implements OnInit {
   @Input() library: string;
   isLoading: boolean = false;
   html: string;
-  config: any;
-  lang: any;
+  config: Config;
+  lang: Language;
+  thisLibraryLang: any;
 
   constructor(
     private route: ActivatedRoute,
@@ -39,11 +42,8 @@ export class AboutComponent implements OnInit {
           this.route.paramMap.subscribe(paramMap => {
             this.authService.getUser().subscribe(res => {
               this.library = paramMap.get('library') ?? res.homeLibrary;
-              this.lang = langRes[this.library];
-              if (!this.config.libraries[this.library]) {
-                this.router.navigate(['/error-no-library'], {skipLocationChange: true});
-                return;
-              }
+              this.lang = langRes;
+              this.thisLibraryLang = this.lang.libraries[this.library];
               this.isAccessibleUser = res.isAccessibleUser;
               this.isLoading = false;
               this.getAboutPage();

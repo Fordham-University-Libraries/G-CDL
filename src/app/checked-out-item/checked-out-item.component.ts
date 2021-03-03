@@ -1,8 +1,10 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Config } from '../models/config.model';
+import { Language } from '../models/language.model';
+import { Customization } from '../models/customization.model';
 import { DriveService } from '../drive.service';
 import { GaService, ACTIONS, CATEGORIES } from '../ga.service';
-import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ConfigService } from '../config.service';
@@ -23,13 +25,16 @@ export class CheckedOutItemComponent implements OnInit {
   isBusy: boolean;
   busyAction: string;
   accessibleUserDialogRef: any;
-  config: any;
+  config: Config;
+  customization: Customization;
   usersLibrary:string;
   isAccessibleUser: boolean;
+  shouldHide: boolean;
   private readClickedEventSubscription: Subscription;
   private refreshEventSubscription: Subscription;
+  @Input() parent: string;
   @Input() library: string;
-  @Input() lang: any;
+  @Input() lang: Language;
   @Input() readClickedEvent: Observable<void>;
   @Input() refreshEvent: Observable<void>;
   @Output() userHasItemCheckedOut = new EventEmitter<boolean>();
@@ -40,7 +45,6 @@ export class CheckedOutItemComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private gaService: GaService,
-    private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private liveAnnouncer: LiveAnnouncer,
     private configService: ConfigService
@@ -60,9 +64,11 @@ export class CheckedOutItemComponent implements OnInit {
     });
     if (this.readClickedEvent) this.readClickedEventSubscription = this.readClickedEvent.subscribe(() => this.read(this.checkedOutItem.id));
     if (this.refreshEvent) this.refreshEventSubscription = this.refreshEvent.subscribe(() => this._getUserCheckedOutItem(true));
-    this._getUserCheckedOutItem();
-    console.log(this.lang);
-    
+    this.configService.getCustomization().subscribe(res => {
+      this.customization = res;
+      this._getUserCheckedOutItem();
+    })
+    //console.log(this.lang);
   }
 
   ngOnDestroy() {
@@ -77,11 +83,19 @@ export class CheckedOutItemComponent implements OnInit {
         this.isAccessibleUser = res['isAccessibleUser'];
         this.usersLibrary = res['usersLibrary'];
         this.checkedOutItem = res['item'];
+        if (!this.library) this.library = this.checkedOutItem.library
+      }
+      //The !! (double bang) logical operators return a value’s truthy value.
+      this.userHasItemCheckedOut.emit(!!this.checkedOutItem);
+      //check customiztion settings to see if should display
+      if (this.parent == 'home' || this.parent == 'item') {
+        if (this.customization.libraries[this.library][this.parent].showCurrentCheckoutSnippet == 1) {
+          if (!this.checkedOutItem) this.shouldHide = true;
+        }
       }
       this.isCheckedOutItemLoading = false;
       this.isBusy = false;
-      //The !! (double bang) logical operators return a value’s truthy value.
-      this.userHasItemCheckedOut.emit(!!this.checkedOutItem);
+
       
       //auto focus after borrow
       if (forceRefresh && this.checkedOutItem) { 
@@ -97,6 +111,7 @@ export class CheckedOutItemComponent implements OnInit {
 
   return(id: string) {
     //console.log(`returning: ${id}`);
+    this.liveAnnouncer.announce('returning an item');
     this.busyAction = 'return';
     this.isBusy = true;
     this.driveService.returnItem(id).subscribe(res => {
@@ -109,7 +124,7 @@ export class CheckedOutItemComponent implements OnInit {
         console.error(res);
         this.isBusy = false;
         this.gaService.logError('home-compo: return() error', false);
-        this.snackBar.open(this.lang.error.return.unknownError, 'Dismiss', {
+        this.snackBar.open(this.lang.libraries[this.library].error.return.unknownError, 'Dismiss', {
           duration: 3000,
         });
       }
@@ -117,7 +132,7 @@ export class CheckedOutItemComponent implements OnInit {
       console.error(error);
       this.isBusy = false;
       this.gaService.logError('home-compo: return() error', true);
-      this.snackBar.open(this.lang.error.return.unknownError, 'Dismiss', {
+      this.snackBar.open(this.lang.libraries[this.library].error.return.unknownError, 'Dismiss', {
         duration: 3000,
       });
     });
@@ -135,6 +150,7 @@ export class CheckedOutItemComponent implements OnInit {
 
   download(id: string) {
    if (this.isAccessibleUser) {
+      this.liveAnnouncer.announce('downloading an accessible version of the item');
       this.gaService.logEvent(ACTIONS.download, CATEGORIES.home, id);
       window.open(this.checkedOutItem.downloadLink);
    }

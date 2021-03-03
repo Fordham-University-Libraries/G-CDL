@@ -16,7 +16,7 @@ export class PageService {
   ) { }
 
   getAbout(library: string) {
-    console.log(this.aboutPages$);
+    //console.log(this.aboutPages$);
     
     if (!this.aboutPages$[library]) {
       this.aboutPages$[library] = this.httpClient.get(`${environment.apiBase}/?action=get_about&libKey=${library}`, { withCredentials:true, responseType: 'text' }).pipe(

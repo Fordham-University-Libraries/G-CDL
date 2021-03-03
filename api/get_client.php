@@ -146,6 +146,7 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
             $_SESSION["gUserName"] = str_replace($config->emailDomain, '', $userInfo->email);
             $_SESSION["gEmail"] = $userInfo->email;
             $_SESSION["gFullName"] = $userInfo->name;
+            $_SESSION["photoUrl"] = $userInfo->picture;
             $_SESSION['gExpire'] = time() + ($config->auth['sessionTtl'] * 60);
             //redirect
             if (isset($_GET['state'])) {

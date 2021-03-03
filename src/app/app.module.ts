@@ -40,7 +40,6 @@ import { ItemComponent } from './item/item.component';
 import { MyComponent } from './my/my.component';
 import { ReservesComponent } from './reserves/reserves.component';
 import { ReservesSearchBarComponent } from './reserves-search-bar/reserves-search-bar.component';
-import { SearchComponent } from './search/search.component';
 import { TermOfServiceComponent } from './term-of-service/term-of-service.component';
 import { StatsComponent } from './stats/stats.component';
 import { AdminComponent } from './admin/admin.component';
@@ -68,7 +67,6 @@ import { IdleDialogComponent } from './idle-dialog/idle-dialog.component';
     MyComponent,
     ReservesComponent,
     ReservesSearchBarComponent,
-    SearchComponent,
     TermOfServiceComponent,
     StatsComponent,
     AdminComponent,

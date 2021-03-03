@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { GaService, ACTIONS, CATEGORIES } from '../ga.service';
+import { Config } from '../models/config.model';
 import { ConfigService } from '../config.service';
 
 @Component({
@@ -9,7 +10,7 @@ import { ConfigService } from '../config.service';
   styleUrls: ['./libraries.component.scss']
 })
 export class LibrariesComponent implements OnInit {
-  config: any;
+  config: Config;
   libraries = [];
 
   constructor(

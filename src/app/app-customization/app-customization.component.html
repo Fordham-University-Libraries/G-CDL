@@ -32,7 +32,7 @@
                 </mat-form-field>
                 <br><br>
                 <button mat-raised-button color="primary" class="button-primary"
-                    (click)="updateAppCustGlobal()">Save</button>
+                    (click)="updateAppCustGlobal()">Save App Global Customization</button>
             </div>
         </mat-expansion-panel>
         <!-- libraries -->
@@ -46,14 +46,14 @@
             <mat-tab-group *ngIf="appCustLibrariesCopy.length">
                 <ng-container *ngFor="let library of appCustLibrariesCopy; let i = index">
                     <mat-tab *ngIf="appCustLibrariesCopy[i].length"
-                        [label]="config.libraries[appCustLibrariesDirtyCount[i]?.libKey].name + ' (' + appCustLibrariesDirtyCount[i]?.libKey  + ')'">
+                        [label]="appCustLibrariesDirtyCount[i].name + ' (' + appCustLibrariesDirtyCount[i]?.libKey  + ')'">
                         <mat-spinner *ngIf="appCustLibrariesDirtyCount[i].isLoading"></mat-spinner>
                         <!-- unsaved banner -->
                         <div *ngIf="appCustLibrariesDirtyCount[i].count && !appCustLibrariesDirtyCount[i].isLoading"
                             class="alert alert-warning margin-top-default">
-                            <p><strong>Unsaved Changes</strong></p>
+                            <p><strong>{{ appCustLibrariesDirtyCount[i].count }} Unsaved Change(s)</strong></p>
                             <button mat-raised-button color="primary" class="button-primary"
-                                (click)="updateCust(appCustLibrariesCopy[i], i)">Save</button>
+                                (click)="updateCust(appCustLibrariesCopy[i], i)">Save Customization for Library {{appCustLibrariesDirtyCount[i].name}}</button>
                         </div>
                         <ul *ngIf="!appCustLibrariesDirtyCount[i].isLoading" class="root">
                             <ng-template #recursiveListLibrary let-library>
@@ -113,7 +113,7 @@
                         </ul>
                         <button mat-raised-button color="primary" class="button-primary"
                             [disabled]="!appCustLibrariesDirtyCount[i].count"
-                            (click)="updateCust(appCustLibrariesCopy[i], i)">Save</button>
+                            (click)="updateCust(appCustLibrariesCopy[i], i)">Save Customization for Library {{appCustLibrariesDirtyCount[i].name}}</button>
                         &nbsp;
                     </mat-tab>
                 </ng-container>

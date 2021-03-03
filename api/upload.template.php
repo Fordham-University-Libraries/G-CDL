@@ -139,7 +139,7 @@
         } 
         
         if (!fileError) {
-            console.log(this.files[0]);
+            //console.log(this.files[0]);
             let fileName = this.files[0].name;
             document.getElementById("fileName").textContent = fileName;
             document.getElementById("fileSize").textContent = (this.files[0].size / 1e+6).toFixed(2) + ' MB';
@@ -181,7 +181,7 @@
             return response.text();
         }).then(function(json) {
             bib = JSON.parse(json).data;
-            console.log(bib);
+            //console.log(bib);
             document.getElementById("bibId").value = bib.bibId;
             document.getElementById("itemId").value = itemId;
             document.getElementById("title").value = bib.title;
@@ -199,7 +199,7 @@
             if (!cdlItem.error) {
                 cdlItem.forEach(item => {
                     if(itemId == itemId) {
-                        console.log('dupe');
+                        //console.log('dupe');
                         document.getElementById("itemId-exists-warning").innerHTML = `An item with item ID: ${itemId} already exists in the CDL app, unless this a multi-part item where you need to break one book into multiple PDFs, then this is a <a href="https://controlleddigitallending.org/faq#:~:text=Does%20CDL%20support%20a%20library%20lending%20more%20copies%20than%20it%20owns" target="_blank">bad idea!</a> Are you sure you want to do this?`;
                         document.getElementById("itemId-exists-warning").style.display = 'block';
                         return;

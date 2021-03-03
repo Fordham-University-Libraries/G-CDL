@@ -6,11 +6,13 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { User } from '../models/user.model';
 import { Item } from '../models/item.model';
+import { Config } from '../models/config.model';
+import { Language } from '../models/language.model';
+import { Customization } from '../models/customization.model';
 import { TermOfServiceComponent } from '../term-of-service/term-of-service.component';
 import { DriveService } from '../drive.service';
 import { AuthenticationService } from '../auth.service';
 import { GaService, ACTIONS, CATEGORIES } from '../ga.service';
-import { environment } from 'src/environments/environment';
 import { ConfigService } from '../config.service';
 import { Subject } from 'rxjs';
 
@@ -44,9 +46,9 @@ export class HomeComponent implements OnInit {
   realSearchTerm: string;
   isSearchDataCached: boolean;
   sort: string = 'default';
-  lang: any;
-  config: any;
-  customization: any;
+  lang: Language;
+  config: Config;
+  customization: Customization;
 
   constructor(
     private route: ActivatedRoute,
@@ -68,14 +70,11 @@ export class HomeComponent implements OnInit {
       this.lang = langRes;
       this.configService.getConfig().subscribe(cRes => {        
         this.config = cRes;
-        console.log(this.config);           
+        //console.log(this.config);           
         this.authService.getUser().subscribe(uRes => {
           this.user = uRes;
           this.route.paramMap.subscribe(paramMap => {
-            if (paramMap.get('library') && !this.config.libraries[paramMap.get('library')]) {
-              this.router.navigate(['/error-no-library'], {skipLocationChange: true});
-              return;
-            } else if (paramMap.get('library')) {
+            if (paramMap.get('library')) {
               this.library = paramMap.get('library');
             } else if (this.user.homeLibrary != this.config.defaultLibrary) {
               this.router.navigate(['/library', this.user.homeLibrary]);
@@ -97,21 +96,21 @@ export class HomeComponent implements OnInit {
     this.isAllItemsLoading = true;
     this.items.length = 0;
     this.driveService.getAllItems(forceRefresh, this.library).subscribe(res => {
-      console.log(res);
+      //console.log(res);
       
       res.nextPageToken ? this.nextPageToken = res.nextPageToken : this.nextPageToken = null;
       if (res.items?.length) {
         this._processItems(res.items, false);
       } else {
         this.isAllItemsLoading = false;
-        this.error = this.lang[this.library].error.getItemsHome.noItems;
+        this.error = this.lang.libraries[this.library].error.getItemsHome.noItems;
       }
     }, (error) => {      
       console.error(error);
       this.isAllItemsLoading = false;      
-      this.error = this.lang[this.library].error.getItemsHome.snackBar;
+      this.error = this.lang.libraries[this.library].error.getItemsHome.snackBar;
       this.gaService.logError('home-compo: error getting all items', true);
-      this.snackBar.open(this.lang[this.library].error.getItemsHome.snackBar, 'Dismiss', {
+      this.snackBar.open(this.lang.libraries[this.library].error.getItemsHome.snackBar, 'Dismiss', {
         duration: 9000,
       });
     });
@@ -255,7 +254,7 @@ export class HomeComponent implements OnInit {
       return;
     }
     this.gaService.logEvent(ACTIONS.borrow, CATEGORIES.home, id);
-
+    this.liveAnnouncer.announce('borrowing an item');
     this.busyAction = 'borrow';
     this.isBusy = true;
     this.driveService.borrowItem(id).subscribe(res => {
@@ -275,7 +274,7 @@ export class HomeComponent implements OnInit {
       console.error(error);
       this.isBusy = false;
       this.gaService.logError('home-compo: borrow() error', true);
-      this.snackBar.open(this.lang[this.library].error.borrow.unknownError, 'Dismiss', {
+      this.snackBar.open(this.lang.libraries[this.library].error.borrow.unknownError, 'Dismiss', {
         duration: 3000,
       });
     });

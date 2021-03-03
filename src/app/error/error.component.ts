@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+import { Config } from '../models/config.model';
+import { Language } from '../models/language.model';
 import { ConfigService } from '../config.service';
 
 @Component({
@@ -12,8 +14,8 @@ export class ErrorComponent implements OnInit {
   mode: string;
   reason: string;
   validReasons = ['no-lib'];
-  lang: any;
-  config: any;
+  lang: Language;
+  config: Config;
   library: string;
 
   constructor(

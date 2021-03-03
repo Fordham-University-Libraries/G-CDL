@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { User } from '../models/user.model';
+import { Config } from '../models/config.model';
 import { AuthenticationService } from '../auth.service';
 import { ConfigService } from '../config.service';
 import { AdminService } from '../admin.service';
@@ -17,20 +18,19 @@ import { debounceTime } from 'rxjs/operators';
 export class AppConfigComponent implements OnInit {
   user: User;
   isBusy: boolean;
-  config: any;
+  config: Config;
   appConfig = []; //stuff we want to edit
   appConfigLibraries = [];
   appConfigCopy = [];
   appConfigLibrariesCopy = [];
   appConfigDirtyCount = { 'count': 0, 'isLoading': false };
-  appConfigLibrariesDirtyCount: { libKey: string, count: number, isLoading: boolean, isDefault?: boolean }[] = [];
+  appConfigLibrariesDirtyCount: { libKey: string, name?: string, count: number, isLoading: boolean, isDefault?: boolean }[] = [];
   appConfigSubject: Subject<string[]> = new Subject();
   obj = {};
   newLib: { key: string, name: string };
   sectionDefinitions: any;
 
   constructor(
-    private route: ActivatedRoute,
     private router: Router,
     private configService: ConfigService,
     private authService: AuthenticationService,
@@ -41,12 +41,14 @@ export class AppConfigComponent implements OnInit {
 
   ngOnInit(): void {
     this.appConfigDirtyCount.isLoading = true;
-    this._processAdminConfigData();
     this.configService.getConfig().subscribe(cRes => {
       this.config = cRes;
       this.titleService.setTitle(`Admin/Config : ${this.config.appName}`);
       this.authService.getUser().subscribe(res => {
         this.user = res;
+        console.log(this.user);
+        
+        this._processAdminConfigData();
       });
     });
 
@@ -65,7 +67,7 @@ export class AppConfigComponent implements OnInit {
   private _processAdminConfigData(kind: string = null) {
     this.adminService.getConfigsAdmin().subscribe(res => {
       if (!res.error) {
-        console.log(res);
+        //console.log(res);
         
         const keysOrder = res.keys;
         this.sectionDefinitions = res.sectionDefinitions;
@@ -90,7 +92,7 @@ export class AppConfigComponent implements OnInit {
     this.appConfigDirtyCount.count = 0;
     this.isBusy = false;
 
-    console.log(this.appConfig);
+    //console.log(this.appConfig);
   }
 
   private _processAdminLibrariesConfigData(data: any, keysOrder: any) {
@@ -99,17 +101,20 @@ export class AppConfigComponent implements OnInit {
     this.appConfigLibrariesDirtyCount = [];
     data.forEach(library => {
       let lib = [];
-      library.forEach(e => {
+      library.forEach(e => {        
         if (e[0] == 'key') this.appConfigLibrariesDirtyCount.push({ libKey: e[1], count: 0, isLoading: false });
+        if (e[0] == 'name') this.appConfigLibrariesDirtyCount[this.appConfigLibrariesDirtyCount.length - 1].name = e[1];
         if (e[0] == 'isDefault') this.appConfigLibrariesDirtyCount[this.appConfigLibrariesDirtyCount.length - 1].isDefault = true;
         lib.push(this._processConfigField(e, keysOrder));
       });
       this.appConfigLibraries.push(lib);
+      console.log(this.appConfigLibrariesDirtyCount);
+      
     });
     //clone
     this.appConfigLibrariesCopy = JSON.parse(JSON.stringify(this.appConfigLibraries));
-    console.log(this.appConfigLibraries);
-    console.log(this.appConfigLibrariesDirtyCount);
+    //console.log(this.appConfigLibraries);
+    //console.log(this.appConfigLibrariesDirtyCount);
     this.isBusy = false;
 
   }
@@ -121,11 +126,11 @@ export class AppConfigComponent implements OnInit {
       //console.log(value);
       if (keysOrder[i] == 'editable') {
         let icon = 'edit'
-        if (value == 2 && !this.user.isDriveOwner) {
+        if (value == 2 && !this.user?.isDriveOwner) {
           icon = 'edit_notifications'
-        } else if (value == -1 && !this.user.isDriveOwner) {
+        } else if (value == -1 && !this.user?.isDriveOwner) {
           icon = 'warning'
-        } else if (value == -2 && !this.user.isDriveOwner) {
+        } else if (value == -2 && !this.user?.isDriveOwner) {
           icon = 'hide'
         }
 
@@ -160,7 +165,7 @@ export class AppConfigComponent implements OnInit {
   compareArrays(arr1: any, arr2: any, diffCount: { count: number }, isRecrusive: boolean = false) {
     for (var x = 0; x < arr1.length; x++) {
       if (arr1[x].type != 'group') {
-        // console.log(arr1[x].key, arr1[x].value, arr2[x].value);                
+        // //console.log(arr1[x].key, arr1[x].value, arr2[x].value);                
         if ((!Array.isArray(arr1[x].value) && arr1[x].value != arr2[x].value) || (Array.isArray(arr1[x].value) && arr1[x].value.toString() != arr2[x].value.toString())) {
           if (!arr1[x].isDirty) {
             diffCount.count++;
@@ -178,12 +183,12 @@ export class AppConfigComponent implements OnInit {
       }
     }
 
-    if (!isRecrusive) console.log(diffCount);
+    //if (!isRecrusive) console.log(diffCount);
   }
 
   updateConfig(config: any, isRecursive: boolean = false) {
     //convert back to assoc array
-    // console.log('update');
+    // //console.log('update');
     //console.log(config);
     let kind: string = 'global';
     let libKey: string = null;
@@ -244,11 +249,11 @@ export class AppConfigComponent implements OnInit {
     }
 
     if (!isRecursive) {
-      console.log(kind);
-      console.log(libKey);
-      console.log(this.obj);
+      //console.log(kind);
+      //console.log(libKey);
+      //console.log(this.obj);
       this.adminService.updateConfigAdmin(this.obj, kind, libKey).subscribe(res => {
-        console.log(res);
+        //console.log(res);
         if (kind == 'global') {
           this._processAdminConfigData('global');
         } else {
@@ -281,13 +286,16 @@ export class AppConfigComponent implements OnInit {
   }
 
   private _submitNewLib(newLib) {
-    console.log('add new lib', newLib);
+    //console.log('add new lib', newLib);
     this.isBusy = true;
 
     this.adminService.addNewLibrary(newLib).subscribe(res => {
-      console.log(res);
+      //console.log(res);
       if (res.result?.success) {
         this.newLib = null;
+        this.configService.getConfig(true).subscribe(res => this.config = res);
+        this.configService.getLang(true).subscribe();
+        this.configService.getCustomization(true).subscribe();
         this._processAdminConfigData('libraries');
       } else {
         this.snackBar.open(`ERROR: ${res.error}`, '', {
@@ -300,11 +308,11 @@ export class AppConfigComponent implements OnInit {
   }
 
   removeLibrary(libIndex: number) {
-    console.log('remove lib', libIndex);
+    //console.log('remove lib', libIndex);
     this.isBusy = true;
     const libKey = this.appConfigLibrariesDirtyCount[libIndex].libKey;
     this.adminService.removeLibrary(libKey).subscribe(res => {
-      console.log(res);
+      //console.log(res);
       if (res.result?.success) {
         this.newLib = null;
         this._processAdminConfigData('libraries');

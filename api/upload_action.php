@@ -28,7 +28,7 @@ function adminUploadGet(string $libKey = null) {
     require_once('Lang.php');
     $langObj = new Lang();
     $lang = $langObj->serialize();
-    $uploadLang = str_replace('{{$linkToAdmin}}', '../admin/config/lang', $lang[$libKey]['upload']);
+    $uploadLang = str_replace('{{$linkToAdmin}}', '../admin/config/lang', $lang['libraries'][$libKey]['upload']);
     $view->data['lang'] = $uploadLang;
 
     // render

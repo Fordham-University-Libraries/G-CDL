@@ -1,14 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { User } from '../models/user.model';
 import { Item } from '../models/item.model';
+import { Config } from '../models/config.model';
+import { Language } from '../models/language.model';
+//import { Customization } from '../models/customization.model';
 import { DriveService } from '../drive.service';
 import { AuthenticationService } from '../auth.service';
 import { ConfigService } from '../config.service';
 import { GaService, ACTIONS, CATEGORIES } from '../ga.service';
-import { environment } from 'src/environments/environment';
 import { HostListener } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -34,8 +36,9 @@ export class ReaderComponent implements OnInit {
   thirdPartyCookiesSupported: boolean = true;
   showLoginBanner: boolean = true;
   popRef: any;
-  config: any;
-  lang: any;
+  config: Config;
+  lang: Language;
+  readerLang: any;
 
   constructor(
     private route: ActivatedRoute,
@@ -82,12 +85,11 @@ export class ReaderComponent implements OnInit {
       }
       this.isCheckedOutItemLoading = false;
       this.ConfigService.getLang().subscribe(langRes => {
-        this.lang = this.checkedOutItem ? langRes[this.checkedOutItem.library].reader : langRes[this.user.homeLibrary].reader;
-        console.log(this.lang);
-        
+        this.lang = langRes;
+        this.readerLang = this.checkedOutItem ? this.lang.libraries[this.checkedOutItem.library].reader : this.lang.libraries[this.user.homeLibrary].reader;        
         if (this.checkedOutItem) {
-          this.lang.readerHead = this.lang.readerHead.replace('{{$title}}', this.checkedOutItem.title);
-          this.lang.dueBack = this.lang.dueBack.replace('{{$due}}', this.datePipe.transform(this.checkedOutItem.due, 'medium'));             
+          this.readerLang.readerHead = this.readerLang.readerHead.replace('{{$title}}', this.checkedOutItem.title);
+          this.readerLang.dueBack = this.readerLang.dueBack.replace('{{$due}}', this.datePipe.transform(this.checkedOutItem.due, 'medium'));             
         }
       });
     })
@@ -101,9 +103,9 @@ export class ReaderComponent implements OnInit {
       this.timeOut = setTimeout(()=>{
         this.hasExpired = true;
         this.isFullScreen = false;
-        console.log('expired!');
+        //console.log('expired!');
       }, diffTime);
-      console.log(`expiring in ${diffTime} ms`);
+      //console.log(`expiring in ${diffTime} ms`);
     }
   }
 
@@ -123,10 +125,10 @@ export class ReaderComponent implements OnInit {
     let subject = new Subject<boolean>();
     var receiveMessage = function (evt) {
       if (evt.data === 'MM:3PCunsupported') {
-        console.log('third party cookies are NOT supported');
+        //console.log('third party cookies are NOT supported');
         subject.next(false);
       } else if (evt.data === 'MM:3PCsupported') {
-        console.log('third party cookies are supported');
+        //console.log('third party cookies are supported');
         subject.next(true);
       }
     };
@@ -156,7 +158,7 @@ export class ReaderComponent implements OnInit {
         console.error(res);
         this.isCheckedOutItemLoading = false;
         this.gaService.logError('home-compo: return() error', false);
-        this.snackBar.open(this.lang.error.return.unknownError, 'Dismiss', {
+        this.snackBar.open(this.readerLang.error.return.unknownError, 'Dismiss', {
           duration: 3000,
         });
       }
@@ -164,22 +166,24 @@ export class ReaderComponent implements OnInit {
       console.error(error);
       this.isCheckedOutItemLoading = false;
       this.gaService.logError('home-compo: return() error', true);
-      this.snackBar.open(this.lang.error.return.unknownError, 'Dismiss', {
+      this.snackBar.open(this.readerLang.error.return.unknownError, 'Dismiss', {
         duration: 3000,
       });
     });
   }
 
   pop() {
+    if(this.popRef) this.popRef.self.close();
     this.gaService.logEvent(ACTIONS.openNewWindow, CATEGORIES.reader, this.checkedOutItem.id);
     const readerUrl = `https://drive.google.com/a/${this.config.gSuitesDomain}/file/d/` + (this.user.isAccessibleUser ? this.checkedOutItem.accessibleFileId : this.checkedOutItem.id) + '/view';
     //console.log(readerUrl);
     this.popRef = window.open(readerUrl,'Book Reader',`directories=no,titlebar=no,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=${screen.width},height=${screen.height}`);
     const now:any = new Date();
     const diffTime= Math.abs(this.due - now); //millisecs 
-    console.log('will auto close in ' + diffTime);
+    //console.log('will auto close in ' + diffTime);
     setTimeout(() => {
-      this.popRef.self.close();      
+      //Wow so much cleverness, very highly techical, many CDL compliants, such a great idea!
+      if(this.popRef) this.popRef.self.close();      
     }, diffTime);
   }
 

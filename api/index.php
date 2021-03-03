@@ -1,7 +1,6 @@
 <?php
 declare(strict_types = 1);
-//error_reporting(E_ERROR);
-error_reporting(E_ALL & ~E_NOTICE);
+error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 
 require 'Config.php';
 require 'CdlItem.php';
@@ -53,6 +52,7 @@ try {
 
 date_default_timezone_set($config->timeZone);
 $isProd = $config->isProd;
+if ($isProd) error_reporting(0);
 
 //allow annon access
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
 
 //everything below this needs to have library setup and user authenticated
 if (!count($config->libraries)) {
-    respondWithError(500, 'No Library');
+    respondWithFatalError(500, 'No Library');
 }
 $sheetService = new Google_Service_Sheets($client);
 $user = new User();

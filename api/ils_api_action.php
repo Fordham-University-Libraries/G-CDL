@@ -335,13 +335,13 @@ function checkIlsApiSettings(string $libKey)
     }
     if ($config->libraries[$libKey]->ils['kind'] == 'sirsi') {
         if (!$config->libraries[$libKey]->ils['api']['clientId'] || !$config->libraries[$libKey]->ils['api']['appId']) {
-            respondWithError(501, 'ILS API is not properly configured (no credentails)');
+            respondWithError(501, 'ILS API is not properly configured (no credentials)');
             die();
         }
     }
     if ($config->libraries[$libKey]->ils['kind'] == 'sierra') {
         if (!$config->libraries[$libKey]->ils['api']['key'] || !$config->libraries[$libKey]->ils['api']['secret']) {
-            respondWithError(501, 'ILS API is not properly configured (no credentails)');
+            respondWithError(501, 'ILS API is not properly configured (no credentials)');
             die();
         }
     }

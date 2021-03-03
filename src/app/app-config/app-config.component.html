@@ -15,7 +15,7 @@
         </mat-menu>
     </div>
     <div *ngIf="user?.isDriveOwner" class="alert alert-warning">WARNING: You're login as the Drive owner, therefore, you
-        CAN edit EVERYTHING. This is super dangerous. Please be careful.</div>
+        CAN edit EVERYTHING (including stuff you shouldn't be editing). This is super dangerous (thanks captain obvious!). Please be careful.</div>
     <mat-spinner *ngIf="!appConfig.length && !appConfigLibraries.length"></mat-spinner>
     <mat-accordion [multi]="false">
         <!-- global -->
@@ -26,9 +26,9 @@
             <h1>Global App's Settings/Config</h1>
             <mat-spinner *ngIf="appConfigDirtyCount.isLoading"></mat-spinner>
             <div *ngIf="appConfigDirtyCount.count && !appConfigDirtyCount.isLoading" class="alert alert-warning">
-                <p><strong>Unsaved Changes</strong></p>
+                <p><strong>{{ appConfigDirtyCount.count }} Unsaved Changes</strong></p>
                 <button mat-raised-button color="primary" class="button-primary"
-                    (click)="updateConfig(appConfigCopy)">Save</button>
+                    (click)="updateConfig(appConfigCopy)">Save Global Configs</button>
             </div>
             <ul *ngIf="!appConfigDirtyCount.isLoading" class="root">
                 <ng-template #recursiveList let-appConfigCopy>
@@ -75,7 +75,7 @@
                 <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: appConfigCopy }"></ng-container>
             </ul>
             <button *ngIf="!appConfigDirtyCount.isLoading" mat-raised-button color="primary" class="button-primary"
-                [disabled]="!appConfigDirtyCount.count" (click)="updateConfig(appConfigCopy)">Save</button>
+                [disabled]="!appConfigDirtyCount.count" (click)="updateConfig(appConfigCopy)">Save Global Configs</button>
         </mat-expansion-panel>
 
         <!-- libraries -->
@@ -125,9 +125,9 @@
                             <!-- unsaved banner -->
                             <div *ngIf="appConfigLibrariesDirtyCount[i].count && !appConfigLibrariesDirtyCount[i].isLoading"
                                 class="alert alert-warning margin-top-default">
-                                <p><strong>Unsaved Changes</strong></p>
+                                <p><strong>{{ appConfigLibrariesDirtyCount[i].count }} Unsaved Changes</strong></p>
                                 <button mat-raised-button color="primary" class="button-primary"
-                                    (click)="updateConfig(appConfigLibrariesCopy[i])">Save</button>
+                                    (click)="updateConfig(appConfigLibrariesCopy[i])">Save Configs for Library {{ appConfigLibrariesDirtyCount[i].name }}</button>
                             </div>
                             <ul *ngIf="!appConfigLibrariesDirtyCount[i].isLoading" class="root">
                                 <ng-template #recursiveListLibrary let-library>
@@ -179,17 +179,28 @@
                             </ul>
                             <button mat-raised-button color="primary" class="button-primary"
                                 [disabled]="!appConfigLibrariesDirtyCount[i].count"
-                                (click)="updateConfig(appConfigLibrariesCopy[i])">Save</button>
+                                (click)="updateConfig(appConfigLibrariesCopy[i])">Save Configs for Library {{ appConfigLibrariesDirtyCount[i].name }}</button>
                             &nbsp;
                             <!-- more menu -->
-                            <button *ngIf="!appConfigLibrariesDirtyCount[i].isDefault" mat-button
-                                [matMenuTriggerFor]="menu">
+                            <button *ngIf="(!appConfigLibrariesDirtyCount[i].isDefault  || user.isDriveOwner)&& user.isSuperAdmin" mat-button
+                                [matMenuTriggerFor]="menu" [matTooltip]="'more options...'">
                                 <mat-icon>more_horiz</mat-icon>
                             </button>
                             <mat-menu #menu="matMenu">
-                                <button mat-menu-item color="warn" (click)="removeLibrary(i)">
-                                    <mat-icon>delete</mat-icon>REMOVE THIS LIBRARY
+                                <button mat-menu-item class="danger" [matMenuTriggerFor]="delConfirm">
+                                    <mat-icon>delete</mat-icon>REMOVE LIBRARY <em>{{ appConfigLibrariesDirtyCount[i].name }}</em>
                                 </button>
+                            </mat-menu>
+                            <mat-menu #delConfirm="matMenu">
+                                <div id="del-confirm">
+                                    <div class="alert alert-warning">
+                                    DANGER!! This will delete the library <em>{{ appConfigLibrariesDirtyCount[i].name }}</em> and all of its items, statistics and etc.
+                                    <br><br>
+                                    <button mat-raised-button color="warn" (click)="removeLibrary(i)">
+                                        DELETE THIS LIBRARY
+                                    </button>
+                                    </div>
+                                </div>
                             </mat-menu>
                         </mat-tab>
                     </ng-container>

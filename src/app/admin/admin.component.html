@@ -6,9 +6,9 @@
             <span> Config</span>
         </button>
         <mat-menu #menu="matMenu">
-            <button mat-menu-item [routerLink]="'/admin/config'" [matTooltip]="'edit settings of this library e.g. loan period and etc.'">App & Library Configs</button>
-            <button mat-menu-item [routerLink]="'/admin/config/customization'">Customizations</button>
-            <button mat-menu-item [routerLink]="'/admin/config/lang'">Languages</button>
+            <button mat-menu-item [routerLink]="'./config'" [matTooltip]="'edit configuration of this library e.g. loan period and etc.'">App & Library Configs</button>
+            <button mat-menu-item [routerLink]="'./config/customization'" [matTooltip]="'edit customizations of this library e.g. color and etc.'">Customizations</button>
+            <button mat-menu-item [routerLink]="'./config/lang'" [matTooltip]="'edit languages for this library e.g. about page, error message and etc.'">Languages</button>
         </mat-menu>
     </div>
     <mat-accordion>

@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { User } from '../models/user.model';
+import { Config } from '../models/config.model';
+//import { Customization } from '../models/customization.model';
 import { AuthenticationService } from '../auth.service';
 import { ConfigService } from '../config.service';
 import { AdminService } from '../admin.service';
@@ -17,17 +19,16 @@ export class AppCustomizationComponent implements OnInit {
   user: User;
   isBusy: boolean;
   itemEditDialogRef: any;
-  config: any;
+  config: Config;
   appCustLibraries = [];
   appCustLibrariesCopy = [];
-  appCustLibrariesDirtyCount: { libKey: string, count: number, isLoading: boolean, isDefault?: boolean }[] = [];
+  appCustLibrariesDirtyCount: { libKey: string, name?: string, count: number, isLoading: boolean, isDefault?: boolean }[] = [];
   sectionDefinitions: any;
   appCustGlobal: any;
   appCustomizationSubject: Subject<string[]> = new Subject();
   obj = {};
 
   constructor(
-    private route: ActivatedRoute,
     private router: Router,
     private configService: ConfigService,
     private authService: AuthenticationService,
@@ -68,7 +69,7 @@ export class AppCustomizationComponent implements OnInit {
         this.appCustLibrariesCopy = [];
         this.appCustLibrariesDirtyCount = [];
         for (const [key, library] of Object.entries(res.libraries)) {
-          this.appCustLibrariesDirtyCount.push({ libKey: key, count: 0, isLoading: false });
+          this.appCustLibrariesDirtyCount.push({ libKey: key, name: this.config.libraries[key].name, count: 0, isLoading: false });
           let lib = [];
           for (const [areaKey, e] of Object.entries(library)) {
             lib.push(this._processConfigField(e, keysOrder));
@@ -77,9 +78,9 @@ export class AppCustomizationComponent implements OnInit {
         };
         //clone
         this.appCustLibrariesCopy = JSON.parse(JSON.stringify(this.appCustLibraries));
-        // console.log(this.appCustLibraries);
-        console.log(this.appCustLibrariesCopy);
-        // console.log(this.appCustLibrariesDirtyCount);
+        // //console.log(this.appCustLibraries);
+        //console.log(this.appCustLibrariesCopy);
+        // //console.log(this.appCustLibrariesDirtyCount);
         this.isBusy = false;
       } else {
         this.router.navigate(['/unauthed'], { skipLocationChange: true });
@@ -147,12 +148,12 @@ export class AppCustomizationComponent implements OnInit {
       }
     }
 
-    if (!isRecrusive) console.log(diffCount);
+    //if (!isRecrusive) console.log(diffCount);
   }
 
   updateCust(config: any, libIndex: number = 0, isRecursive: boolean = false) {
     //convert back to assoc array
-    // console.log('update');
+    // //console.log('update');
     let libKey: string = this.appCustLibrariesDirtyCount[libIndex].libKey;
     if (!isRecursive) {
       this.isBusy = true;
@@ -201,10 +202,10 @@ export class AppCustomizationComponent implements OnInit {
     }
 
     if (!isRecursive) {
-      // console.log(libKey);
-      // console.log(this.obj);
+      // //console.log(libKey);
+      // //console.log(this.obj);
       this.adminService.updateCustomizationAdmin(this.obj, libKey).subscribe(res => {
-        // console.log(res);
+        // //console.log(res);
         this.configService.onForceRefresh.emit(true);
         this._processAdminCustData();
       });

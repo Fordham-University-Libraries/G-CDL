@@ -1,5 +1,7 @@
-
-
+.label {
+    color:#333;
+    margin-right: .25em;
+}
 .badge {
     font-size: smaller;
     margin: 0 .5em;
@@ -16,12 +18,6 @@
     padding: 1em;
     background: aliceblue;
     color: black;
-    &.is-law-item {
-        button.return {
-            background: #f44336;
-            color: white;
-        }
-    }
 }
 
 .read-return {

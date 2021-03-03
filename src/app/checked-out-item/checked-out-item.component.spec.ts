@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { CheckedOutItemComponent } from './checked-out-item.component';
 
@@ -6,7 +6,7 @@ describe('CheckedOutItemComponent', () => {
   let component: CheckedOutItemComponent;
   let fixture: ComponentFixture<CheckedOutItemComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ CheckedOutItemComponent ]
     })

@@ -195,10 +195,10 @@ class Customization
             ],
             'second' => [
                 'display' => ['should the second row of the header be displayed?', 1],
-                'logo' => ['FULL URL of image filename of the logo to be display e.g. https://www.myuniv.edi/images/seal.png OR enter filename to use image store in Angular\'s /assets folder e.g. univ-logo.png', 1],
+                'logo' => ['FULL URL of image filename of the logo to be display e.g. https://library.myuniv.edi/images/lib-logo.png OR enter filename to use image store in Angular\'s /assets folder e.g. lib-logo.png', 1],
                 'logoAltText' => ['alt text for the logo', 1],
-                'text' => ['a text to be displayed after logo, leave blank to use app name'],
-                'link' => ['a URL, if set, the logo image and text will be a link'],
+                'text' => ['a text to be displayed after logo, leave blank to use \'app name @library name\' (if has multiple libraries)'],
+                'link' => ['a URL, if set, override the default link (home of CDL app for this library) with the link you provided'],
                 'css' => [
                     'background-color' => ['background color', 1],
                     'color' => ['text color', 1],
@@ -340,7 +340,7 @@ class Customization
             $this->_serializeRecursive($this->default, $this->libraries[$libKey]);
         }
 
-        return $this->libraries;
+        return ['libraries' => $this->libraries];
     }
 
     private function _serializeRecursive(&$default, &$library)
@@ -550,5 +550,19 @@ class Customization
         if (!$isRecursive) {
             return $target;
         }
+    }
+
+    public function removeLibrary($libKey): bool {
+        global $config;
+        global $user;
+        if(!$user->isSuperAdmin) die('unauthorized');
+        if(!$this->libraries[$libKey]) return false;
+
+        unset($this->libraries[$libKey]);
+        $fileName = $config->privateDataDirPath . 'customization.json';
+        $file = fopen($fileName, 'wb');
+        fwrite($file, json_encode($this->libraries));
+        fclose($file);
+        return true;
     }
 }

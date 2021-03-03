@@ -121,80 +121,80 @@ class Lang {
     ];
 
     private $_definitions = [
-        //[help text, editable status, select options]
+        //[help text, editable status, options]
         //-2 = hide, -1 = read only, 1 = editable, 2 = use caution
         'home' => [
-            'homeHead' => ['header (h1) of the home page',1],
-            'itemsHead' => ['section header of the section that lists items at this library', 1],
-            'copy' => ['what to called a "copy" of items with mutiliple copies',1],
-            'multiParts' => ['what to called a "Multi Parts" items (item that was splitted e.g. by chapters)',1],
-            'part' => ['what to called a "part" of "Multi Parts" items',1]
+            'homeHead' => ['header (h1) of the home page',1, null],
+            'itemsHead' => ['section header of the section that lists items at this library', 1, null],
+            'copy' => ['what to called a "copy" of items with mutiliple copies',1, null],
+            'multiParts' => ['what to called a "Multi Parts" items (item that was splitted e.g. by chapters)',1, null],
+            'part' => ['what to called a "part" of "Multi Parts" items',1, null]
         ],
         'currentCheckout' => [
-            'head' => ['the heading of the snippet that show an item currently checked out to a user',1],
-            'noItem' => ['what to say when there\'s no item checked out',1],
-            'itemHead' => ['what to say when the shippet is shown at item level view, if user is borrowing other item',1],
-            'itemHeadThis' => ['what to say when the shippet is shown at item level view, if user is borrowing THIS item',1]
+            'head' => ['the heading of the snippet that show an item currently checked out to a user',1, null],
+            'noItem' => ['what to say when there\'s no item checked out',1, null],
+            'itemHead' => ['what to say when the shippet is shown at item level view, if user is borrowing other item',1, null],
+            'itemHeadThis' => ['what to say when the shippet is shown at item level view, if user is borrowing THIS item',1, null]
         ],
         'item' => [
-            'itemHead' => ['header (h1) of the item page',1],
-            'copies' => ['what to called a "copies" of items has mutiliple copies',1],
-            'copy' => ['what to called a "copy" of items with mutiliple copies',1],
-            'part' =>  ['what to called a "part" of "Multi Parts" items',1]
+            'itemHead' => ['header (h1) of the item page',1, null],
+            'copies' => ['what to called a "copies" of items has mutiliple copies',1, null],
+            'copy' => ['what to called a "copy" of items with mutiliple copies',1, null],
+            'part' =>  ['what to called a "part" of "Multi Parts" items',1, null]
         ],
         'reader' => [
-            'readerHead' => ['header (h1) of the item page, use the token {{$title}} for item\'s title',1],
-            'dueBack' => ['Text that show when the item is due back, use the token {{$due}} for item\'s due date/time',1],
-            'itemHasBeenAutoReturned' => ['text to show then the item has been automiatically return (will show this message inplace of the book reader)',1],
+            'readerHead' => ['header (h1) of the item page, use the token {{$title}} for item\'s title',1, null],
+            'dueBack' => ['Text that show when the item is due back, use the token {{$due}} for item\'s due date/time',1, null],
+            'itemHasBeenAutoReturned' => ['text to show then the item has been automiatically return (will show this message inplace of the book reader)',1, null],
             'help' => [
-                'helpHead' => ['title of the viewer troubshooting snippet',1],
-                'helpDesc' => ['description of the viewer troubshooting snippet',1],
+                'helpHead' => ['title of the viewer troubshooting snippet',1, null],
+                'helpDesc' => ['description of the viewer troubshooting snippet',1, null],
                 'helpText' => ['help/troublshooting text', 1, 'htmlOk'],
-                'openReaderInNewWindowText' => ['help to explain that uesr can try open the reader in a new window if it does not load. user the token {{$button}} to place the button within the help text',1],
-                'openReaderInNewWindowButtonText' => ['Text of the button that allows user to open Google viewer directly on a new tab/window',1]
+                'openReaderInNewWindowText' => ['help to explain that uesr can try open the reader in a new window if it does not load. user the token {{$button}} to place the button within the help text',1, null],
+                'openReaderInNewWindowButtonText' => ['Text of the button that allows user to open Google viewer directly on a new tab/window',1, null]
             ]
         ],
         'reserves' => [
             'searchFields' => [
                 'courseName' => [
-                    'text' => ['Text for search by course name',1],
-                    'placeholder' => ['placeholder text (when search field is empty)',1],
-                    'hint' => ['hint text under search field',1]
+                    'text' => ['Text for search by course name',1, null],
+                    'placeholder' => ['placeholder text (when search field is empty)',1, null],
+                    'hint' => ['hint text under search field',1, null]
                 ],
                 'courseNumber' => [
-                    'text' => ['Text for search by course id/number',1],
-                    'placeholder' => ['placeholder text (when search field is empty)',1],
-                    'hint' => ['hint text under search field',1]
+                    'text' => ['Text for search by course id/number',1, null],
+                    'placeholder' => ['placeholder text (when search field is empty)',1, null],
+                    'hint' => ['hint text under search field',1, null]
                 ],
                 'courseProf' => [
-                    'text' => ['Text for search by course\'s teacher/professor and etc.',1],
-                    'placeholder' => ['placeholder text (when search field is empty)',1],
-                    'hint' => ['hint text under search field',1]
+                    'text' => ['Text for search by course\'s teacher/professor and etc.',1, null],
+                    'placeholder' => ['placeholder text (when search field is empty)',1, null],
+                    'hint' => ['hint text under search field',1, null]
                 ]
             ],
-            'head' => ['header (h1) of the reserves search page',1],
-            'subtitle' => ['subtitle for the course reserves search page',1],
-            'details' => ['heading of course details area',1],
-            'course' => ['what to call "Course"',1],
-            'prof' => ['what to call "Professor"',1],
-            'items' => ['heading for items on reserve for the course',1],
-            'availDigitalHead' => ['heading for items available digitally in CDL app',1],
-            'unavailDigital' => ['message to display when there\'s no CDL items for the course',1],
-            'availPrintHead' => ['heading for items on reserves but NOT available digitally in CDL app',1],
-            'availPrintSubhead' => ['sub-heading for items on reserves but NOT available digitally in CDL app',1],
-            'unavailPrint' => ['message to display when there\'s no print reserve items for the course e.g. all reserves items are on CDL app',1],
-            'snippetHead' => ['heading of the course reserves search snippet',1],
-            'snippetDescription' => ['help text of the course reserves search snippet',1],
+            'head' => ['header (h1) of the reserves search page',1, null],
+            'subtitle' => ['subtitle for the course reserves search page',1, null],
+            'details' => ['heading of course details area',1, null],
+            'course' => ['what to call "Course"',1, null],
+            'prof' => ['what to call "Professor"',1, null],
+            'items' => ['heading for items on reserve for the course',1, null],
+            'availDigitalHead' => ['heading for items available digitally in CDL app',1, null],
+            'unavailDigital' => ['message to display when there\'s no CDL items for the course',1, null],
+            'availPrintHead' => ['heading for items on reserves but NOT available digitally in CDL app',1, null],
+            'availPrintSubhead' => ['sub-heading for items on reserves but NOT available digitally in CDL app',1, null],
+            'unavailPrint' => ['message to display when there\'s no print reserve items for the course e.g. all reserves items are on CDL app',1, null],
+            'snippetHead' => ['heading of the course reserves search snippet',1, null],
+            'snippetDescription' => ['help text of the course reserves search snippet',1, null],
         ],
         'about' => [
-            'snippetHead' => ['heading of the about info snippet',1],
-            'snippetDescription' => ['help text of the about info snippet',1],
-            'aboutHead' => ['header of the full about page', 1]
+            'snippetHead' => ['heading of the about info snippet',1, null],
+            'snippetDescription' => ['help text of the about info snippet',1, null],
+            'aboutHead' => ['header of the full about page', 1, null]
         ],
         'emails' => [
             //placeholder for item title = {{$title}}
-            'borrowSubject' => ['subject for item borrow notification email -- token available: {{$title}}',1],
-            'returnSubject' => ['subject for item return notification email -- token available: {{$title}}',1],
+            'borrowSubject' => ['subject for item borrow notification email -- token available: {{$title}}',1, null],
+            'returnSubject' => ['subject for item return notification email -- token available: {{$title}}',1, null],
             'borrowBody' => ['body for item borrow notification email (HTML is ok!) -- tokens available: {{$title}}, {{$returnLink}}, {{$readLink}}, {{$borrowingPeriod}}',1, 'htmlOk'],
             'returnBody' => ['body for item return notification email (HTML is ok!) -- tokens available: {{$title}}, {{$returnLink}}, {{$readLink}}, {{$borrowingPeriod}}',1, 'htmlOk'],
         ],
@@ -202,38 +202,38 @@ class Lang {
             'helpText' => ['help text staff will see on the item (pdf) upload page -- token available: {{$linkToAdmin}}',1, 'htmlOk'],
         ],
         'error' => [
-            'genericError' => ['generic error message for errors not defined below', 1],
-            'unauthed' => ['error message to show when user is trying to access unauthorized area',1],
-            'unknownLibrary' => ['error message to show when user try to access unknown library',1],
-            'disabled' => ['error message to show when functionality is disabled',1],
+            'genericError' => ['generic error message for errors not defined below', 1, null],
+            'unauthed' => ['error message to show when user is trying to access unauthorized area',1, null],
+            'unknownLibrary' => ['error message to show when user try to access unknown library',1, null],
+            'disabled' => ['error message to show when functionality is disabled',1, null],
             'item' => [
-                'notPartOfCollecton' => ['error message to show when items cannot be found on CDL app',1],
-                'notOwnedByMe' => ['error message to show when item is not owned by the drive owner',1]
+                'notPartOfCollecton' => ['error message to show when items cannot be found on CDL app',1, null],
+                'notOwnedByMe' => ['error message to show when item is not owned by the drive owner',1, null]
             ],
             'reader' => [
-                'noItemCheckedOut' => ['error message to show when user is on reader page but don\'t have any item checked out',1]
+                'noItemCheckedOut' => ['error message to show when user is on reader page but don\'t have any item checked out',1, null]
             ],
             'borrow' => [
-                'unknownError' => ['error message to show when internal error occurs when borrowing',1],
-                'notAvailHaveOtherViewer' => ['error message to show when try to borrow item that has been borrow by other user',1],
-                'notAvailGeneric' => ['error message to show when user try to borrow item that is not available e.g. it is suspended',1],
-                'backToBack' => ['error message to show when user try to borrow the same item they have just returned -- available token {{$backToBackBorrowCoolDown}}',1],
-                'backToBackCopy' => ['error message to show when user try to borrow the same different copy of an item they have just returned -- available token {{$backToBackBorrowCoolDown}}',1],
+                'unknownError' => ['error message to show when internal error occurs when borrowing',1, null],
+                'notAvailHaveOtherViewer' => ['error message to show when try to borrow item that has been borrow by other user',1, null],
+                'notAvailGeneric' => ['error message to show when user try to borrow item that is not available e.g. it is suspended',1, null],
+                'backToBack' => ['error message to show when user try to borrow the same item they have just returned -- available token {{$backToBackBorrowCoolDown}}',1, null],
+                'backToBackCopy' => ['error message to show when user try to borrow the same different copy of an item they have just returned -- available token {{$backToBackBorrowCoolDown}}',1, null],
             ],
             'return' => [
-                'unknownError' => ['error message to show when internal error occurs when returning',1],
-                'userDoesNotHaveItemCheckedOut' => ['error message to show when user try to return item that\'s not checked out the them',1],
+                'unknownError' => ['error message to show when internal error occurs when returning',1, null],
+                'userDoesNotHaveItemCheckedOut' => ['error message to show when user try to return item that\'s not checked out the them',1, null],
             ],
             'getItemsHome' => [
-                'noItems' => ['error message to show when there\'s no item in the system',1],
-                'page' => ['error message to show when user try to load more items on home page',1],
-                'snackBar' => ['error message to show when failing to load CDL item on home page',1]
+                'noItems' => ['error message to show when there\'s no item in the system',1, null],
+                'page' => ['error message to show when user try to load more items on home page',1, null],
+                'snackBar' => ['error message to show when failing to load CDL item on home page',1, null]
             ],
             'accessible' => [
-                'downloadNotFound' => ['error message to show when accessbile version of the PDf is not available',1]
+                'downloadNotFound' => ['error message to show when accessbile version of the PDf is not available',1, null]
             ],
-            '404' => ['when the page reuqested does not exist',1],
-            'loggedOut' => ['message to display when user click log out',1]
+            '404' => ['when the page reuqested does not exist',1, null],
+            'loggedOut' => ['message to display when user click log out',1, null]
         ],
     ];
 
@@ -275,7 +275,7 @@ class Lang {
             }, $library);
         }
 
-        return $this->libraries;
+        return ['libraries' => $this->libraries];
     }
 
     private function _serialize(&$default, &$libLang) {
@@ -337,7 +337,12 @@ class Lang {
         } else {
             $xValue = isset($library) ? $library : $props;
             $isDefault = !isset($library);
-            array_unshift($definitions, $key, $xValue, gettype($xValue) != "NULL" ? gettype($xValue) : 'string', $isDefault);
+            //OMG! really? refactor me plz! - why don't do it the opposit way?
+            if (count($definitions) <= 3) {
+                array_unshift($definitions, $key, $xValue, gettype($xValue) != "NULL" ? gettype($xValue) : 'string', $isDefault);
+            } else {
+                $definitions[1] = $xValue;
+            }
         }
 
         if (!$isRecursive) {
@@ -434,5 +439,23 @@ class Lang {
 
         }
         return $result;
+    }
+
+    public function removeLibrary($libKey): bool {
+        global $config;
+        global $user;
+        if(!$user->isSuperAdmin) die('unauthorized');
+        if(!$this->libraries[$libKey]) return false;
+
+        unset($this->libraries[$libKey]);
+        $fileName = $config->privateDataDirPath . 'lang.json';
+        $file = fopen($fileName, 'wb');
+        fwrite($file, json_encode($this->libraries));
+        fclose($file);
+
+        $aboutFile = $config->privateDataDirPath . $libKey . '_about.html';
+        if (file_exists($aboutFile)) unlink($aboutFile);
+
+        return true;
     }
 }

@@ -57,7 +57,6 @@ class Config
     public $pageSize = 100;
     public $orderBy = 'createdTime desc'; //created descending
 
-    private $_config; //debug
     private $_propertiesInfo = [
         //[help text, editable status, select options]
         //-2 = hide, -1 = read only, 1 = editable, 2 = use caution
@@ -66,7 +65,7 @@ class Config
         'timeZone' => ['timezone. see https://www.php.net/manual/en/timezones.php', 1],
         'maxFileSizeInMb' => ['Google PDF Viewer has max fix file size litmit of 100MB (as of early 2021), if you upload something bigger than that, it will not display',2],
         'useEmbedReader' => ['if enabled, embed Google Drive vieewer inside app\'s page. Else, will open Google Drive viewer directly in a new tab. NOTE: you might want to enable it since, as of early 2021, if end users open a reader and don\'t close it, they\'ll be able to keep reading even AFTER the share has expired. Using the embed reader, the app will embed the Google reader on its own page, and will automatically refresh the page when the item expires' , 1],
-        'appSuperAdmins' => ['user(s) that can edit EVERYTHING incuding app\'s config, and EVERY library. Separate multiple users by a comma', 2],
+        'appSuperAdmins' => ['user(s) that can edit EVERYTHING incuding app\'s config, and EVERY library. Separate multiple users with a comma', 2],
         'auth' => [
             'kind' => ['how to authenticate user (telling who the user is). Only support Google OAuth (since end users need to be login to Google to view borrowed item)', -1, ['GoogleOAuth']],
             'gSuitesDomain' => ['your GSuites Domain WITHOUT the @ sign e.g. if your work email that you use to log in to GSuites is jdoe@someuniversity.edu, enter someuniversity.edu', -1],
@@ -112,14 +111,15 @@ class Config
         'libraries' => [
             'key' => ['short name (key) of the library, only visible to end users if there\'s more than one library', -1],
             'name' => ['name of the library', 1],
-            'isDefault' => ['is this a default library? (if there\'s multiple)', -1],
+            'isDefault' => ['is this the default library? (if there\'s multiple)', -1],
             'withOcrFolderId' => ['ID of the WITH ORC folder on GDrive of this library', -2],
             'noOcrFolderId' => ['ID of the NO ORC folder on GDrive of this library', -2],
             'statsSheetId' => ['ID of the Google Sheet file to store stats data for this library', -2],
             'borrowingPeriod' => ['how long the item is due back (hours)', 1],
             'backToBackBorrowCoolDown' => ['prevent user from borrwing the same item s/he just returned (have to wait for X minutes before can borrow it again)', 1],
-            'admins' => ['admins for this library (can change library\'s config)', 1],
-            'staff' => ['staff of this library (can upload, administer items, view statistics)', 1],
+            'customUserHomeLibrary' => ['enter usernames here to manually make this library their home library (useful if you have multiple libraries setup) e.g enter \'jdoe\' will make this library a home library of user jdoe -- separate multiple users with a comma',1],
+            'admins' => ['admins for this library (can change library\'s config) -- separate multiple users with a comma', 1],
+            'staff' => ['staff of this library (can upload, administer items, view statistics) -- separate multiple users with a comma', 1],
             'ils' => [
                 'kind' => ['ILS system', 1, ['Sirsi','Sierra']],
                 'itemIdInFilenameRegexPattern' => ['Regular Expression pattern with a Capturing group [parentesis symbol] for getting itemId from filename when upload including the / delimiter at the begining and end of the pattern e.g. if your itemId is 13 digits and you plan to tell your staff the name the file "somerandomstring09876543210987.pdf" then enter /(\d{13})+/ the app will use the value of the first matched group as the itemId (first sequence of 13 digits it found)', 1],
@@ -141,7 +141,6 @@ class Config
             ],
             'authorization' => [
                 'enable' => ['enable to also check with your local authentication system to get users attributes.',1],
-                'customUserHomeLibrary' => ['enter usernames here to manually make this library their home library',1],
                 'auth' => [
                     'kind' => ['type of auth system to authenticate and get users attributes from', 1],
                     'CAS' => [
@@ -198,7 +197,6 @@ class Config
         if (file_exists($fileName)) { //local config exists
             $file = file_get_contents($fileName);
             $data = json_decode($file);
-            $this->_config = $data;
             $this->_map($data);
         } else {
             //if no local config, grab the basic/essential config fron appData
@@ -211,7 +209,6 @@ class Config
                 if ($file) {
                     $content = $service->files->get($file->getId(), ["alt" => "media"]);
                     $data = json_decode((string) $content->getBody());
-                    $this->_config = $data;
                     $this->_map($data);
                     $file = fopen($fileName, 'wb');
                     fwrite($file, json_encode($data));
@@ -285,7 +282,7 @@ class Config
     }
 
     //update ALL config to local config.json
-    public function updatePropsAll()
+    private function _updatePropsAll()
     {
         $fileName = $this->privateDataDirPath . 'config.json';
         try {
@@ -300,17 +297,31 @@ class Config
         return $result;
     }
 
+    //POST from config edit, only save custom values
     public function updatePropsDeep($chagedProperties, $libKey = null)
     {
-            //if update library
-            if ($libKey) {
-                return $this->_updatePropsDeep($chagedProperties, $this->libraries[$libKey]);
-            } else {
-                return $this->_updatePropsDeep($chagedProperties, $this);
+        global $user;
+        if (!count($user->isAdminOfLibraries)) {
+            respondWithError(401, 'Not Authorized');
+            die();
+        }
+        //if update library
+        if ($libKey) {
+            if (!in_array($libKey, $user->isAdminOfLibraries)) {
+                respondWithError(401, 'Not Authorized to edit config of this library');
+                die();
             }
+            return $this->_updatePropsDeep($chagedProperties, $this->libraries[$libKey]);
+        } else {
+            if (!$user->isSuperAdmin) {
+                respondWithError(401, 'Not Authorized to edit app global config');
+                die();
+            }
+            return $this->_updatePropsDeep($chagedProperties, $this);
+        }
     }
 
-    public function _updatePropsDeep(&$input, &$target, $isRecursive = false)
+    private function _updatePropsDeep(&$input, &$target, $isRecursive = false)
     {
         foreach ($input as $key => $value) {
             if ($this->_has_string_keys((array) $value)) {
@@ -329,7 +340,7 @@ class Config
         }
 
         //if(!$isRecursive) return (array) $target;
-        if(!$isRecursive) return $this->updatePropsAll();
+        if(!$isRecursive) return $this->_updatePropsAll();
     }
 
     //for public -- annon acceess allowed
@@ -405,7 +416,7 @@ class Config
             array_push($config['libraries'], $this->_createLibraryField($library->serialize(), $this->_propertiesInfo['libraries'][$library->key]));
         }
 
-        $config['scopes'] = $this->getScopes();
+        $config['scopes'] = $this->_getScopes();
         if ($this->emails['method'] == 'gMail') {
             if (!in_array(Google_Service_Gmail::GMAIL_SEND, $config['scopes'])) $config['missingScopes'][] = Google_Service_Gmail::GMAIL_SEND;
         }
@@ -416,7 +427,7 @@ class Config
         return $config;
     }
 
-    public function getScopes()
+    private function _getScopes()
     {
         $tokenPath = './private_data/token.json';
         $accessToken = json_decode(file_get_contents($tokenPath), true);
@@ -425,6 +436,12 @@ class Config
 
     public function createNewLibrary(string $libKey, string $libName, array $options = null)
     {
+        global $user;
+        if (!$user->isSuperAdmin) {
+            respondWithError(401, 'Not Authorized');
+            die();
+        }
+
         //create folders
         $client = getClient();
         $driveService = new Google_Service_Drive($client);
@@ -464,20 +481,28 @@ class Config
         $libData = [
             'key' => $libKey,
             'name' => $libName,
+            'isDefault' => false,
             'withOcrFolderId' => $withOcrFolder->getId(),
             'noOcrFolderId' => $noOcrFolder->getId(),
             'statsSheetId' => $statsSheet->getId()
         ];
         if ($options) $libData += $options;
+        if (!count($this->libraries)) $libData['isDefault'] = true;
         $library = new Library($libData);
         $this->libraries[$libKey] = $library;
-        $result = $this->updatePropsAll();
+        $result = $this->_updatePropsAll();
 
         return $result;
     }
 
     function removeLibrary(string $libKey)
     {
+        global $user;
+        if (!$user->isSuperAdmin) {
+            respondWithError(401, 'Not Authorized');
+            die();
+        }
+
         //delete stuff on GDrive
         $client = getClient();
         $driveService = new Google_Service_Drive($client);
@@ -495,10 +520,18 @@ class Config
             respondWithError(500, "Internal Error");
             logError($e->getMessage());
         }
+        //remove from cust/lang
+        require_once('Customization.php');
+        $customization = new Customization();
+        $customization->removeLibrary($libKey);
+        require_once('Lang.php');
+        $lang = new Lang();
+        $lang->removeLibrary($libKey);
         //remove from config
         unset($this->libraries[$libKey]);
-        $result = $this->updatePropsAll();
+        $result = $this->_updatePropsAll();
         return $result;
+        
     }
 
     private function _createField($key, &$props = null, &$propsInfo = null, $isRecursive = false)

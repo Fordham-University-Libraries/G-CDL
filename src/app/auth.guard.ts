@@ -16,7 +16,7 @@ export class AuthGuard implements CanActivate {
     ) { }
 
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
-        console.log('canActivate');
+        //console.log('canActivate');
         let subject = new Subject<boolean>();
         const cookie = document.cookie.split('; ').find(row => row.startsWith('cdlLogin=1'));
         const isLoggedIn = !!cookie;         
@@ -34,8 +34,7 @@ export class AuthGuard implements CanActivate {
                     //auth returns a soft (recoverable) 302, go to the local auth URL provided
                     window.location.href = res.url + encodeURIComponent('&target=' + window.location.pathname);
                     return;
-                } else {
-                    console.log('auth guard soft err');
+                } else {                    
                     if(res.error = "No Library") {
                         this.router.navigate(['/api-error/no-lib'], {skipLocationChange: true});   
                     }
@@ -51,7 +50,11 @@ export class AuthGuard implements CanActivate {
                 this.authenticationService.login(window.location.pathname);
                 subject.next(false);
             } else {
-                this.router.navigate(['/api-error'], {skipLocationChange: true});
+                if(error.error = "No Library") {
+                    this.router.navigate(['/api-error/no-lib'], {skipLocationChange: true});   
+                } else {
+                    //this.router.navigate(['/api-error'], {skipLocationChange: true});
+                }
             }
             subject.next(false);
         });

@@ -4,9 +4,10 @@ class User
     public bool $isDriveOwner = false;
     public string $userName;
     public string $email;
-    public string $univId;
-    public string $fullName;
-    public string $homeLibrary;
+    public ?string $univId;
+    public ?string $fullName;
+    public ?string $homeLibrary;
+    public ?string $photoUrl;
     public bool $isActiveUser = false;
     public bool $isAccessibleUser = false;
     public bool $isFacStaff = false;
@@ -31,6 +32,7 @@ class User
             if (isset($_SESSION['gUserName']) && $_SESSION['gExpire'] > time()) {
                 $this->userName = str_replace('@' . $config->auth['gSuitesDomain'], '', $_SESSION['gEmail']);
                 $this->email = $_SESSION['gEmail'];
+                if ($_SESSION["photoUrl"]) $this->photoUrl = $_SESSION["photoUrl"];
                 if (!$config->isProd) {
                     //dev -- become somebody else
                     //$this->userName = 'djohn';
@@ -117,11 +119,11 @@ class User
                 foreach ($values as $row) {
                     array_push($accessibleUsers, $row[0]);
                 }
-                $file = fopen($fileName, 'wb');
-                fwrite($file, serialize($accessibleUsers));
-                fclose($file);
-                $this->isAccessibleUser = in_array($this->userName, $accessibleUsers);
             }
+            $file = fopen($fileName, 'wb');
+            fwrite($file, serialize($accessibleUsers));
+            fclose($file);
+            $this->isAccessibleUser = in_array($this->userName, $accessibleUsers);    
         }
     }
 
@@ -219,6 +221,7 @@ class User
             'isAuthenticated' => true,
             'userName' => $this->userName,
             'fullName' => $this->fullName ?? null,
+            'photoUrl' => $this->photoUrl ?? null,
             'univId' => $this->univId ?? null,
             'email' => $this->email ?? null,
             'homeLibrary' => $this->homeLibrary ?? null,

@@ -3,7 +3,7 @@
     <ng-container *ngIf="!isLoadingUser && lang">
         <div fxLayout="row" *ngIf="checkedOutItem">
             <div fxLayout="column" fxLayoutAlign="center start" id="book-header">
-                <h1 *ngIf="lang.readerHead">{{ lang.readerHead }}</h1>
+                <h1 *ngIf="readerLang.readerHead">{{ readerLang.readerHead }}</h1>
                 <h2 *ngIf="checkedOutItem.part && !isFullScreen">Part
                     {{checkedOutItem.part}}/{{checkedOutItem.partTotal}} <span
                         *ngIf="checkedOutItem.partDesc">({{checkedOutItem.partDesc}})</span></h2>
@@ -15,7 +15,7 @@
         </div>
         <div *ngIf="checkedOutItem && !isFullScreen" fxLayout="row" class="due">
             <div>
-                {{ lang.dueBack }}
+                {{ readerLang.dueBack }}
                 <!-- Due back: {{ checkedOutItem.due | date:'medium' }} &nbsp;&nbsp; -->
             </div>
             <div class="buttons" fxLayoutGap=".5em">
@@ -37,17 +37,17 @@
                 <mat-panel-title>
                     <mat-icon id="support-icon" role="presentation">support</mat-icon>
                     <span
-                        fxLayoutAlign="start center">{{ lang.help.helpHead }}</span>
+                        fxLayoutAlign="start center">{{ readerLang.help.helpHead }}</span>
                 </mat-panel-title>
                 <mat-panel-description>
-                    {{ lang.help.helpDesc }}
+                    {{ readerLang.help.helpDesc }}
                 </mat-panel-description>
             </mat-expansion-panel-header>
-            <div [innerHTML]="lang.help.helpText | safe:'html'">
+            <div [innerHTML]="readerLang.help.helpText | safe:'html'">
             </div>
-            <div *ngIf="lang.help.openReaderInNewWindowButtonText || lang.help.openReaderInNewWindowText">
-                <p *ngIf="lang.help.openReaderInNewWindowText">{{ lang.help.openReaderInNewWindowText }}</p>
-                <button *ngIf="lang.help.openReaderInNewWindowButtonText" mat-stroked-button (click)="pop()">{{ lang.help.openReaderInNewWindowButtonText }}</button>
+            <div *ngIf="readerLang.help.openReaderInNewWindowButtonText || readerLang.help.openReaderInNewWindowText">
+                <p *ngIf="readerLang.help.openReaderInNewWindowText">{{ readerLang.help.openReaderInNewWindowText }}</p>
+                <button *ngIf="readerLang.help.openReaderInNewWindowButtonText" mat-stroked-button (click)="pop()">{{ readerLang.help.openReaderInNewWindowButtonText }}</button>
             </div>
         </mat-expansion-panel>
 
@@ -67,7 +67,7 @@
         <div *ngIf="!isCheckedOutItemLoading && !checkedOutItem" class="err-msg margin-top-default">You don't currently
             have any item checked out</div>
     </ng-container>
-    <div *ngIf="hasExpired" class="err-msg margin-top-default">{{ lang.itemHasBeenAutoReturned }}</div>
+    <div *ngIf="hasExpired" class="err-msg margin-top-default">{{ readerLang.itemHasBeenAutoReturned }}</div>
     <!-- need to host this ourselves but don't have other domain LOL -->
     <iframe [src]="'https://mindmup.github.io/3rdpartycookiecheck/start.html' | safe: 'resourceUrl'"
         style="display: none;"></iframe>

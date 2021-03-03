@@ -1,19 +1,11 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
-import { MatSort } from '@angular/material/sort';
-import { MatTableDataSource } from '@angular/material/table';
-import { MatPaginator } from '@angular/material/paginator';
-import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { User } from '../models/user.model';
-import { Item } from '../models/item.model';
+import { Config } from '../models/config.model';
 import { AuthenticationService } from '../auth.service';
-import { DriveService } from '../drive.service';
 import { ConfigService } from '../config.service';
 import { AdminService } from '../admin.service';
-import { AdminItemEditComponent } from '../admin-item-edit/admin-item-edit.component';
-import { stringify } from '@angular/compiler/src/util';
 import { Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { AngularEditorConfig } from '@kolkov/angular-editor';
@@ -25,13 +17,14 @@ import { AngularEditorConfig } from '@kolkov/angular-editor';
 })
 export class AppLangComponent implements OnInit {
   user: User;
-  config: any;
+  isBusy: boolean;
+  config: Config;
   aboutLibraries = [];
   aboutLibrariesCopy = [];
   appLangLibraries = [];
   appLangLibrariesCopy = [];
   appConfigDirtyCount = { 'count': 0, 'isLoading': false };
-  appLangLibrariesDirtyCount: { libKey: string, count: number, isLoading: boolean, isDefault?: boolean }[] = [];
+  appLangLibrariesDirtyCount: { libKey: string, name?: string, count: number, isLoading: boolean, isDefault?: boolean }[] = [];
   rootKeyTemp: string;
   appLangSubject: Subject<string[]> = new Subject();
   obj = {};
@@ -45,15 +38,11 @@ export class AppLangComponent implements OnInit {
   }
 
   constructor(
-    private route: ActivatedRoute,
     private router: Router,
-    private dialog: MatDialog,
-    private driveService: DriveService,
     private configService: ConfigService,
     private authService: AuthenticationService,
     private titleService: Title,
     private adminService: AdminService,
-    private snackBar: MatSnackBar,
   ) { }
 
   ngOnInit(): void {
@@ -89,8 +78,8 @@ export class AppLangComponent implements OnInit {
         this.appLangLibraries = [];
         this.appLangLibrariesCopy = [];
         this.appLangLibrariesDirtyCount = [];
-        for (const [key, library] of Object.entries(res.libraries)) {
-          this.appLangLibrariesDirtyCount.push({ libKey: key, count: 0, isLoading: false });
+        for (const [key, library] of Object.entries(res.libraries)) {          
+          this.appLangLibrariesDirtyCount.push({ libKey: key, name: this.config.libraries[key].name, count: 0, isLoading: false });
           let lib = [];
           for (const [areaKey, e] of Object.entries(library)) {
             lib.push(this._processConfigField(e, keysOrder));
@@ -99,11 +88,15 @@ export class AppLangComponent implements OnInit {
           this.aboutLibraries[key] = res.abouts[key];
           this.aboutLibrariesCopy[key] = res.abouts[key];
         };
+        //console.log(this.appLangLibrariesDirtyCount);
         //clone
         this.appLangLibrariesCopy = JSON.parse(JSON.stringify(this.appLangLibraries));
-        // console.log(this.appLangLibraries);
-        // console.log(this.appLangLibrariesCopy);
-        // console.log(this.appLangLibrariesDirtyCount);
+        console.log(this.appLangLibrariesCopy);
+        
+        this.isBusy = false;
+        // //console.log(this.appLangLibraries);
+        // //console.log(this.appLangLibrariesCopy);
+        // //console.log(this.appLangLibrariesDirtyCount);
       } else {
         this.router.navigate(['/unauthed'], { skipLocationChange: true });
       }
@@ -126,8 +119,10 @@ export class AppLangComponent implements OnInit {
         } else if (value == -2 && !this.user.isDriveOwner) {
           icon = 'hide'
         }
-
         field[keysOrder[i]] = icon;
+      } else if (keysOrder[i] == 'options') {
+        field[keysOrder[i]] = value;
+        if (value == 'htmlOk') field['editing'] = false;
       } else {
         field[keysOrder[i]] = value;
       }
@@ -170,14 +165,15 @@ export class AppLangComponent implements OnInit {
       }
     }
 
-    if (!isRecrusive) console.log(diffCount);
+    //if (!isRecrusive) console.log(diffCount);
   }
 
   updateLang(config: any, libIndex: number = 0, isRecursive: boolean = false) {
     //convert back to assoc array
-    // console.log('update');
+    // //console.log('update');
     let libKey: string = this.appLangLibrariesDirtyCount[libIndex].libKey;
     if (!isRecursive) {
+      this.isBusy = true;
       this.appLangLibrariesDirtyCount[libIndex].isLoading = true;
       this.obj = {};
       config.forEach(f => {
@@ -224,11 +220,11 @@ export class AppLangComponent implements OnInit {
     }
 
     if (!isRecursive) {
-      console.log(libKey);
-      console.log(this.obj);
+      //console.log(libKey);
+      //console.log(this.obj);
 
       this.adminService.updateLangAdmin(this.obj, libKey).subscribe(res => {
-        console.log(res);
+        //console.log(res);
         this.configService.onForceRefresh.emit(true);
         this._processAdminLangData();
       });
@@ -248,9 +244,11 @@ export class AppLangComponent implements OnInit {
   }
 
   updateAboutPage(libKey: string) {
-    console.log(this.aboutLibrariesCopy[libKey]);
+    //console.log(this.aboutLibrariesCopy[libKey]);
+    this.isBusy = true;
     this.adminService.updateAboutAdmin(this.aboutLibrariesCopy[libKey], libKey).subscribe(res => {
-      console.log(res);
+      //console.log(res);
+      this.isBusy = false;
     })
   }
 

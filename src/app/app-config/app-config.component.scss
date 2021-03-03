@@ -8,6 +8,26 @@
     }
 }
 
+::ng-deep.mat-menu-panel {
+    max-width: none !important;
+}
+#del-confirm {
+    padding: 0 1em;
+}
+button.danger {
+    color: darkred;
+    mat-icon {
+        color: darkred;
+    }
+}
+
+button.danger-er {
+    color: red;
+    mat-icon {
+        color: red;
+    }
+}
+
 mat-expansion-panel {
     mat-expansion-panel-header {
         background: #ececec;

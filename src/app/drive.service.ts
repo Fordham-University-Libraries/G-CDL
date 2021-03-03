@@ -41,8 +41,8 @@ export class DriveService {
     this.allItems$ = [];
   }
 
-  getAllItemsNextPage(nextPageToken: string): Observable<{nextPageToken?: string, items?: Item[], lawItems?: Item[]}> {
-    let subject = new Subject<{nextPageToken?: string, items?: Item[], lawItems?: Item[]}>();
+  getAllItemsNextPage(nextPageToken: string): Observable<{nextPageToken?: string, items?: Item[]}> {
+    let subject = new Subject<{nextPageToken?: string, items?: Item[]}>();
     if (!nextPageToken) subject.error('no next page token');
     this.httpClient.get(`${this.apiBase}/?action=view_all&nextPageToken=${nextPageToken}`, {withCredentials: true}).subscribe(res => {
       subject.next(res['data']);      

@@ -295,7 +295,7 @@ function searchSirsiForEbook($libKey, $title, $author)
     $customization = new Customization();
     $customization = $customization->serialize();
     $curl = curl_init();
-    $url =  $config->libraries[$libKey]->ils['api']['base'] . "/rest/standard/searchCatalog?json=true&includeAvailabilityInfo=true&libraryFilter=" . $customization[$libKey]['reserves']['ilsEbookLocationName'] . "&term1=" . curl_escape($curl, $title) . "&searchType1=TITLE&operator1=AND&term2=" . curl_escape($curl, $author) . "&searchType2=AUTHOR";
+    $url =  $config->libraries[$libKey]->ils['api']['base'] . "/rest/standard/searchCatalog?json=true&includeAvailabilityInfo=true&libraryFilter=" . $customization['libraries'][$libKey]['reserves']['ilsEbookLocationName'] . "&term1=" . curl_escape($curl, $title) . "&searchType1=TITLE&operator1=AND&term2=" . curl_escape($curl, $author) . "&searchType2=AUTHOR";
     curl_setopt_array($curl, array(
         CURLOPT_URL => $url,
         CURLOPT_RETURNTRANSFER => true,

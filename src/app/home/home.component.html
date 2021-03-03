@@ -4,11 +4,11 @@
     <mat-spinner></mat-spinner>
 </div>
 <main id="main" [attr.aria-busy]="isBusy" *ngIf="config && lang && library" class="home">
-    <h1  *ngIf="lang[library].home.homeHead">{{ lang[library].home.homeHead }}</h1>
+    <h1  *ngIf="lang.libraries[library].home.homeHead">{{ lang.libraries[library].home.homeHead }}</h1>
     <!-- curr cehckout compo -->
-    <ng-container *ngIf="customization && customization[library]?.home?.showCurrentCheckoutSnippet">
+    <ng-container *ngIf="customization && customization.libraries[library]?.home?.showCurrentCheckoutSnippet">
         <app-checked-out-item 
-            *ngIf="customization[library]?.home?.showCurrentCheckoutSnippet == 2 || (customization[library]?.home?.showCurrentCheckoutSnippet == 1 && userHasItemCheckedOut)" 
+            [parent]="'home'" 
             [library]="library" [lang]="lang"
             [readClickedEvent]="readClickedSubject.asObservable()"
             [refreshEvent]="checkedOutitemRefreshSubject.asObservable()"
@@ -20,38 +20,38 @@
     <div class="margin-top-default">
         <mat-accordion>
             <!-- about -->
-            <mat-expansion-panel *ngIf="customization && customization[library]?.home?.showAboutSnippet" [expanded]="false">
+            <mat-expansion-panel *ngIf="customization && customization.libraries[library]?.home?.showAboutSnippet" [expanded]="false">
                 <mat-expansion-panel-header>
                     <mat-panel-title>
                         <mat-icon role="presentation">info</mat-icon>
-                        <span fxLayoutAlign="start center">{{ lang[library].about.snippetHead }}</span>
+                        <span fxLayoutAlign="start center">{{ lang.libraries[library].about.snippetHead }}</span>
                     </mat-panel-title>
                     <mat-panel-description>
-                        {{ lang[library].about.snippetDescription }}
+                        {{ lang.libraries[library].about.snippetDescription }}
                     </mat-panel-description>
                 </mat-expansion-panel-header>
                 <app-about [isAccessibleUser]="user.isAccessibleUser" [library]="library" [embed]="true"></app-about>
             </mat-expansion-panel>
             <!-- course reserves search -->
-            <mat-expansion-panel *ngIf="customization && customization[library].reserves?.enable && customization[library]?.home?.showCourseSearchSnippet && config.libraries[library].ilsApiEnabled">
+            <mat-expansion-panel *ngIf="customization && customization.libraries[library].reserves?.enable && customization.libraries[library]?.home?.showCourseSearchSnippet && config.libraries[library].ilsApiEnabled">
                 <mat-expansion-panel-header>
                     <mat-panel-title>
                         <mat-icon role="presentation">school</mat-icon>
-                        <span fxLayoutAlign="start center">{{ lang[library].reserves.snippetHead }}</span>
+                        <span fxLayoutAlign="start center">{{ lang.libraries[library].reserves.snippetHead }}</span>
                     </mat-panel-title>
                     <mat-panel-description>
-                        {{ lang[library].reserves.snippetDescription }}
+                        {{ lang.libraries[library].reserves.snippetDescription }}
                     </mat-panel-description>
                 </mat-expansion-panel-header>
                 <div class="padding-default content">
-                    <app-reserves-search-bar [library]="library" [config]="config" [lang]="lang[library]?.reserves"></app-reserves-search-bar>
+                    <app-reserves-search-bar [library]="library" [config]="config" [lang]="lang.libraries[library]?.reserves"></app-reserves-search-bar>
                 </div>
             </mat-expansion-panel>
         </mat-accordion>
     </div>
 
     <section aria-label="Digital Reserves Items">
-        <h2 *ngIf="lang[library].home.itemsHead">{{ lang[library].home.itemsHead }}</h2>
+        <h2 *ngIf="lang.libraries[library].home.itemsHead">{{ lang.libraries[library].home.itemsHead }}</h2>
         <div *ngIf="error && !isAllItemsLoading" class="err-msg">{{ error }}</div>
         <div>
             <!-- item filters -->
@@ -160,10 +160,10 @@
                                 <ul>
                                     <li *ngFor="let copy of item.items; let i = index">
                                         <span *ngIf="!copy.part"
-                                            [matTooltip]="'barcode: ' + copy?.itemId">{{ lang[library].home.copy }}
+                                            [matTooltip]="'barcode: ' + copy?.itemId">{{ lang.libraries[library].home.copy }}
                                             {{ i + 1 }}</span>
                                         <span *ngIf="copy.part"
-                                            [matTooltip]="'barcode: ' + copy?.itemId">{{ lang[library].home.part }}
+                                            [matTooltip]="'barcode: ' + copy?.itemId">{{ lang.libraries[library].home.part }}
                                             {{ copy?.part }} / {{ copy?.partTotal }}<span *ngIf="copy?.partDesc">
                                                 ({{copy?.partDesc}})</span></span>
                                         <span class="status" [class.available]="copy.available"
