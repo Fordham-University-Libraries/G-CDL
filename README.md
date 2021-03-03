@@ -31,13 +31,13 @@ Example of App/GDrive Interactions
 ## Installation
 - Requirements
     - local machine
-        - PHP 7+
+        - PHP 7.4+
             - Composer
         - Node.js
         - Angular CLI
     - server
         - a server (Apache, NGINX, IIS, and etc.)
-        - PHP 7+
+        - PHP 7.4+
 - Clone this repo
     - CD into the cloned repo and run `npm install`
     - CD into ./api and install dependencies `composer install`
