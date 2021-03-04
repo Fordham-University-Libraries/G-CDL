@@ -23,7 +23,6 @@ export class AuthGuard implements CanActivate {
         if (isLoggedIn) return true;
         
         this.authenticationService.getUser(true).subscribe(res => {
-            console.log(res);
             if (res) {
                 if (!res.error) {
                     this.user = res;

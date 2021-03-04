@@ -4,9 +4,15 @@ require 'View.php';
 function init($step = 1, $authCode = null)
 {
     $hasCreds = file_exists('./private_data/credentials.json');
-    if ($hasCreds) {
+    $hasToken = file_exists('./private_data/token.json');
+    if ($hasCreds && $hasToken) {
         global $config;
-        $config = new Config();
+        try {
+            $config = new Config();
+        } catch (Google_Service_Exception $e) {
+            $errMsg = json_decode($e->getMessage());
+            die('has creds and token BUT cannot get config');
+        }
 
         if ($config) {
             if (count($config->libraries)) {
@@ -32,6 +38,7 @@ function init($step = 1, $authCode = null)
         $creds = file_get_contents('./private_data/credentials.json');
         $creds = json_decode($creds, true);
         $view->data['creds'] = $creds['web'];
+        $view->data['creds']['client_id'] = substr($view->data['creds']['client_id'], 0, 5) . '⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛ googleusercontent.com';
         $view->data['creds']['project_id'] = '🤐 ⬛⬛⬛⬛⬛ 🕵️';
         $view->data['creds']['client_secret'] = '🤐 ⬛⬛⬛⬛⬛ 🕵️';
         //if it's local 
@@ -60,18 +67,24 @@ function init($step = 1, $authCode = null)
             }
         }
     }
-    $hasToken = file_exists('./private_data/token.json');
 
     $view->data['hasToken'] = $hasToken;
     $view->data['showRefresh'] = false;
+    if (!$hasCreds && $step > 1) {
+        header("location: ./?action=init&step=1");
+        die();
+    }
+    if ((!$hasToken || $auth) && $step > 2) {
+        header("location: ./?action=init&step=2");
+        die();
+    }
 
-    if (!$authed || !$hasCreds) $step = 1;
-    if (!$hasToken && $step > 2) $step = 2;
     $view->data['step'] = $step;
 
     $view->data['scopeDefinitions'] = [
         Google_Service_Oauth2::USERINFO_EMAIL => 'View your email address',
         Google_Service_Oauth2::USERINFO_PROFILE => 'View your personal info, including any personal info you\'ve made publicly available',
+        'openid' => 'Associate you with your personal info on Google',
         Google_Service_PeopleService::DIRECTORY_READONLY => 'read your org GSuites\' directory (to get end users info)',
         Google_Service_Drive::DRIVE_FILE => 'Allow app the create files on your Drive (the app only have access to files it created)',
         Google_Service_Drive::DRIVE_APPDATA => 'Allows access to the Application Data folder. (for storing app\'s config)',
@@ -81,21 +94,42 @@ function init($step = 1, $authCode = null)
 
     if ($authCode) { //redirect back from Google login, generate token and init folders and etc.
         $client = getClient($authCode);  //gen token
-        if(!initFolders($client)) {
-            die('Error: this application is designed to be used with G Suite (now Google Workspace) only i.e. you log in to your work Gmail as jdoe@myinstitution.edu. You tried to login with @gmail.com account.');
+        if(!initMainFolder($client)) {
+            die('Error: this application is designed to be used with G Suite (now Google Workspace) only i.e. you log in to your work Gmail as jdoe@myinstitution.edu. Looks like you tried to login with @gmail.com account?');
         }
     } else if ($step == 1) { //create creds
         if (!$hasCreds) $view->data['showRefresh'] = true;
     } else if ($step == 2) { //gen token
         if ($hasToken) {
-            $client = getClient();
-            $oauth2 = new \Google_Service_Oauth2($client);
-            $userInfo = $oauth2->userinfo->get();
-            $view->data['driveOwner'] = $userInfo->email;
-            $tokenPath = './private_data/token.json';
-            $token = json_decode(file_get_contents($tokenPath), true);
-            $view->data['scopes'] = explode(" ", $token['scope']);
-            $client = getClient();
+            //will show token info, so make sure user is logged in
+            try {
+                $user = new User(true);
+                if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
+            } catch (Exception $e) {
+                //not login
+                endUserGoogleLogin(null,null,'init&step=2');
+            }
+
+            try {
+                $config = new Config();
+                $view->data['driveOwner'] = $config->driveOwner;
+                $view->data['mainFolderId'] = $config->mainFolderId;
+                $tokenPath = './private_data/token.json';
+                $token = json_decode(file_get_contents($tokenPath), true);
+                $view->data['scopes'] = explode(" ", $token['scope']);
+            } catch (Exception $e) {
+                die('has token but cannot get config?');
+            }
+            //check that app is connected to Drive
+            try {
+                $client = getClient();
+                $service = new Google_Service_Drive($client);
+                $mainFolder = $service->files->get($config->mainFolderId);
+                $view->data['appIsConnected'] = true;
+            } catch (Google_Service_Exception $e) {
+                $view->data['appIsConnected'] = false;
+                $view->data['showNext'] = false;
+            }
         } else { 
           $authUrlInfo = getClient(null, 'init'); //will return auth info if no token & no authcode
           $view->data['authUrl'] = $authUrlInfo['authUrl'];
@@ -104,11 +138,22 @@ function init($step = 1, $authCode = null)
       } 
     } else if ($step == 3) { //add first library
         global $user;
-        $config = new Config();
+        try {
+            $config = new Config();
+            $client = getClient();
+            $oauth2 = new \Google_Service_Oauth2($client);    
+            $userInfo = $oauth2->userinfo->get();
+        } catch (Google_Service_Exception $e) {
+            $errMsg = json_decode($e->getMessage());
+            logError($errMsg);
+            header("location: ./?action=init&step=2");
+            die();
+        }
         try {
             $user = new User(true);
-            if (!$user->isDriveOwner) die("only drive owner can init stuff! please log in with the account " . $config->driveOwner . '@' . $config->gSuitesDomain);
+            if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
         } catch (Exception $e) {
+            //not login
             endUserGoogleLogin(null,null,'init&step=3');
         }
         //GET        
@@ -184,41 +229,53 @@ function init($step = 1, $authCode = null)
     $view->render(dirname(__DIR__) . '/api/init.template.php');
 }
 
-function initFolders($client)
+function initMainFolder($client)
 {
-    //create main folder and config
+    //has token.json now, create main folder and config
     $config = new Config();
     if (!$config || !isset($config->mainFolderId)) {
+        $client = getClient();
+        try {
+            //default leeway is 1, increase it in case clocks are not quite synced
+            $jwt = new \Firebase\JWT\JWT;
+            $jwt::$leeway = 5;
+            $tokenData = $client->verifyIdToken();
+            $tokenOwner = $tokenData['email'];
+            $hostedDomain = $tokenData['hd'];
+        } catch (Google_Service_Exception $e) {
+            $errMsg = json_decode($e->getMessage());
+            die('ERROR: cannot verify token - Error is: ' . $errMsg->error->message );
+        }
         //get user info
         $oauth2 = new \Google_Service_Oauth2($client);
         $userInfo = $oauth2->userinfo->get();
+
         //only allow GSuites account
-        if (strpos($userInfo->email, '@gmail.com') !== false) {
+        if ($tokenOwner != $userInfo->email || !$hostedDomain) {
             return false;
         }
 
-        $client = getClient();
         $driveService = new Google_Service_Drive($client);
         $driveFile = new Google_Service_Drive_DriveFile;
         $driveFile->setName("CDL APP");
-        $driveFile->setDescription("Folder for CDL Application data, contains the PDF files and etc. No dot touch it directly");
+        $driveFile->setDescription("Main Folder for CDL Application data, contains the PDF files and etc. No dot touch it directly");
         $driveFile->setMimeType("application/vnd.google-apps.folder");
         try {
             $mainFolder = $driveService->files->create($driveFile);
         } catch (Exception $e) {
-            die('failed');
+            die('failed to create main folder');
         }
         
         //create sheet to store accessible users
         $driveFile = new Google_Service_Drive_DriveFile;
         $driveFile->setName("Accessible Users");
         $driveFile->setParents([$mainFolder->getId()]);
-        $driveFile->setDescription("Spreadsheet for CDL Application accessible users data. Do NO touch it directly");
+        $driveFile->setDescription("Spreadsheet for CDL Application accessible users data (for ALL libraries). Do NO touch it directly");
         $driveFile->setMimeType("application/vnd.google-apps.spreadsheet");
         try {
             $accessbileUsersSheet = $driveService->files->create($driveFile);
         } catch (Exception $e) {
-            die('failed');
+            die('failed to create accessible users sheet');
         }
 
         //save mainFolder id and etc.to AppConfig
@@ -227,19 +284,20 @@ function initFolders($client)
             'parents' => ['appDataFolder']
         ]);
         $config = [
-            'driveOwner' => $userInfo->email,
-            'gSuitesDomain' => preg_replace('/.*@/', '', $userInfo->email),
+            'driveOwner' => $tokenOwner,
+            'gSuitesDomain' => $hostedDomain,
             'mainFolderId' => $mainFolder->getId(),
             'accessibleUsersSheetId' => $accessbileUsersSheet->getId()
         ];
-        $configDriveFile = $driveService->files->create($configDriveFileMetadata, array(
-            'data' => json_encode($config),
-            'mimeType' => 'application/json',
-            'uploadType' => 'multipart',
-            'fields' => 'id'));
-
-        //respondWithData(['configFileId' => $configDriveFile->getId()]);
-        //die();
+        try {
+            $configDriveFile = $driveService->files->create($configDriveFileMetadata, array(
+                'data' => json_encode($config),
+                'mimeType' => 'application/json',
+                'uploadType' => 'multipart',
+                'fields' => 'id'));
+        } catch (Exception $e) {
+            die('failed to create config.json in AppData');
+        }
     }
 
     //redirect

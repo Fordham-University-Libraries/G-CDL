@@ -1,5 +1,5 @@
 <?php
-function getSirsiBib($keyType = 'barcode', $key, $library) {
+function getSirsiBib($key, $library, $keyType = 'barcode') {
     global $config;
     if ($keyType == 'barcode') {
         $url = $config->libraries[$library]->ils['api']['base'] . "/rest/standard/lookupTitleInfo?json=true&includeOPACInfo=true&includeItemInfo=true&includeItemCategory=true&itemID=$key";

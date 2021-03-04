@@ -17,8 +17,8 @@ class Config
         'sessionTtl' => 180, //minutes
         'clientDomain' => '',
         'clientPath' => '/',
-        'clientSecure' => false,
-        'clientHttpOnly' => false,
+        'clientSecure' => true,
+        'clientHttpOnly' => true,
     ];
     public $googleTagManagerUA;
     public $libraries = [];
@@ -60,7 +60,7 @@ class Config
     private $_propertiesInfo = [
         //[help text, editable status, select options]
         //-2 = hide, -1 = read only, 1 = editable, 2 = use caution
-        'isProd' => ['is the app configred for production? When it is NOT in production, the API will 1) allow Access-Control-Allow-Origin: http://localhost:4200 and assume that you are running the frontend on port 4200. 2) will NOT change items status in your ILS (if enabled). 3) will apply session cookies settings. 4) will allow unsecure CAS', 1],
+        'isProd' => ['is the app configred for production? When it is NOT in production, the API will 1) allow Access-Control-Allow-Origin: http://localhost:4200 and assume that you are running the frontend on port 4200. 2) will NOT change items status in your ILS (if enabled). 3) will NOT apply session cookies settings. 4) will allow unsecure CAS', 1],
         'appName' => ['name of the application (visible to end users)', 1],
         'timeZone' => ['timezone. see https://www.php.net/manual/en/timezones.php', 1],
         'maxFileSizeInMb' => ['Google PDF Viewer has max fix file size litmit of 100MB (as of early 2021), if you upload something bigger than that, it will not display',2],
@@ -234,15 +234,21 @@ class Config
     { //from GDrive's appDataFolder
         $client = getClient();
         $service = new Google_Service_Drive($client);
-        $fileList = $service->files->listFiles([
-            'spaces' => 'appDataFolder',
-            'fields' => '*',
-            'pageSize' => 10
-        ]);
-        foreach ($fileList->getFiles() as $file) {
-            if ($file->getName() == 'config.json') {
-                return $file;
+        try {
+            $fileList = $service->files->listFiles([
+                'spaces' => 'appDataFolder',
+                'fields' => '*',
+                'pageSize' => 10
+            ]);
+            foreach ($fileList->getFiles() as $file) {
+                if ($file->getName() == 'config.json') {
+                    return $file;
+                }
             }
+        } catch (Google_Service_Exception $e) {
+            $errMsg = json_decode($e->getMessage());
+            logError('cannot get config.json file on Drive AppData... is the app still connect to the drive? Error is: ' . $errMsg->error->message);
+            die('Fatal Error: cannot get config file from Drive\'s AppData');
         }
     }
 
@@ -536,7 +542,7 @@ class Config
 
     private function _createField($key, &$props = null, &$propsInfo = null, $isRecursive = false)
     {
-        if (!$props) $props = &$this->$key;
+        if ($props === null) $props = &$this->$key;
         if (!$propsInfo) $propsInfo = &$this->_propertiesInfo[$key];
 
         if ($props && is_array($props) && $this->_has_string_keys($props)) {

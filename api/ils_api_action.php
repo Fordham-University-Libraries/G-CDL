@@ -10,7 +10,7 @@ function getIlsBibByBibId($libKey, $bibId)
         if (strtolower($config->libraries[$libKey]->ils['kind']) == 'sierra') {
             return getSierraBibByBibId($bibId, $libKey);
         } elseif (strtolower($config->libraries[$libKey]->ils['kind']) == 'sirsi') {
-            return getSirsiBib('ckey', $bibId, $libKey);
+            return getSirsiBib($bibId, $libKey, 'ckey');
         }
     }
 }
@@ -23,7 +23,7 @@ function getIlsBibByItemId($libKey, $itemId)
         if (strtolower($config->libraries[$libKey]->ils['kind']) == 'sierra') {
             return getSierraBibByItemId($itemId, $libKey);
         } elseif (strtolower($config->libraries[$libKey]->ils['kind']) == 'sirsi') {
-            return getSirsiBib('barcode', $itemId, $libKey);
+            return getSirsiBib($itemId, $libKey, 'barcode');
         }
     }
 }

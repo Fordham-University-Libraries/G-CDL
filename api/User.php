@@ -37,8 +37,6 @@ class User
                     //dev -- become somebody else
                     //$this->userName = 'djohn';
                     //$this->email = 'djohn@mustard.edu';
-                    $this->userName = 'librarycatalog';
-                    $this->email = 'librarycatalog@fordham.edu';
                 }
                 $this->fullName = $_SESSION['gFullName'];
                 $_SESSION['gExpire'] = time() + ($config->auth['sessionTtl'] * 60);
@@ -112,19 +110,27 @@ class User
             $client = getClient();
             $sheetService = new Google_Service_Sheets($client);
             $range = 'Sheet1!A1:A';
-            $response = $sheetService->spreadsheets_values->get($config->accessibleUsersSheetId, $range);
-            $values = $response->getValues();
-            $accessibleUsers = [];
-            if (!empty($values)) {
-                foreach ($values as $row) {
-                    array_push($accessibleUsers, $row[0]);
+            try {
+                $response = $sheetService->spreadsheets_values->get($config->accessibleUsersSheetId, $range);
+                $values = $response->getValues();
+                $accessibleUsers = [];
+                if (!empty($values)) {
+                    foreach ($values as $row) {
+                        array_push($accessibleUsers, $row[0]);
+                    }
                 }
-            }
-            $file = fopen($fileName, 'wb');
-            fwrite($file, serialize($accessibleUsers));
-            fclose($file);
-            $this->isAccessibleUser = in_array($this->userName, $accessibleUsers);    
+                $file = fopen($fileName, 'wb');
+                fwrite($file, serialize($accessibleUsers));
+                fclose($file);
+                $this->isAccessibleUser = in_array($this->userName, $accessibleUsers);
+            } catch (Google_Service_Exception $e) {
+                $errMsg = json_decode($e->getMessage());
+                logError('cannot get accessible users data from sheet ' + $configDriveFile->getId());
+                logError($errMsg);
+                $this->isAccessibleUser = false;
+            } 
         }
+
     }
 
     //get users arrtibutes from auth system

@@ -31,7 +31,7 @@ export class AppComponent implements OnInit {
   config: Config;
   customization: Customization;
   unauthedMode: boolean;
-  appPathToCheckIdle: string[] = ['home','item','my'];
+  appPathToCheckIdle: string[] = ['home', 'item', 'my'];
 
   constructor(
     private route: ActivatedRoute,
@@ -50,22 +50,18 @@ export class AppComponent implements OnInit {
         //console.log('nav start');        
       } else if (event instanceof NavigationEnd) {
         //console.log('nav end');
-        if (this.timeOut) clearTimeout(this.timeOut);
-        if (this.router.onSameUrlNavigation == 'reload') {
-          //console.log('reset router config');
-          this.router.onSameUrlNavigation = 'ignore';
-        }
+        if (this.router.onSameUrlNavigation == 'reload') this.router.onSameUrlNavigation = 'ignore';
         this._update();
       } else if (event instanceof NavigationError) {
         console.error(event.error);
       }
     });
 
-    this.configService.getLang().subscribe(res => { this.lang = res;});
+    this.configService.getLang().subscribe(res => { this.lang = res; });
     this.configService.onForceRefresh.subscribe(shouldRefresh => { if (shouldRefresh) this._update(true); });
 
     this.configService.getConfig().subscribe(res => {
-      this.config = res;      
+      this.config = res;
       if (Object.keys(this.config.libraries).length > 1) this.hasMultiLibraries = true;
       this.authService.getUser().subscribe(res => {
         this.user = res;
@@ -87,9 +83,10 @@ export class AppComponent implements OnInit {
   }
 
   private _update(forceRefresh = false) {
-    this.appPath = this.route.root.firstChild.snapshot.data.appPath;    
+    this.appPath = this.route.root.firstChild.snapshot.data.appPath;
     this.mode = this.route.root.firstChild.snapshot.data.mode ?? null;
     this.updateSkipLink();
+    if (this.timeOut) clearTimeout(this.timeOut);
     if (this.appPathToCheckIdle.includes(this.appPath)) this._checkIdle();
     if (!this.config) {
       this.configService.getConfig(forceRefresh).subscribe(res => {
@@ -102,22 +99,24 @@ export class AppComponent implements OnInit {
     this.loadCSS(`${environment.apiBase}/?action=get_custom_css`, forceRefresh);
     if (!this.customization || forceRefresh) {
       this.configService.getCustomization(forceRefresh).subscribe(res => {
-        this.customization = res;        
-        for (const [key, value] of Object.entries(this.customization.libraries)) {
-          if (this.customization.libraries[key].header.first?.logo && !this.customization.libraries[key].header.first.logo.startsWith('http') && !this.customization.libraries[key].header.first.logo.startsWith('//')) {
-            if (!this.customization.libraries[key].header.first?.logo.includes('./assets/')) this.customization.libraries[key].header.first.logo = './assets/' + this.customization.libraries[key].header.first.logo;
-          }
-          if (this.customization.libraries[key].header.second?.logo && !this.customization.libraries[key].header.second.logo.startsWith('http') && !this.customization.libraries[key].header.first.logo.startsWith('//')) {
-            if (!this.customization.libraries[key].header.first?.logo.includes('./assets/')) this.customization.libraries[key].header.second.logo = './assets/' + this.customization.libraries[key].header.second.logo;
+        this.customization = res;
+        if (this.customization.libraries) {
+          for (const [key, value] of Object.entries(this.customization.libraries)) {
+            if (this.customization.libraries[key].header.first?.logo && !this.customization.libraries[key].header.first.logo.startsWith('http') && !this.customization.libraries[key].header.first.logo.startsWith('//')) {
+              if (!this.customization.libraries[key].header.first?.logo.includes('./assets/')) this.customization.libraries[key].header.first.logo = './assets/' + this.customization.libraries[key].header.first.logo;
+            }
+            if (this.customization.libraries[key].header.second?.logo && !this.customization.libraries[key].header.second.logo.startsWith('http') && !this.customization.libraries[key].header.first.logo.startsWith('//')) {
+              if (!this.customization.libraries[key].header.first?.logo.includes('./assets/')) this.customization.libraries[key].header.second.logo = './assets/' + this.customization.libraries[key].header.second.logo;
+            }
           }
         }
       });
     }
   }
 
-  private _setLibrary() {    
-    if (!Object.keys(this.config.libraries).length) { 
-      this.router.navigate(['/api-error/no-lib'], {skipLocationChange: true});
+  private _setLibrary() {
+    if (!Object.keys(this.config.libraries).length) {
+      this.router.navigate(['/api-error/no-lib'], { skipLocationChange: true });
       return;
     }
 
@@ -126,23 +125,23 @@ export class AppComponent implements OnInit {
     if (!this.route.root.firstChild.snapshot.data.isDefaultLibraryRoute) {
       this.library = this.route.root.firstChild.snapshot.params?.library;
     }
-    
+
     if (!this.library) {
       this.library = this.config.defaultLibrary;
     }
 
-    if (!this.config.libraries[this.library]) { 
-      this.router.navigate(['/unknown-library'], {skipLocationChange: true});
+    if (!this.config.libraries[this.library]) {
+      this.router.navigate(['/unknown-library'], { skipLocationChange: true });
       return;
     }
 
     //set class at body - for custom CSS
-    if (previousRouteLibrary != this.library) {      
+    if (previousRouteLibrary != this.library) {
       let bodyClassList = document.body.classList
       if (bodyClassList.length) {
         bodyClassList.remove(bodyClassList.item(0));
       }
-      bodyClassList.add(`library-${this.library}`); 
+      bodyClassList.add(`library-${this.library}`);
     }
   }
 
@@ -155,7 +154,7 @@ export class AppComponent implements OnInit {
         if (refresh) {
           this.router.routeReuseStrategy.shouldReuseRoute = () => false;
           this.router.onSameUrlNavigation = 'reload';
-          this.router.navigate(['./'], { relativeTo: this.route, queryParamsHandling: 'preserve' });
+          this.router.navigate([this.router.url], { relativeTo: this.route, queryParamsHandling: 'preserve' });
         }
       });
     }, seconds * 1000);

@@ -1,6 +1,7 @@
 <?php
 declare(strict_types = 1);
 error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
+if (phpversion('tidy') < '7.4') die('Must use PHP 7.4 or higher');
 
 require 'Config.php';
 require 'CdlItem.php';

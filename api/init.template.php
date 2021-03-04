@@ -177,7 +177,7 @@
                 <div class="alert alert-info" role="alert">
                 Credentials.json file found! follow the steps below to generate token
                 </div>
-                    <p>Click on the 'Authenticate' button below to authenticate with Google, please login with the account that you used to generate credentials.json with. You'll be asked if the app can access these data, please allow it.  
+                    <p>Click on the 'Authenticate' button below to authenticate with Google, please login with the account that you used to generate credentials.json with. You'll be asked if the app can access <a href="https://developers.google.com/identity/protocols/oauth2/scopes" target="_blank">these data</a>, please allow it.  
                     <ul>
                     <?php
                         foreach ($scopes as $scope) {
@@ -187,19 +187,20 @@
                     </ul>
                     <div><a href="<?= $authUrl ?>" class="btn btn-primary">Authenticate</a></div>
             <?php endif; ?>
-            <!-- has token -->
-            <?php if ($hasCreds && $hasToken) : ?>
+            <!-- has token and connected to Drive -->
+            <?php if ($hasCreds && $hasToken && $appIsConnected) : ?>
                 <div class="alert alert-success" role="alert">
-                token.json found, looking good. You can proceed to the next step (set up library)
+                token.json found, looking good. The App is now connected to your Google Drive. You can proceed to the next step (set up library)!
                 </div>
                 <div id="user-info">
-                    <strong>Drive/Account Owner:</strong>
+                    <strong>Token Info</strong>
                     <ul>
-                        <li><?= $driveOwner ?></li>
+                        <li>Token/Drive Owner: <?= $driveOwner ?></li>
+                        <li>Main CDL app folder ID: <?= $mainFolderId ?></li>
                     </ul>
                 </div>
                 <div id="scopes">
-                <strong>Current token has scopes:</strong>
+                <strong>Current token has <a href="https://developers.google.com/identity/protocols/oauth2/scopes" target="_blank">scopes</a>:</strong>
                     <ul>
                     <?php
                         foreach ($scopes as $scope) {
@@ -209,6 +210,19 @@
                     <ul>
                 </div>
             <?php endif; ?>
+            <!-- not connected -->
+            <?php if ($hasCreds && $hasToken && !$appIsConnected) : ?>
+                <div class="alert alert-danger" role="alert">
+                    token.json found, BUT it looks like the app is not connected to your Google Drive? (can't get the mainfolder <?= $mainFolderId ?></li>)
+                </div>
+                <p>Troubleshooting</p>
+                <ul>
+                    <li>check that the main folder (<a href="https://drive.google.com/drive/folders/<?=$mainFolderId?>" target="_blank">CDL APP</a>) is still there on your GDRIVE</li>
+                    <li>check that the app is still connected to your account. see <a href="https://support.google.com/accounts/answer/3466521?hl=en" target="_blank">https://support.google.com/accounts/answer/3466521?hl=en</a></li>
+                    <li>reconnect the app by removing the file token.json from your /api/private_data and refresh this page</li>
+                </ul>
+            <?php endif; ?>
+
             </div>
         </div>
         <?php endif ?>
@@ -227,7 +241,7 @@
                     <form method="post">
                         <div class="mb-3">
                             <label for="lib-key" class="form-label">Library Short Name / Key (alphabets only)</label>
-                            <input <?= $libKey && $libName ? 'readonly' : ''?> required pattern="[a-zA-Z]*" type="text" class="form-control" id="lib-key" name ="libKey" value="<?= $libKey; ?>">
+                            <input <?= $libKey && $libName ? 'readonly' : ''?> required pattern="[a-zA-Z]*" type="text" class="form-control" id="lib-key" title="Only letters (a-zA-Z) are allowed" name ="libKey" value="<?= $libKey; ?>">
                             <small class="form-text text-muted">The Library Short Name (cannot be changed later -- will only be visible to end users in the URL if you have multiple libraries)</small>
                         </div>
                         <div class="alert alert-secondary">
