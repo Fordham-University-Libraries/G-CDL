@@ -162,7 +162,8 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
                 //to frontend
                 if (!$config->isProd) $host = str_replace(':8080', ':4200', $host);
                 if ($states) $target = $states[1];
-                $url = $host . $baseDir . $target;
+                $url = $host . $target;
+                //$url = $host . $baseDir . $target;
                 $url = str_replace('/api', '', $url);
                 header("Location: " . $url);
                 die();
