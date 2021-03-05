@@ -121,8 +121,9 @@ export class AppComponent implements OnInit {
     }
 
     let previousRouteLibrary = this.library;
-    //the /library/:library route
-    if (!this.route.root.firstChild.snapshot.data.isDefaultLibraryRoute) {
+    //check if it's the /library/:library route
+    this.isDefaultLibraryRoute = this.route.root.firstChild.snapshot.data.isDefaultLibraryRoute;
+    if (!this.isDefaultLibraryRoute) {
       this.library = this.route.root.firstChild.snapshot.params?.library;
     }
 

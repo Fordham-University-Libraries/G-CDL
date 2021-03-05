@@ -29,6 +29,11 @@ export class AppConfigComponent implements OnInit {
   obj = {};
   newLib: { key: string, name: string };
   sectionDefinitions: any;
+  serverCheck: {
+    privateDataWritable: boolean,
+    privateTempWritable: boolean,
+    shellExecEnable: boolean,
+  }
 
   constructor(
     private router: Router,
@@ -66,13 +71,13 @@ export class AppConfigComponent implements OnInit {
 
   private _processAdminConfigData(kind: string = null) {
     this.adminService.getConfigsAdmin().subscribe(res => {
-      if (!res.error) {
+      if (!res.error) {        
         //console.log(res);
-        
         const keysOrder = res.keys;
         this.sectionDefinitions = res.sectionDefinitions;
         if ((!kind || kind == 'global') && res.global) this._processAdminGlobalConfigData(res.global, keysOrder);
         if ((!kind || kind == 'libraries') && res.libraries) this._processAdminLibrariesConfigData(res.libraries, keysOrder);
+        this.serverCheck = res.serverCheck;
       } else {
         this.router.navigate(['/unauthed'], { skipLocationChange: true });
       }

@@ -14,6 +14,16 @@
             <button mat-menu-item [routerLink]="'./lang'">Languages</button>
         </mat-menu>
     </div>
+    <!-- server check -->
+    <div *ngIf="serverCheck && (!serverCheck.privateDataWritable || !serverCheck.privateTempWritable || !serverCheck.shellExecEnable)" class="alert alert-danger">
+        WARNING: there's a problem with you server settings
+        <ul>
+            <ng-container *ngFor="let issue of serverCheck | keyvalue">
+                <li *ngIf="!issue.value">{{ issue.key }}: is NOT writable/callable</li>
+            </ng-container>
+        </ul>
+    </div>
+    <!-- drive owner wanring -->
     <div *ngIf="user?.isDriveOwner" class="alert alert-warning">WARNING: You're login as the Drive owner, therefore, you
         CAN edit EVERYTHING (including stuff you shouldn't be editing). This is super dangerous (thanks captain obvious!). Please be careful.</div>
     <mat-spinner *ngIf="!appConfig.length && !appConfigLibraries.length"></mat-spinner>

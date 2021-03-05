@@ -70,19 +70,23 @@
                     <li>create a new project</li>
                     <li>then, in the project you've just created</li>
                     <ul>
-                    <li>enable these APIs</li>
+                    <li>enable APIs for this project</li>
                     <ul>
-                        <li>Google Drive API</li>
-                        <li>Google Sheets API</li>
-                        <li>Gmail API</li>
-                        <li>Google People API</li>
+                        <li>under 'Api & Services' -> 'Library', search for these APIs and enable them</li>
+                        <ul>
+                            <li>Google Drive API</li>
+                            <li>Google Sheets API</li>
+                            <li>Gmail API</li>
+                            <li>Google People API</li>
+                        </ul>
                     </ul>
                     <li>Setup OAuth consent screen</li>
                     <ul>
                         <li>under 'Api & Services' -> 'Oauth consent screen'</li>
                         <li>User type: <em>Internal</em> (to allow only user within your GSuites domain)</li>
                         <li>enter app's name (end users will see the first fime they login) and other required fields</li>
-                        <li>add Authorized domains (domain that you plan to host the app on e.g. https://cdl.library.myuniv.edu) - you'll need to verify that you own the domain, see on-screen instructions (verify by URL prefix is simpler)</li>
+                        <!-- nope - this only needed for WebHook -->
+                        <!-- <li>add Authorized domains (top-level domain of the location you plan to host the app for production on e.g. https://cdl.library.myuniv.edu put <em>myuniv.edu</em>) - you'll need to verify that you own the domain, see on-screen instructions (verify by URL prefix is simpler)</li> -->
                         <li>you can skip the "Scopes" step (the app will only request non-sensitive data from end users e.g. get their username and email)</li>
                     </ul>
                     <li>Add OAuth 2.0 Client ID</li>
@@ -96,7 +100,7 @@
                                     <li>Under <strong>Authorized redirect URIs</strong>, add a URI so Google can redirect users back to the app</li>
                                     <ul>
                                         <li>{{app_url}}/api/?action=login</li>
-                                        <li> e.g.</li>
+                                        <li> e.g. put 2 URLs, one for production and other for development</li>
                                         <ul>
                                             <li>https://library.myuniversity.edu/cdl/api/?action=login</li>
                                             <li>http://localhost:8080/api/?action=login</li>

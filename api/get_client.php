@@ -80,8 +80,8 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
     global $config;
     if (session_status() == PHP_SESSION_NONE) {
         session_name($config->auth['sessionName']);
-        session_start();
         if ($config->isProd) session_set_cookie_params(0, $config->auth['clientPath'], $config->auth['clientDomain'], $config->auth['clientSecure'], $config->auth['clientHttpOnly']);
+        session_start();
     }
 
     $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
@@ -119,12 +119,11 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
     ];
     $client->addScope($scopes);
 
-
+    $client->setHostedDomain($config->auth['gSuitesDomain']);
+    $redirectUrl = $host . $baseDir . "/?action=login";
+    $client->setRedirectUri($redirectUrl);
     if (!$authCode) {
         //send user to login at Google
-        $client->setHostedDomain($config->auth['gSuitesDomain']);
-        $redirectUrl = $host . $baseDir . "/?action=login";
-        $client->setRedirectUri($redirectUrl);
         if ($target) {
             $client->setState("target!!$target");
         } else if ($apiAction) {
@@ -137,7 +136,9 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
         //come back from Google with authcode
         $accessToken = $client->authenticate($authCode);
         if (array_key_exists('error', $accessToken)) {
-            throw new Exception(join(', ', $accessToken));
+            logError('end users G-OAuth failed ' . join(', ', $accessToken));
+            die('Login Error');
+            //throw new Exception(join(', ', $accessToken));
         }
         $oauth2 = new \Google_Service_Oauth2($client);
         $userInfo = $oauth2->userinfo->get();

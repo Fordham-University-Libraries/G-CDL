@@ -422,13 +422,10 @@ class Config
             array_push($config['libraries'], $this->_createLibraryField($library->serialize(), $this->_propertiesInfo['libraries'][$library->key]));
         }
 
-        $config['scopes'] = $this->_getScopes();
-        if ($this->emails['method'] == 'gMail') {
-            if (!in_array(Google_Service_Gmail::GMAIL_SEND, $config['scopes'])) $config['missingScopes'][] = Google_Service_Gmail::GMAIL_SEND;
-        }
-        if ($this->notifications['emailOnAutoReturn']['enable'] && $this->notifications['emailOnAutoReturn']['method'] == 'webHook' ) {
-            if (!in_array(Google_Service_DriveActivity::DRIVE_ACTIVITY_READONLY, $config['scopes'])) $config['missingScopes'][] = Google_Service_DriveActivity::DRIVE_ACTIVITY_READONLY;
-        }
+        $config['serverCheck'] = [];
+        $config['serverCheck']['privateDataWritable'] = is_writable('./private_data');
+        $config['serverCheck']['privateTempWritable'] = is_writable('./private_temp');
+        $config['serverCheck']['shellExecEnable'] = is_callable('shell_exec') && false === stripos(ini_get('disable_functions'), 'shell_exec');
 
         return $config;
     }
