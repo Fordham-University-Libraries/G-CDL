@@ -96,36 +96,39 @@
                 </mat-panel-title>
             </mat-expansion-panel-header>
             <div class="padding-default content">
-                <button *ngIf="!newLib" mat-stroked-button (click)="addNewLib()">
-                    <mat-icon>add</mat-icon> Add New Library
-                </button>
-                <mat-card *ngIf="newLib">
-                    <mat-card-header>
-                        <mat-card-title>New Library</mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                        <mat-form-field appearance="outline">
-                            <mat-label>Key</mat-label>
-                            <input #newLibKeyField="ngModel" matInput type="text" [(ngModel)]="newLib.key"
-                                pattern="[A-Za-z0-9]*" placeholder="e.g. downtown">
-                            <mat-hint *ngIf="newLibKeyField.invalid" class="error">Only Alphanumeric Characters Allowed
-                            </mat-hint>
-                        </mat-form-field>
-                        &nbsp;
-                        <mat-form-field appearance="outline" class="wider-field">
-                            <mat-label>Name</mat-label>
-                            <input matInput type="text" [(ngModel)]="newLib.name"
-                                placeholder="e.g. Downtown Campus Library">
-                        </mat-form-field>
-                        &nbsp;&nbsp;
-                        <button mat-raised-button [disabled]="!newLib.key || !newLib.name || newLibKeyField.invalid"
-                            color="primary" (click)="addNewLib(newLib)">Add</button>
-                        <button id="new-lib-cancel" mat-icon-button (click)="addNewLib()">
-                            <mat-icon>clear</mat-icon>
-                        </button>
+                <!-- add new library -->
+                <ng-container *ngIf="user?.isSuperAdmin">
+                    <button *ngIf="!newLib" mat-stroked-button (click)="addNewLib()">
+                        <mat-icon>add</mat-icon> Add New Library
+                    </button>
+                    <mat-card *ngIf="newLib">
+                        <mat-card-header>
+                            <mat-card-title>New Library</mat-card-title>
+                        </mat-card-header>
+                        <mat-card-content>
+                            <mat-form-field appearance="outline">
+                                <mat-label>Key</mat-label>
+                                <input #newLibKeyField="ngModel" matInput type="text" [(ngModel)]="newLib.key"
+                                    pattern="[A-Za-z0-9]*" placeholder="e.g. downtown">
+                                <mat-hint *ngIf="newLibKeyField.invalid" class="error">Only Alphanumeric Characters Allowed
+                                </mat-hint>
+                            </mat-form-field>
+                            &nbsp;
+                            <mat-form-field appearance="outline" class="wider-field">
+                                <mat-label>Name</mat-label>
+                                <input matInput type="text" [(ngModel)]="newLib.name"
+                                    placeholder="e.g. Downtown Campus Library">
+                            </mat-form-field>
+                            &nbsp;&nbsp;
+                            <button mat-raised-button [disabled]="!newLib.key || !newLib.name || newLibKeyField.invalid"
+                                color="primary" (click)="addNewLib(newLib)">Add</button>
+                            <button id="new-lib-cancel" mat-icon-button (click)="addNewLib()">
+                                <mat-icon>clear</mat-icon>
+                            </button>
 
-                    </mat-card-content>
-                </mat-card>
+                        </mat-card-content>
+                    </mat-card>
+                </ng-container>
                 <mat-spinner *ngIf="!appConfigLibrariesCopy.length"></mat-spinner>
                 <mat-tab-group *ngIf="appConfigLibrariesCopy.length">
                     <ng-container *ngFor="let library of appConfigLibrariesCopy; let i = index">
