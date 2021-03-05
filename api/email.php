@@ -21,12 +21,12 @@ function email(string $kind, User $user, CdlItem $cdlItem) {
             $strSubject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowSubject']);
             $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowBody']);
             $strBody = str_replace('{{$libraryName}}', $config->libraries[$cdlItem->library]->name, $strBody);
-        } elseif ($kind == 'return') {
-            $strSubject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnSubject']);
-            $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnBody']);
             $strBody = str_replace('{{$borrowingPeriod}}', $config->libraries[$cdlItem->library]->borrowingPeriod, $strBody);
             $strBody = str_replace('{{$readLink}}', $host . $baseDir , '/read', $strBody);
             $strBody = str_replace('{{$returnLink}}', $host . $baseDir , '/return', $strBody);
+        } elseif ($kind == 'return') {
+            $strSubject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnSubject']);
+            $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnBody']);
             $strBody = str_replace('{{$libraryName}}', $config->libraries[$cdlItem->library]->name, $strBody);
         } else {
             return 0;
@@ -74,10 +74,15 @@ function email(string $kind, User $user, CdlItem $cdlItem) {
         //$mailer->addBCC();
         if ($kind == 'borrow') {
             $mailer->Subject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowSubject']);
-            $mailer->Body = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowBody']);
+            $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowBody']);
+            $strBody = str_replace('{{$libraryName}}', $config->libraries[$cdlItem->library]->name, $strBody);
+            $strBody = str_replace('{{$borrowingPeriod}}', $config->libraries[$cdlItem->library]->borrowingPeriod, $strBody);
+            $strBody = str_replace('{{$readLink}}', $host . $baseDir , '/read', $strBody);
+            $mailer->Body = str_replace('{{$returnLink}}', $host . $baseDir , '/return', $strBody);
         } elseif ($kind == 'return') {
             $mailer->Subject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnSubject']);
-            $mailer->Body = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnBody']);
+            $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnBody']);
+            $mailer->Body = str_replace('{{$libraryName}}', $config->libraries[$cdlItem->library]->name, $strBody);
         } else {
             return 0;
             die();
