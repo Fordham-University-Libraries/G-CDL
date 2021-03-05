@@ -116,7 +116,7 @@ class Lang {
                 'downloadNotFound' => 'ERROR: accessible version of the file is not available'
             ],
             '404' => '404 - PAGE NOT FOUND',
-            'loggedOut' => 'You’ve been logged out of the application! To also log out of Google, visit https://accounts.google.com/logout'
+            'loggedOut' => 'You’ve been logged out of the application! To also log out of Google, visit <a href="https://accounts.google.com/logout">https://accounts.google.com/logout</a>'
         ],
     ];
 

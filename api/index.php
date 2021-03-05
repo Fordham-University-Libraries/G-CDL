@@ -343,6 +343,12 @@ function compliantBreachNotify(string $error, string $errorId = null)
 function logout()
 {
     global $config;
+    if (session_status() == PHP_SESSION_NONE) {
+        session_name($config->auth['sessionName']);
+        if ($config->isProd) session_set_cookie_params(0, $config->auth['clientPath'], $config->auth['clientDomain'], $config->auth['clientSecure'], $config->auth['clientHttpOnly']);
+        session_start();
+    }
+
     $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
     if (!$config->isProd) $host = str_replace(':8080', ':4200', $host);
     $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
@@ -359,7 +365,11 @@ function logout()
          }
     } 
 
-    session_unset();
+    $_SESSION = [];
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,$params["path"], $params["domain"],$params["secure"], $params["httponly"]);
+    }
     session_destroy();
     setcookie('cdlLogin','0',time(),'/');
 

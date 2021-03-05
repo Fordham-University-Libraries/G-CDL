@@ -27,7 +27,7 @@ export class PageComponent implements OnInit {
   ngOnInit(): void {
     this.mode = this.route.snapshot.data.mode;
     if (this.mode == 'loggedOut') {
-      this.authService.getUser().subscribe(res => {
+      this.authService.getUser(true).subscribe(res => {        
         if(res && res.isAuthenticated) { 
           this.authService.logout();
           return;

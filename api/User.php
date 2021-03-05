@@ -42,7 +42,7 @@ class User
                 $_SESSION['gExpire'] = time() + ($config->auth['sessionTtl'] * 60);
                 if (!$config->libraries[array_key_first($config->libraries)]->authorization['enable']) setcookie('cdlLogin','1',$_SESSION['gExpire'],'/');
             } else {
-                session_unset();
+                $_SESSION = [];
                 session_destroy();
                 setcookie('cdlLogin','0',time(),'/');
                 if (!$internal) {
@@ -177,7 +177,7 @@ class User
                 //soft error, tell front-end to redirect
                 respondWithError(302, 'needs local login', phpCAS::getServerLoginURL());
             }
-
+            //for frontend
             setcookie('cdlLogin','1',$_SESSION['gExpire'],'/');
             $this->attributes = phpCAS::getAttributes();
         
