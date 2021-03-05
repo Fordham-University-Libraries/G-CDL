@@ -25,8 +25,8 @@ class User
         if ($config->auth['kind'] == 'GoogleOAuth') {
             if (session_status() == PHP_SESSION_NONE) {
                 session_name($config->auth['sessionName']);
-                session_start();
                 if ($config->isProd) session_set_cookie_params(0, $config->auth['clientPath'], $config->auth['clientDomain'], $config->auth['clientSecure'], $config->auth['clientHttpOnly']);
+                session_start();
             }
 
             if (isset($_SESSION['gUserName']) && $_SESSION['gExpire'] > time()) {
