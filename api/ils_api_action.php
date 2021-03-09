@@ -163,7 +163,7 @@ function searchIlsCourseReserves(string $libKey, ?string $field, string $term)
         }
         if (count($matchedCourses) > 1) {
             usort($matchedCourses, function ($a, $b) {
-                return $a['score'] < $b['score'];
+                return $b['score'] <=> $a['score'];
             });
         }
         if ($field == 'courseProf') {
