@@ -210,7 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     ///// POST /////
 } else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_SERVER["CONTENT_LENGTH"])) {
-        if ($_SERVER["CONTENT_LENGTH"] > ((int)ini_get('post_max_size') * 1024 * 1024)) {
+        if (stripos(ini_get('post_max_size'),'M') && (int)$_SERVER["CONTENT_LENGTH"] > ((int)ini_get('post_max_size') * 1024 * 1024)) {
             respondWithFatalError(413, 'File is too large');
             die();
         }
