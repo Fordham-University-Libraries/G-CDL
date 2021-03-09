@@ -126,21 +126,21 @@
                         <th class="author">Author</th>
                         <th>Call#</th>
                         <th>Location</th>
-                        <th *ngIf="customizations[library].reserves.showSearchForEbooks || customizations[library].reserves.showRequestButton">Options</th>
+                        <th *ngIf="customizations.libraries[library].reserves.showSearchForEbooks || customizations.libraries[library].reserves.showRequestButton">Options</th>
                     </tr>
                     <tr *ngFor="let item of courseDetailedResultPhysical">
                         <td class="title">
-                            <a *ngIf="customizations[library].reserves.catalogUrl" href="#" (click)="openInCatalog(library, item.bibId, item.itemId); false;">{{ item.title }}</a>
-                            <ng-container *ngIf="!customizations[library].reserves.catalogUrl">{{ item.title }}</ng-container>
+                            <a *ngIf="customizations.libraries[library].reserves.catalogUrl" href="#" (click)="openInCatalog(library, item.bibId, item.itemId); false;">{{ item.title }}</a>
+                            <ng-container *ngIf="!customizations.libraries[library].reserves.catalogUrl">{{ item.title }}</ng-container>
                         </td>
                         <td class="author">{{ item.author }}</td>
                         <td>{{ item.callNumber }}</td>
                         <td>{{ locations && locations[item.location] ? locations[item.location] : item.location }}</td>
 
-                        <td *ngIf="customizations[library].reserves.showSearchForEbooks || customizations[library].reserves.showRequestButton" fxLayout="column" fxLayoutGap=".5em">
-                            <button *ngIf="customizations[library].reserves.showSearchForEbooks" mat-stroked-button
+                        <td *ngIf="customizations.libraries[library].reserves.showSearchForEbooks || customizations.libraries[library].reserves.showRequestButton" fxLayout="column" fxLayoutGap=".5em">
+                            <button *ngIf="customizations.libraries[library].reserves.showSearchForEbooks" mat-stroked-button
                                 (click)="searchEbook(library, item.title, item.author)">{{ (item.title.includes('[video') || item.title.includes('[audio')) ? 'Search for streaming' : 'Search for eBooks' }}</button>
-                            <button *ngIf="customizations[library].reserves.showRequestButton && courseDetailedResultPhysical.length"
+                            <button *ngIf="customizations.libraries[library].reserves.showRequestButton && courseDetailedResultPhysical.length"
                                 mat-stroked-button color="primary"
                                 [matTooltip]="'Request that this item becomes available as Digital Reserves'"
                                 (click)="digiReservesRequest(courseDetailedResult.courseName, courseDetailedResult.courseNumber, courseDetailedResult.professors.join(','), item)">
