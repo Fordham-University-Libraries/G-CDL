@@ -100,9 +100,8 @@ export class ReservesComponent implements OnInit {
                 this.library = this.config.defaultLibrary;
               }
 
-              this.getIlsLocationsDefinition(this.library);
-
-              if (!this.customizations[this.library].reserves.enable) {
+              this.getIlsLocationsDefinition(this.library);              
+              if (!this.customizations.libraries[this.library].reserves.enable) {
                 this.router.navigate(['/error-disabled'], { skipLocationChange: true });
                 return;
               }
@@ -263,9 +262,9 @@ export class ReservesComponent implements OnInit {
   }
 
   openInCatalog(library: string, bibId?: string, itemId?: string) {
-    if (!this.customizations[library].reserves?.catalogUrl) return;
+    if (!this.customizations.libraries[library].reserves?.catalogUrl) return;
 
-    let url = `${this.customizations[library].reserves.catalogUrl}`;
+    let url = `${this.customizations.libraries[library].reserves.catalogUrl}`;
     if (url.includes('{{$bibId}}')) {
       url = url.replace('{{$bibId}}', bibId)
     }
@@ -277,7 +276,7 @@ export class ReservesComponent implements OnInit {
   }
 
   digiReservesRequest(courseName: string, courseId: string, profName: string, item: any) {
-    const formUrl = this.customizations[this.library].reserves.requestFormUrl;
+    const formUrl = this.customizations.libraries[this.library].reserves.requestFormUrl;
     window.open(`${formUrl}?course_name=${encodeURIComponent(courseName)}&course_number=${encodeURIComponent(courseId)}&name=${encodeURIComponent(profName)}&book_title=${encodeURIComponent(item.title)}&book_author-edi=${encodeURIComponent(item.author)}`);
   }
 

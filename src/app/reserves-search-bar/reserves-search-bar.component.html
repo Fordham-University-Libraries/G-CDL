@@ -1,23 +1,23 @@
 <div fxLayout="row" fxLayout.xs="column" fxLayoutGap.gt-xs="2em">
     <mat-button-toggle-group vertical name="browseType" id="browse-type" aria-label="Browse Type"
         [(ngModel)]="reserveMode" fxFlex="25">
-        <mat-button-toggle *ngFor="let field of lang?.libraries[library].searchFields | keyvalue" [value]="field.key">{{ field.value.text }}</mat-button-toggle>
+        <mat-button-toggle *ngFor="let field of thisLibraryReservesLang.searchFields | keyvalue" [value]="field.key">{{ field.value.text }}</mat-button-toggle>
     </mat-button-toggle-group>
     <div fxFlex="auto">
         <!-- reserveMode: {{ reserveMode }} -->
         <ng-container>
-            <h3>Search by {{ lang?.libraries[library].searchFields[reserveMode].text }}</h3>
+            <h3>Search by {{ thisLibraryReservesLang.searchFields[reserveMode].text }}</h3>
             <div fxLayout="row" fxLayoutGap=".5em">
                 <mat-form-field appearance="outline">
-                    <mat-label>{{ lang?.libraries[library].searchFields[reserveMode].text }}</mat-label>
-                    <input [(ngModel)]="reservesSearchTerm" matInput [placeholder]="lang?.libraries[library].searchFields[reserveMode]?.placeholder"
+                    <mat-label>{{ thisLibraryReservesLang.searchFields[reserveMode].text }}</mat-label>
+                    <input [(ngModel)]="reservesSearchTerm" matInput [placeholder]="thisLibraryReservesLang.searchFields[reserveMode]?.placeholder"
                         (keyup.enter)="searchReserve()">
                     <mat-icon *ngIf="reservesSearchTerm" matSuffix class="field-button" (click)="clear()">clear</mat-icon>
                 </mat-form-field>
                 <button mat-raised-button color="primary" class="button-primary" (click)="searchReserve();"
                     [disabled]="!reservesSearchTerm || (currentReservesSearchTerm == reservesSearchTerm && currentReserveMode == reserveMode)">Search</button>
             </div>
-            <div *ngIf="lang?.libraries[library].searchFields[reserveMode].hint" class="hint">{{ lang?.libraries[library].searchFields[reserveMode].hint }}</div>
+            <div *ngIf="thisLibraryReservesLang.searchFields[reserveMode].hint" class="hint">{{ thisLibraryReservesLang.searchFields[reserveMode].hint }}</div>
         </ng-container>
     </div>
 </div>

@@ -3,7 +3,7 @@
     <div *ngIf="lang.libraries[library].reserves.subtitle" class="subtitle"><strong>{{ lang.libraries[library].reserves.subtitle }}</strong></div>
     <div class="padding-default content mat-elevation-z10">
         <app-reserves-search-bar [currentReserveMode]="browseMode" [currentReservesSearchTerm]="searchTerm"
-            [library]="library" [isDefaultLibraryRoute]="isDefaultLibraryRoute" [config]="config" [lang]="lang.libraries[library]?.reserves">
+            [library]="library" [isDefaultLibraryRoute]="isDefaultLibraryRoute" [config]="config" [thisLibraryReservesLang]="lang.libraries[library]?.reserves">
         </app-reserves-search-bar>
     </div>
     <div aria-live="polite" [attr.aria-busy]="isLoading">

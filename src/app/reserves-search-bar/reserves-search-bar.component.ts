@@ -1,7 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { Router } from '@angular/router';
 import { Config } from '../models/config.model';
-import { Language } from '../models/language.model';
 
 @Component({
   selector: 'app-reserves-search-bar',
@@ -10,7 +9,7 @@ import { Language } from '../models/language.model';
 })
 export class ReservesSearchBarComponent implements OnInit {
   @Input() config: Config;
-  @Input() lang: Language;
+  @Input() thisLibraryReservesLang: any;
   @Input() currentReserveMode: string;
   @Input() currentReservesSearchTerm: string;
   @Input() library: string;
