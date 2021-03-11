@@ -116,7 +116,7 @@ class Config
             'noOcrFolderId' => ['ID of the NO ORC folder on GDrive of this library', -2],
             'statsSheetId' => ['ID of the Google Sheet file to store stats data for this library', -2],
             'borrowingPeriod' => ['how long the item is due back (hours)', 1],
-            'backToBackBorrowCoolDown' => ['prevent user from borrwing the same item s/he just returned (have to wait for X minutes before can borrow it again)', 1],
+            'backToBackBorrowCoolDown' => ['prevent user from borrwing the same item s/he just returned (minutes) i.e. have to wait for X minutes before can borrow it again', 1],
             'customUserHomeLibrary' => ['enter usernames here to manually make this library their home library (useful if you have multiple libraries setup) e.g enter \'jdoe\' will make this library a home library of user jdoe -- separate multiple users with a comma',1],
             'admins' => ['admins for this library (can change library\'s config) -- separate multiple users with a comma', 1],
             'staff' => ['staff of this library (can upload, administer items, view statistics) -- separate multiple users with a comma', 1],
