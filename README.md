@@ -67,3 +67,15 @@ Example of App/GDrive Interactions
             - IS writable by your server
         
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+
+## CDL Resources
+[![Awesome](https://awesome.re/badge.svg)](https://awesome.re)
+- CDL info
+  - https://controlleddigitallending.org/  
+  - https://sites.google.com/view/cdl-implementers/  
+- CDL implementation
+   - [Internet Archive](https://archive.org/details/inlibrary)
+   - [IIIF based](https://iiif.io/api/auth/1.0/#authentication-for-description-resources) -- being implemented in the wild by that one university on the West Coast
+   - [project ReShare](https://projectreshare.org/products/reshare-controlled-digital-lending/)
+   - [CIRC project](https://www.cdlproject.org/)
+
