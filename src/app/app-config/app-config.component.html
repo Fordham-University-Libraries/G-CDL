@@ -110,7 +110,7 @@
                                 <mat-label>Key</mat-label>
                                 <input #newLibKeyField="ngModel" matInput type="text" [(ngModel)]="newLib.key"
                                     pattern="[A-Za-z0-9]*" placeholder="e.g. downtown">
-                                <mat-hint *ngIf="newLibKeyField.invalid" class="error">Only Alphanumeric Characters Allowed
+                                <mat-hint *ngIf="newLibKeyField.invalid" class="error new-lib-hint">Only Alphanumeric Characters Allowed
                                 </mat-hint>
                             </mat-form-field>
                             &nbsp;
