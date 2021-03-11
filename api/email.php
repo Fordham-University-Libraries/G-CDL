@@ -22,8 +22,8 @@ function email(string $kind, User $user, CdlItem $cdlItem) {
             $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowBody']);
             $strBody = str_replace('{{$libraryName}}', $config->libraries[$cdlItem->library]->name, $strBody);
             $strBody = str_replace('{{$borrowingPeriod}}', $config->libraries[$cdlItem->library]->borrowingPeriod, $strBody);
-            $strBody = str_replace('{{$readLink}}', $host . $baseDir , '/read', $strBody);
-            $strBody = str_replace('{{$returnLink}}', $host . $baseDir , '/return', $strBody);
+            $strBody = str_replace('{{$readLink}}', $host . $baseDir . '/read', $strBody);
+            $strBody = str_replace('{{$returnLink}}', $host . $baseDir . '/return', $strBody);
         } elseif ($kind == 'return') {
             $strSubject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnSubject']);
             $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnBody']);
@@ -32,6 +32,7 @@ function email(string $kind, User $user, CdlItem $cdlItem) {
             return 0;
             die();
         }
+
         $oauth2 = new \Google_Service_Oauth2($client);
         $userInfo = $oauth2->userinfo->get();
         $fromEmail = $userInfo->email;
