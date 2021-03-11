@@ -94,6 +94,9 @@
                                         <div *ngIf="sectionDefinitions[item.key]" class="sec-def">
                                             <mat-icon>info</mat-icon> {{ sectionDefinitions[item.key] }}
                                         </div>
+                                        <div *ngIf="item.key == 'about'" class="alert alert-info margin-top-default">
+                                            NOTE: Edit the content of the About page on the <a href="#" (click)="scrollBott();false;">bottom of this page</a>
+                                        </div>
                                         <ng-container
                                             *ngTemplateOutlet="recursiveListLibrary; context:{ $implicit: item.children }">
                                         </ng-container>

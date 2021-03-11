@@ -256,4 +256,8 @@ export class AppLangComponent implements OnInit {
     return Array.isArray(obj)
   }
 
+  scrollBott() {
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+
 }
