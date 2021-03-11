@@ -1,12 +1,14 @@
 <?php
 function getSierraBibByBibId($bibId, $library)
 {
+    if (!$bibId) respondWithError(400, 'No Bib/Item ID');
     global $config;
     $sierraToken = getSierraToken($library);
     $bibId = str_replace('b', '', $bibId);
     $curl = curl_init();
+    $url = $config->libraries[$library]->ils['api']['base'] . "bibs/" . $bibId . '?fields=default%2CvarFields';
     curl_setopt_array($curl, array(
-        CURLOPT_URL => $config->libraries[$library]->ilsApi->base . "bibs/" . $bibId . '?fields=default%2CvarFields',
+        CURLOPT_URL => $url,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => "",
         CURLOPT_MAXREDIRS => 10,
@@ -30,7 +32,6 @@ function getSierraBibByBibId($bibId, $library)
         'published' => $obj->publishYear
     ];
     foreach($obj->varFields as $field) {
-        //return $field->marcTag;
         if (isset($field->marcTag) && $field->marcTag == '020') {
             foreach($field->subfields as $subField) {
                 if ($subField->tag == 'a') $bib['isbn'] = $subField->content;
@@ -60,7 +61,6 @@ function getSierraBibByBibId($bibId, $library)
             }
         }
     }
-    //return $obj;
     return (object) $bib;
 }
 
@@ -68,20 +68,17 @@ function getSierraBibByItemId($itemId, $library)
 {
     $itemId = str_replace('i', '', $itemId);
     $item = getSierraItem($itemId, $library);
-    $bibId = $item['bibIds'][0];
-    $bib = getSierraBibByBibId($bibId, $library);
-    return $bib;
-}
-
-//@return array
-function getSierraBibIdByItemId(string $itemId, $library)
-{
-    $itemId = str_replace('i', '', $itemId);
-    $item = getSierraItem($itemId, $library);
-    if (isset($item['bibIds'])) {
-        return $item['bibIds'];
+    if (!$item) {
+        //try remove check digit
+        if(substr($itemId, -1) == getSierraCheckDigit(substr($itemId, 0, -1))) {
+            return getSierraBibByItemId(substr($itemId, 0, -1), $library);
+        } else {
+            respondWithError(404,'Item ID not found');
+        }
     } else {
-        return null;
+        $bibId = $item['bibIds'][0];
+        $bib = getSierraBibByBibId($bibId, $library);
+        return $bib;
     }
 }
 
@@ -91,8 +88,9 @@ function getSierraItem($itemId, $library)
     $sierraToken = getSierraToken($library);
     $itemId = str_replace('i', '', $itemId);
     $curl = curl_init();
+    $url = $config->libraries[$library]->ils['api']['base'] . "items/" . $itemId;
     curl_setopt_array($curl, array(
-        CURLOPT_URL => $config->libraries[$library]->ilsApi->base . "items/" . $itemId,
+        CURLOPT_URL => $url,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => "",
         CURLOPT_MAXREDIRS => 10,
@@ -108,6 +106,9 @@ function getSierraItem($itemId, $library)
     $response = curl_exec($curl);
     curl_close($curl);
     $data = json_decode($response, true);
+    if ($data['httpStatus'] == 404) {
+        return false;
+    }
     return $data;
 }
 
@@ -126,7 +127,7 @@ function setSierraItemStatus($isBorrow, $itemId, $library)
     $curl = curl_init();
 
     curl_setopt_array($curl, array(
-        CURLOPT_URL => $config->libraries[$library]->ilsApi->base . "items/$itemId",
+        CURLOPT_URL => $config->libraries[$library]->ils['api']['base'] . "items/$itemId",
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => "",
         CURLOPT_MAXREDIRS => 10,
@@ -150,11 +151,9 @@ function setSierraItemStatus($isBorrow, $itemId, $library)
 //get all course
 function getSierraCourses($library)
 {
-    //echo 'fasfadsfa';
-    //die();
     global $config;
     $cacheSec = 86400; //1 day
-    $fileName = $config->libraries[$library]->ilsApi->courseCacheFile;
+    $fileName = $config->privateDataDirPath . $library . '_' . $config->libraries[$library]->ils['api']['courseCacheFile'];
     if (file_exists($fileName) && time() - filemtime($fileName) < $cacheSec) {
         //use cache
         $file = file_get_contents($fileName);
@@ -164,7 +163,7 @@ function getSierraCourses($library)
         $sierraToken = getSierraToken($library);
         $curl = curl_init();
         curl_setopt_array($curl, array(
-        CURLOPT_URL => $config->libraries[$library]->ilsApi->base . "courses/?limit=1000",
+        CURLOPT_URL => $config->libraries[$library]->ils['api']['base'] . "courses/?limit=1000",
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => "",
         CURLOPT_MAXREDIRS => 10,
@@ -189,8 +188,10 @@ function getSierraCourses($library)
 function getSierraToken($library)
 {
     global $config;
-    if (file_exists($config->libraries[$library]->ilsApi->tokenFile)) {
-        $file = file_get_contents($config->libraries[$library]->ilsApi->tokenFile);
+    
+    $fileName = $config->privateDataDirPath . $library . $config->libraries[$library]->ils['api']['tokenFile'];
+    if (file_exists($fileName)) {
+        $file = file_get_contents($fileName);
         $sierraTokenInfo = unserialize($file);
         $expires = $sierraTokenInfo['expires'];
         if (time() < $expires) {
@@ -214,7 +215,7 @@ function getNewSierraToken($library)
     $curl = curl_init();
 
     curl_setopt_array($curl, array(
-        CURLOPT_URL => $config->libraries[$library]->ilsApi->base . "token",
+        CURLOPT_URL => $config->libraries[$library]->ils['api']['base'] . "token",
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => "",
         CURLOPT_MAXREDIRS => 10,
@@ -223,14 +224,14 @@ function getNewSierraToken($library)
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => "POST",
         CURLOPT_HTTPHEADER => array(
-            "Authorization: Basic " . $config->libraries[$library]->ilsApi->key
+            "Authorization: Basic " . $config->libraries[$library]->ils['api']['key']
         ),
     ));
 
     $response = curl_exec($curl);
     $sierraToken = json_decode($response, true);
     $sierraToken['expires'] = time() + $sierraToken['expires_in'] - 60; //minus one minute
-    $file = fopen($config->libraries[$library]->ilsApi->tokenFile, 'wb');
+    $file = fopen($config->privateDataDirPath . $library . $config->libraries[$library]->ils['api']['tokenFile'], 'wb');
     fwrite($file, serialize($sierraToken));
     fclose($file);
 

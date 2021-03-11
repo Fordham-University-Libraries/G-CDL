@@ -259,6 +259,7 @@ export class ReservesComponent implements OnInit {
   backToResult() {
     this.courseDetailedResult = null;
     this.courseDetailedView = false;
+    this.isLoading = false;
   }
 
   openInCatalog(library: string, bibId?: string, itemId?: string) {

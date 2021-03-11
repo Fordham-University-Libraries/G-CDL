@@ -18,7 +18,7 @@ class Library {
             'enable' => false,
             'base' => null,
             'key' => null,
-            'secret' => null,
+            'tokenFile' => '_sierra_api_token.php.serialized',
             'clientId' => null,
             'appId' => null,
             'courseCacheFile' => 'course_cache.php.serialized',

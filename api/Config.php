@@ -127,7 +127,7 @@ class Config
                     'enable' => ['use ILS api with the app (e.g. get bib info automatically when upload, search ILS reserves and etc.)', 1],
                     'base' => ['API URL base e.g. https://myopac.univ.edu/iii/sierra-api/v6/ or https://siris.univ.edu/sirsi_ilsws', 1],
                     'key' => ['API key', 1],
-                    'secret' => ['API secret', 1],
+                    'tokenFile' => ['name for api token file', 1],
                     'clientId' => ['clientId (for Sirsi only)', 1],
                     'appId' => ['appId (for Sirsi only)', 1],
                     'courseCacheFile' => ["file name of cache file of all the courses", -2],
@@ -151,7 +151,7 @@ class Config
                         'version' => ['CAS version', 1],
                         'caCertPath' => ['path to local root certificate file on the server that hosts this app (REQUIRED for production)', 1],
                         'attributesMapping' => [
-                            'fullName' => ['attribute name that containts users\'s full name', 1],
+                            'fullName' => ['attribute name that containts users\'s full name (will replace fullname from G Suite)', 1],
                             'univId' => ['attribute name that containts users\'s university id (e.g. the numberic one)', 1]
                         ],
                         'checkHomeLibrary' => [

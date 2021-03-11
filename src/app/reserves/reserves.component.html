@@ -19,7 +19,7 @@
                 <ng-container *ngFor="let course of results.courses">
                     <!-- course name/number -->
                     <ng-container
-                        *ngIf="(browseMode == 'courseName' || browseMode == 'courseNumber') && (course.itemsCount || course.items?.length) && !isLoading">
+                        *ngIf="(course.itemsCount || course.items?.length) && !isLoading">
                         <li>
                             <span class="cdk-visually-hidden">course name </span>
                             <strong><a href="#"
