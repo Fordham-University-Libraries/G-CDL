@@ -19,7 +19,7 @@ Example of App/GDrive Interactions
 | User                                                                 | App                                                                                                                                                       | Note |
 |----------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|------|
 | Library staff upload PDF                                             | gets item's info via ILS's API, generates a second copy of the pdf with NO-OCR data                                                                         |      |
-| Users log to to app and see all the items with availability info | app gets all the files in Google Drive, processes it (e.g. is it being borrowed by someone?), and returns the data                                                   |      |
+| Users log in to app and see all the items with availability info | app gets all the files in Google Drive, processes it (e.g. is it being borrowed by someone?), and returns the data                                                   |      |
 | User A borrow item 'History of Pi'                                             | app checks the file on GDrive, found that it has no 'viewer' (therefore available), add user A as a 'viewer' and set the share expiration for e.g. 2 hours |      |
 | User A clicks the 'Read' button                                       | app sends user A to the "Google Docs/Drive Viewer" ([drive#file->webContentLink](https://developers.google.com/drive/api/v3/reference/files#webContentLink)) since user A is a viewer of that file, s/he can read it                    |      |
 | 5 minutes later, user B tries to borrow item 'History of Pi'                        | app checks the file on GDrive, notices that it already has a 'viewer', returns error                                                                         |      |
@@ -48,14 +48,14 @@ Example of App/GDrive Interactions
         - run PHP development server on port 8080 to serve the API `php -S localhost:8080`
         - open a web browser and navigate to [http://localhost:8080/api/](http://localhost:8080/api/)
         - you'll see the app init wizard, follow the on-screen instructions
-- development & testing
+- Development & testing
     - on your local machine
     - make sure you did run the `npm install`, and `composer install`
     - cd into the /G-CDL folder, run php test server `php -S localhost:8080`
     - on another terminal tab/window run `ng serve`
     - To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
     - go to [http://localhost:4200](http://localhost:4200) on your browser
-- deployment
+- Deployment
     - on your local machine
     - make sure you did run the `npm install`, and `composer install`
     - run `ng build --prod`
