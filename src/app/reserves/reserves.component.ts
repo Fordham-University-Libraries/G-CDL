@@ -69,11 +69,12 @@ export class ReservesComponent implements OnInit {
 
     this.locationSub = this.location.subscribe(e => {
       //console.log(e);
-      //make back button works when on show item page
+      //make back button works when back from courseDetailedView page
       if (e.pop) {
         //console.log('its a pop');
         this.courseDetailedView = false;
         delete (this.courseDetailedView);
+        this.isLoading = false;
       }
     })
 
