@@ -31,7 +31,7 @@ Example of App/GDrive Interactions
 ## Installation
 - Requirements
     - Google
-      - your institution must be have G Suite/Google Workspace      
+      - your institution must have G Suite/Google Workspace      
     - local machine
         - PHP 7.4+
             - [Composer](https://getcomposer.org/download/)
