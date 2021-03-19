@@ -1,6 +1,6 @@
 # Google Drive Library Controlled Digital Lending (G-CDL)
 
-This is a [CDL](https://controlleddigitallending.org/) application that uses Google Drive as a backend. All files are stored and manged in Google Drive.
+This is a [CDL](https://controlleddigitallending.org/) application that uses Google Drive as a backend. All files are stored and managed in Google Drive.
 
 ## Overview
 
@@ -30,6 +30,8 @@ Example of App/GDrive Interactions
   
 ## Installation
 - Requirements
+    - Google
+      - your institution must be have G Suite/Google Workspace      
     - local machine
         - PHP 7.4+
             - [Composer](https://getcomposer.org/download/)
