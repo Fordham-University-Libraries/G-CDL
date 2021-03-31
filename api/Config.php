@@ -417,9 +417,9 @@ class Config
         $config['libraries'] = [];
         foreach ($this->libraries as $library) {
             if (!in_array($library->key, $user->isAdminOfLibraries)) continue; //skip it since only show library that user is admin
-
             $this->_propertiesInfo['libraries'][$library->key] = $this->_propertiesInfo['libraries'];
             array_push($config['libraries'], $this->_createLibraryField($library->serialize(), $this->_propertiesInfo['libraries'][$library->key]));
+            unset($this->_propertiesInfo['libraries'][$library->key]);
         }
 
         $config['serverCheck'] = [];
@@ -571,8 +571,9 @@ class Config
             if (is_array($value) && $this->_has_string_keys($value)) {
                 $this->_createLibraryField($value, $propsInfo[$key], true);
             } else {
-                if (!$propsInfo[$key]) echo "bad $key \n";
-                array_unshift($propsInfo[$key], $key, $value, (gettype($value) && gettype($value) != 'NULL') ? gettype($value) : 'string');
+                if (isset($propsInfo[$key])) {
+                    array_unshift($propsInfo[$key], $key, $value, (gettype($value) && gettype($value) != 'NULL') ? gettype($value) : 'string');
+                }
             }
         }
         if (!$isRecursive) return $this->_array_values_recursive($propsInfo);

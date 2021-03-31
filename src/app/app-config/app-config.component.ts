@@ -51,8 +51,7 @@ export class AppConfigComponent implements OnInit {
       this.titleService.setTitle(`Admin/Config : ${this.config.appName}`);
       this.authService.getUser().subscribe(res => {
         this.user = res;
-        console.log(this.user);
-        
+        //console.log(this.user);
         this._processAdminConfigData();
       });
     });
@@ -113,7 +112,7 @@ export class AppConfigComponent implements OnInit {
         lib.push(this._processConfigField(e, keysOrder));
       });
       this.appConfigLibraries.push(lib);
-      console.log(this.appConfigLibrariesDirtyCount);
+      //console.log(this.appConfigLibrariesDirtyCount);
       
     });
     //clone
