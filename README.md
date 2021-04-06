@@ -54,7 +54,7 @@ Example of App/GDrive Interactions
     - on your local machine
     - make sure you did run the `npm install`, and `composer install`
     - cd into the /G-CDL folder, run php test server `php -S localhost:8080`
-    - on another terminal tab/window run `ng serve`
+    - on another terminal tab/window, the /G-CDL folder (if not already), run `ng serve`
     - To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
     - go to [http://localhost:4200](http://localhost:4200) on your browser
 - Deployment
