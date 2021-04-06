@@ -33,6 +33,20 @@ function init($step = 1, $authCode = null)
     }
 
     $view = new View();
+    
+    if(!$v = phpversion('tidy')) {
+        $v = phpversion();
+    }
+    $requiredVer = "7.4";
+    
+    if (!$v) {
+        $phpVerWarning = "HEADS UP! can't get your PHP version, this app needs PHP $requiredVer or higher!";
+    } else if(version_compare($v, $requiredVer) < 0) {
+        $phpVerWarning = "HEADS UP! this app needs PHP $requiredVer or higher! seem like your PHP is $v";
+    }
+
+    if ($phpVerWarning) $view->data['phpVerWarning'] = $phpVerWarning;
+
     $view->data['hasCreds'] = $hasCreds;
     if ($hasCreds) {
         $creds = file_get_contents('./private_data/credentials.json');

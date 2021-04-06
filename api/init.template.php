@@ -46,6 +46,11 @@
 <body>
     <div class="container">
         <h1>Initialize API</h1>
+        <?php if ($phpVerWarning) : ?>
+            <div class="alert alert-danger">
+                <?= $phpVerWarning ?>!
+            </div>
+        <?php endif ?>
         <?php if ($userName) : ?>
             Hello <?= $userName ?>!
         <?php endif ?>
