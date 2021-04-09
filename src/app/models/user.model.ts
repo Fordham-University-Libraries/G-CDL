@@ -1,9 +1,9 @@
 import { Deserializable } from './deserializable.model';
 
 export class User implements Deserializable {
-    public userName: string;
-    public fullName: string;
-    public homeLibrary: string;
+    public userName?: string;
+    public fullName?: string;
+    public homeLibrary?: string;
     public univId?: string;
     public photoUrl?: string;
     public email?: string;

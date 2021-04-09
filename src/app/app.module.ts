@@ -32,6 +32,8 @@ import { MatCardModule } from '@angular/material/card';
 import { AngularEditorModule } from '@kolkov/angular-editor';
 
 import { SafePipe } from './pipes/safe.pipe';
+import { SortPipe } from './pipes/sort.pipe';
+
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -61,6 +63,7 @@ import { IdleDialogComponent } from './idle-dialog/idle-dialog.component';
 @NgModule({
   declarations: [
     SafePipe,
+    SortPipe,
     AppComponent,
     HomeComponent,
     ItemComponent,

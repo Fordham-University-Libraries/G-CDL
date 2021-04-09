@@ -14,16 +14,19 @@ import { Observable, Subject } from 'rxjs';
   templateUrl: './accessible-users.component.html',
   styleUrls: ['./accessible-users.component.scss']
 })
+
 export class AccessibleUsersComponent implements OnInit {
   config: Config;
   userNameColIndex: number;
   emailColIndex: number;
-  nameColsIndexes: number[] = [];
+  fullNameColIndex: number;
+  lastnameColIndex: number;
+  firstnameColIndex: number;
   firstRowWithDataIndex: number;
   accessbileUsers: string[];
-  uploadedUserNames: string[] = [];
-  uploadedEmails: string[] = [];
-  invalidUsers: { name: string, email: string }[] = [];
+  uploadedUsers: User[] = [];
+  validUsers: User[] = [];
+  invalidUsers: User[] = [];
   newUsers: string[] = [];
   usersAlreadyInSystem: string[] = [];
   isAnalyzing: boolean;
@@ -75,7 +78,6 @@ export class AccessibleUsersComponent implements OnInit {
 
   onFileChange(event: any) {
     //console.log('file change');
-
     this._reset();
     this.isAnalyzing = true;
     /* wire up file reader */
@@ -96,93 +98,121 @@ export class AccessibleUsersComponent implements OnInit {
 
       /* save data */
       const data: string[] = XLSX.utils.sheet_to_json(ws, { header: 1 }); // to get 2d array pass 2nd parameter as object {header: 1}
-      //console.log(data); // Data will be logged in array format containing objects
+      //console.log(data.length); // Data will be logged in array format containing objects
+
+      //find row that contains the column head
       let r = 0;
+      const validColNames = ['username', 'email', 'fullName', 'firstname', 'lastname'];
       for (let row of data) {
-        let c = 0;
-        if (!this.firstRowWithDataIndex) {
-          //console.log('looking for col heads');
-          for (let col of row) {
-            //locate userName columns
-            if (col.toLowerCase() == 'username') {
-              if (!this.firstRowWithDataIndex) this.firstRowWithDataIndex = r + 1;
-              this.userNameColIndex = c;
-              //console.log('fonund username in col', c);
+        const filteredArray = validColNames.filter(value => row.includes(value));
+        if (filteredArray.length) {
+          this.firstRowWithDataIndex = r + 1;
+          for (let hCol of filteredArray) {
+            switch (hCol) {
+              case 'username':
+                this.userNameColIndex = row.indexOf('username');
+                break;
+              case 'email':
+                this.emailColIndex = row.indexOf('email');
+                break;
+              case 'fullName':
+                this.fullNameColIndex = row.indexOf('fullName');
+                break;
+              case 'firstname':
+                this.firstnameColIndex = row.indexOf('firstname');
+                break;
+              case 'lastname':
+                this.lastnameColIndex = row.indexOf('lastname');
+                break;
+              default:
+              //
             }
-            //locate email column
-            if (col.toLowerCase().replace('-', '') == 'email') {
-              if (!this.firstRowWithDataIndex) this.firstRowWithDataIndex = r + 1;
-              this.emailColIndex = c;
-              //console.log('fonund email in col', c);
-            }
-            //locate name columns
-            if ((col.toLowerCase().includes('fullname') || col.toLowerCase().includes('firstname') || col.toLowerCase().includes('lastname'))) {
-              if (!this.firstRowWithDataIndex) this.firstRowWithDataIndex = r + 1;
-              this.nameColsIndexes.push(c);
-              //console.log('fonund name in col', c);
-            }
-            c++;
           }
-        } else if (this.userNameColIndex !== null || this.emailColIndex !== null || this.nameColsIndexes.length) {
-          //console.log('looking for vals');
-          var userNameOrEmailFound = false;
-          var email: string;
-          for (let col of row) {
-            //if it's a username col
-            if (this.userNameColIndex != null && this.userNameColIndex == c && col) {
-              let userName = col.replace(this.config.emailDomain, '');
-              this.uploadedUserNames.push(userName);
-              if (!this.accessbileUsers.includes(userName) && !this.newUsers.includes(userName)) {
-                this.newUsers.push(userName);
-              } else {
-                this.usersAlreadyInSystem.push(userName);
-              }
-              userNameOrEmailFound = true;
-            } else if (this.emailColIndex != null && this.emailColIndex == c && col && !userNameOrEmailFound) {
-              //if it's an email col
-              if (col.toLowerCase().includes(this.config.emailDomain)) {
-                let userName = col.toLowerCase().replace(this.config.emailDomain, '');
-                this.uploadedEmails.push(userName);
-                if (!this.accessbileUsers.includes(userName) && !this.newUsers.includes(userName)) {
-                  this.newUsers.push(userName);
-                } else {
-                  this.usersAlreadyInSystem.push(userName);
-                }
-                userNameOrEmailFound = true;
-              } else {
-                email = col;
-              }
-            } else if (this.nameColsIndexes.length && this.nameColsIndexes.includes(c) && col && !userNameOrEmailFound) {
-              //full, first,lastname
-              //console.log(`have to use names now. name: ${col}`);
-              let name = '';
-              this.nameColsIndexes.forEach(cIndex => {
-                name += row[cIndex] + ' ';
-              })
-              if (this.nameColsIndexes[this.nameColsIndexes.length - 1] == c) this.invalidUsers.push({ name: name.trim(), email: email });
-            }
-            c++;
-          }
+          break;
         }
         r++;
       }
 
-      //console.log(this.userNameColIndex);
-      //console.log(this.emailColIndex);
-      //console.log(this.nameColsIndexes.length);
-      if (this.userNameColIndex === null && this.emailColIndex === null && !this.nameColsIndexes.length) this.error = 'No column headers found in Excel file!'
+      if (!this.firstRowWithDataIndex) {
+        this.error = `No column with valid header found, please use one of these as a column header: ${validColNames}`;
+        this.isAnalyzing = false;
+        return;
+      }
+
+      //has col head, start processing
+      r = 0;
+      for (let row of data) {
+        let user = new User;
+        if (r++ < this.firstRowWithDataIndex) continue;
+
+        if (this.userNameColIndex > -1 && row[this.userNameColIndex]) {
+          user.userName = row[this.userNameColIndex];
+        }
+        if (this.emailColIndex > -1 && row[this.emailColIndex]) {
+          user.email = row[this.emailColIndex];
+        }
+
+        if (this.fullNameColIndex > -1 && row[this.fullNameColIndex]) {
+          user.fullName = row[this.fullNameColIndex];
+        } else {
+          if (this.firstnameColIndex > -1 && row[this.firstnameColIndex]) {
+            user.fullName = row[this.firstnameColIndex];
+          }
+          if (this.lastnameColIndex > -1 && row[this.lastnameColIndex]) {
+            if (user.fullName) {
+              user.fullName += ' ' + row[this.lastnameColIndex];
+            } else {
+              user.fullName = row[this.lastnameColIndex];
+            }
+          }
+          if (Object.values(user).length) this.uploadedUsers.push(user);
+        }
+      }
+
+      //have users now, next check if it's new users and etc.
+      for (let user of this.uploadedUsers) {
+        //has username, it's a valid user
+        if (user.userName) {
+          user.userName = user.userName.replace(this.config.emailDomain, ''); //remove email domain just incase
+          this.validUsers.push(user);
+        } else if (user.email) {
+          //no username but has email
+          //if email is valid domain, it's a valid user
+          if (user.email.includes(this.config.emailDomain)) {
+            user.userName = user.email.replace(this.config.emailDomain, ''); //just use the username portion of email
+            this.validUsers.push(user);
+          } else {
+            this.invalidUsers.push(user);
+          }
+        } else {
+          this.invalidUsers.push(user);
+        }
+      }
+
+      //check 'valid' users if it's a new users and etc.
+      for (let user of this.validUsers) {
+        if (!this.accessbileUsers.includes(user.userName)) {
+          this.newUsers.push(user.userName);
+        } else {
+          this.usersAlreadyInSystem.push(user.userName);
+        }
+      }
+
       this.isAnalyzing = false;
-      //console.log(this.invalidUsers);
-      //console.log(this.uploadedEmails);
-      //console.log(this.nameColsIndexes);
-    };
+      console.log(`uploadedUsers: ${this.uploadedUsers.length}`);
+      console.log(`validUsers: ${this.validUsers.length}`);
+      console.log(`invalidUsers: ${this.invalidUsers.length}`);
+      console.log(`usersAlreadyInSystem: ${this.usersAlreadyInSystem.length}`);
+      console.log(`newUsers: ${this.newUsers.length}`);
+
+    } //end .onLoad LOL
   }
 
   lookupUsers() {
     this.isLookingUp = true;
     let names = [];
     this.invalidUsers.forEach(user => {
-      names.push(user.name);
+      names.push(user.fullName);
     });
 
     this.adminService.lookupUsersByNames(names).subscribe(res => {
@@ -203,16 +233,13 @@ export class AccessibleUsersComponent implements OnInit {
           this.usersLookupResult.foundUsers.alreadlyInSystemUsers.push(user);
         }
       });
-      //remove of invalid list
-      this.invalidUsers = [];
-      let notFoundUsers = this.usersLookupResult.notFoundUsers.multipleMatches.concat(this.usersLookupResult.notFoundUsers.zeroMatches);
-      notFoundUsers.forEach(user => {
-        this.invalidUsers.push({ name: user, email: null });
+      //remove of found users frominvalid list
+      let allNotFoundUsers = this.usersLookupResult.notFoundUsers.multipleMatches.concat(this.usersLookupResult.notFoundUsers.zeroMatches);
+      this.invalidUsers = this.invalidUsers.filter((user, index, arr) => {
+        return allNotFoundUsers.includes(user.fullName);
       });
       this.isLookingUp = false;
-      //console.log(this.usersLookupResult);
     });
-
   }
 
   //add new users to GSheet
@@ -236,9 +263,7 @@ export class AccessibleUsersComponent implements OnInit {
     //console.log('resetting');
     this.userNameColIndex = null;
     this.emailColIndex = null;
-    this.nameColsIndexes = [];
     this.firstRowWithDataIndex = null;
-    this.uploadedEmails = [];
     this.invalidUsers = [];
     this.newUsers = [];
     this.usersAlreadyInSystem = [];
@@ -278,7 +303,7 @@ export class AccessibleUsersComponent implements OnInit {
     });
   }
 
-  _removeUsers(userNames: string[]):Observable<boolean> {
+  _removeUsers(userNames: string[]): Observable<boolean> {
     let subject = new Subject<boolean>();
     this.adminService.removeAccessibleUsers(userNames).subscribe(res => {
       if (res.usersRemoved?.includes(this.user.userName)) {

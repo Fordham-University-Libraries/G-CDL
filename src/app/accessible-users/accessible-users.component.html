@@ -26,7 +26,6 @@
 
     <mat-tab-group>
         <mat-tab label="Upload">
-
             <mat-horizontal-stepper *ngIf="!usersAddedViaExcel" [linear]="true" #stepper class="margin-top-default">
                 <!-- 1: upload -->
                 <mat-step label="Upload Excel">
@@ -134,7 +133,7 @@
                                         <th>Email (invalid -- expecting {{ config?.emailDomain }})</th>
                                     </tr>
                                     <tr *ngFor="let user of invalidUsers">
-                                        <td>{{ user.name }}</td>
+                                        <td>{{ user.fullName }}</td>
                                         <td>{{ user.email }}</td>
                                     </tr>
                                 </table>
@@ -224,6 +223,7 @@
                     </div>
                 </mat-step>
             </mat-horizontal-stepper>
+            <div class="alert alert-success margin-top-default" *ngIf="usersAddedViaExcel">Success! {{ usersAddedViaExcel.length | number }} user(s) has been added.</div>
         </mat-tab>
         <!-- tab 2: manual  -->
         <mat-tab label="Add Manually">
@@ -271,7 +271,7 @@
                 <div *ngIf="accessbileUsers" class="remove-users-list wells" [class.multi-cols]="accessbileUsers.length > 10">
                     <h2>Current Accessible Users</h2>
                     <ul>
-                        <li *ngFor="let user of accessbileUsers"><mat-checkbox (change)="markUserToBeRemoved(user)">{{ user }}</mat-checkbox></li>
+                        <li *ngFor="let user of accessbileUsers | sort:'asc'"><mat-checkbox (change)="markUserToBeRemoved(user)">{{ user }}</mat-checkbox></li>
                     </ul>
                 </div>
                 <div *ngIf="usersToBeRemoved.length">
