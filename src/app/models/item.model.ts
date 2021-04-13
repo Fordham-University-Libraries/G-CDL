@@ -23,16 +23,17 @@ export class Item implements Deserializable {
     // public publisherName?: string;
     // public extent?: string;
     //internal
-    public appProperties?: {
-        bibId: string,
-        itemId: string,
-        fileWithOcrId: string,
-        author?: string,
-        lastReturned?: string;
-        lastViewer?: string;
-        lastBorrowed?: string;
-    };
+    // public appProperties?: {
+    //     bibId: string,
+    //     itemId: string,
+    //     fileWithOcrId: string,
+    //     author?: string,
+    //     lastReturned?: string;
+    //     lastViewer?: string;
+    //     lastBorrowed?: string;
+    // };
     //admin - stats
+    public fileWithOcrId?: string;
     public isSuspended?: number;
     public created?: string;
     public lastBorrowed?: string;

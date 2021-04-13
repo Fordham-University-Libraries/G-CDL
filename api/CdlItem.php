@@ -11,11 +11,11 @@ class CdlItem
     public string $name; //file name
     public string $title;
     public string $author;
-    public $bibId;
-    public $itemId;
+    public string $bibId; //some system use '.b123456' and etc. so string it is
+    public string $itemId;
     public bool $available = true;
-    public $createdTime; //zulu date
-    public $library; //item of which library
+    public string $createdTime; //zulu date
+    public string $library; //item of which library
     public int $part;
     public int $partTotal;
     public string $partDesc;
@@ -25,18 +25,18 @@ class CdlItem
     public int $lastReturned;
     public int $lastBorrowed;
     public string $lastViewer;
-    public string $url;
+    public string $url; //webViewLink
     public bool $isSuspended = false;
     public bool $isTrashed  = false;
     public string $accessibleFileId;
-    public string $webContentLink; //????
+    public string $webContentLink; //A link for downloading the content of the file in a browser using cookie based authentication - unused
     public string $downloadLink;
-    public $ilsMetadata = [
-        'publisher' => '',
-        'pubDate' => '',
-        'physDesc' => '',
-        'isbn' => ''
-    ];
+    // public $ilsMetadata = [
+    //     'publisher' => '',
+    //     'pubDate' => '',
+    //     'physDesc' => '',
+    //     'isbn' => ''
+    // ];
     
     public function __construct(Google_Service_Drive_DriveFile $driveFile)
     {
@@ -47,17 +47,22 @@ class CdlItem
         $this->parentId = $driveFile->getParents()[0];
         $this->name = $driveFile->getName();
         $this->title = $driveFile->getDescription();
-        $this->createdTime = $driveFile->getCreatedTime();
+        $this->createdTime = $driveFile->getCreatedTime() ?? '';
         $this->isTrashed = $driveFile->getTrashed() ?? false;
+        //assign all the props
         foreach ($driveFile->getAppProperties() as $key => $value) {
             $rp = new ReflectionProperty($this, $key);
             $propType = $rp->getType();
             if ($propType && ($propType->getName() == gettype($value))) {
                 $this->$key = $value;
+            } else if ($propType && $propType->getName() == 'int' && gettype($value) == "string") {
+                //cast to int
+                $this->$key = intval($value);
             } else if ($propType && $propType->getName() == 'bool') {
-                    $this->$key = filter_var($value, FILTER_VALIDATE_BOOLEAN);
-            } else if (!$propType) {
-                $this->$key = $value;   
+                //bool
+                $this->$key = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+            } else {
+                logError("can't assign key: $key with val: $val to CDL item object");
             }
         }
         $this->checkPerms($driveFile);
@@ -529,7 +534,7 @@ class CdlItem
         $tempFile->setTrashed(true);
         try {
             retry(function () use ($service, $tempFile) {
-                $service->files->update($this->id, $tempFile);
+                $this->driveFile = $service->files->update($this->id, $tempFile);
             });
             $this->isTrashed = true;
         } catch (Google_Service_Exception $e) {
@@ -592,13 +597,13 @@ class CdlItem
         }
 
         if ($for == 'admin') {
-            $item['fileWithOrcId'] = $this->fileWithOcrId;
+            $item['fileWithOcrId'] = $this->fileWithOcrId;
             $item['lastReturned'] = $this->lastReturned ?? null;
             $item['lastBorrowed'] = $this->lastBorrowed ?? null;
             $item['lastViewer'] = $this->lastViewer ?? null;
             $item['isSuspended'] = $this->isSuspended ?? false;
             $item['isTrashed'] = $this->isTrashed ?? null;
-            $item['appProps'] = $this->driveFile->getAppProperties();
+            //$item['appProperties'] = $this->driveFile->getAppProperties();
         }
 
         return $item;
