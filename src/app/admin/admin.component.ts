@@ -6,6 +6,8 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import * as XLSX from 'xlsx';
+
 import { User } from '../models/user.model';
 import { Item } from '../models/item.model';
 import { Config } from '../models/config.model';
@@ -14,6 +16,7 @@ import { DriveService } from '../drive.service';
 import { ConfigService } from '../config.service';
 import { AdminService } from '../admin.service';
 import { AdminItemEditComponent } from '../admin-item-edit/admin-item-edit.component';
+
 
 @Component({
   selector: 'app-admin',
@@ -26,6 +29,7 @@ export class AdminComponent implements OnInit {
   user: User;
   isLoading: boolean;
   items: MatTableDataSource<Item>;
+  rawItems: Item[]; //for Excel export
   displayedColumns: string[] = ['title', 'itemId', 'createdTime', 'lastBorrowed', 'isSuspended', 'action'];
   @ViewChild(MatSort, { static: false }) sort: MatSort;
   @ViewChild(MatPaginator, { static: false }) paginator: MatPaginator;
@@ -85,7 +89,7 @@ export class AdminComponent implements OnInit {
   }
 
   private _getItems() {
-    //get all first 1,000 items
+    //get all items
     this.driveService.getItemsForAdmin(this.library).subscribe(res => {      
       this.staff = res.staff;
       this.admins = res.admins;
@@ -93,6 +97,7 @@ export class AdminComponent implements OnInit {
       this.items = new MatTableDataSource(res.results);
       this.items.paginator = this.paginator;
       this.items.sort = this.sort;
+      this.rawItems = res.results;
       this.isLoading = false;
       //console.log(this.items);
     })
@@ -144,5 +149,19 @@ export class AdminComponent implements OnInit {
         });
       }
     });
+  }
+
+  export() {
+    let data = [];
+    data.push(['Bib ID', 'Title', 'Item ID', 'Added', 'Last Borrowed','Status','Part','Of Total Parts','Part Description','WITH-OCR file ID', 'NO-OCR file ID']);
+    this.rawItems.forEach(item => {      
+      data.push([item.bibId, item.title, item.itemId, item.createdTime, item.lastBorrowed, !item.isSuspended ? 'Active' : 'Suspended', item.part, item.partTotal, item.partDesc, item.fileWithOcrId, item.id]);
+    });
+    
+    var wb = XLSX.utils.book_new();
+    var ws_name = `Items-${this.library}`;
+    var ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, ws_name);
+    XLSX.writeFile(wb, 'cdl_items_metadata.xls');
   }
 }

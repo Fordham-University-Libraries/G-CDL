@@ -42,10 +42,11 @@
             </div>
         </mat-expansion-panel>
     </mat-accordion>
-    <div class="wells margin-top-default">
+    <div class="wells margin-top-default" fxLayout="row" fxLayoutGap="1em">
         <button mat-raised-button routerLink="./upload"><mat-icon>cloud_upload</mat-icon><span> Upload Item</span></button>
-        &nbsp;&nbsp;
-        <button mat-raised-button routerLink="./accessible"><mat-icon>accessible_forward</mat-icon><span> Manage Accessible Users</span></button>        
+        <button mat-raised-button routerLink="./accessible"><mat-icon>accessible_forward</mat-icon><span> Manage Accessible Users</span></button>
+        <button class="margin-left-auto" mat-raised-button (click)="export()" matTooltip="just the items metadata, not the actual pdfs"><mat-icon>cloud_download</mat-icon><span> Export All Items Info (.CSV)</span></button>        
+        
     </div>
     <h2>Items</h2>
     <mat-form-field>
