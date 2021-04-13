@@ -39,11 +39,12 @@ function getClient($authCode = null, $state = null)
             // has authCode (redirected back from Goolge)
             // Exchange authorization code for an access token.
             $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
-            $client->setAccessToken($accessToken);
-            // Check to see if there was an error.
+            // Check accessToken to see if there was an error.
             if (array_key_exists('error', $accessToken)) {
-                throw new Exception(join(', ', $accessToken));
+                throw new Exception("\$client->fetchAccessTokenWithAuthCode() ERROR: [" . join(', ', $accessToken) . "]. Tried to fetch with authCode: $authCode");
             }
+
+            $client->setAccessToken($accessToken);
             // Save the token to a file.
             if (!file_exists(dirname($tokenPath))) {
                 mkdir(dirname($tokenPath), 0700, true);
