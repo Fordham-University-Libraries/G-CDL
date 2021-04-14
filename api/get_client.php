@@ -17,19 +17,29 @@ function getClient($authCode = null, $state = null)
     ];
     $client->setApplicationName('GDRIVE CDL APP'); //will show as editor of file and etc...
     $client->setScopes($scopes);
-    if(!file_exists('./private_data/credentials.json')) respondWithFatalError(500, 'no credentials');
-    $client->setAuthConfig('./private_data/credentials.json');
+    $credsPath = './private_data/credentials.json';
+    if(!file_exists($credsPath)) respondWithFatalError(500, 'no credentials');
+    $client->setAuthConfig($credsPath);
     $client->setAccessType('offline');
     $client->setPrompt('select_account consent');
 
     $tokenPath = './private_data/token.json';
     //if no token
     if (!file_exists($tokenPath)) {
+        $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
+        $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
+        $redirectUri = $host .  $baseDir . '/?action=login';
+        //check if redirect URI is set in creds.json
+        $authConfig = file_get_contents($credsPath);
+        $authConfig = json_decode($authConfig, true);
+        $redirectUrisInCreds = $authConfig[array_keys($authConfig)[0]]['redirect_uris'];
+        if (!in_array($redirectUri, $redirectUrisInCreds)) {
+            respondWithFatalError(500, "ERROR! redirectUri NOT set in credentails.json. The app is trying to set it to $redirectUri but your credentials.json only has [" . join(',', $redirectUrisInCreds) . "]. If you add more redirectUri on Gogole Dev Console after you downloaded the credentials.json, try re-download it!");
+        }
+
+        $client->setRedirectUri($redirectUri);
         if ($state && $state == 'init') {
             // Return authorization URL
-            $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
-            $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
-            $client->setRedirectUri($host . '/api/?action=login');
             $client->setState($state);
             return [
                 'authUrl' => $client->createAuthUrl(),
@@ -135,7 +145,7 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
         die();
     } else {
         //come back from Google with authcode
-        $accessToken = $client->authenticate($authCode);
+        $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
         if (array_key_exists('error', $accessToken)) {
             logError('end users G-OAuth failed ' . join(', ', $accessToken));
             die('Login Error');
@@ -174,4 +184,3 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
         }
     }
 }
-?>
