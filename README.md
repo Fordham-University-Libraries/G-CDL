@@ -67,6 +67,7 @@ Example of App/GDrive Interactions
         - make sure the /api/private_data
             - is NOT accessible to the public
             - IS writable by your server
+    - NOTE: if you host the api on a different host than the front-end, you can edit Angular's `environment.prod.ts` and change the `apiBase` from `./api` to where ever e.g. `//gcdl-api.myuni.edu/api`
         
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
