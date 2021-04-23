@@ -362,7 +362,7 @@
                                 <ul>
                                     <li>CLICK ME ==> <a href="<?= $credsDirPath ?>credentials.json" target="_blank"><?= $credsDirPath ?>credentials.json</a> it MUST NOT be accessible</li>
                                 </ul>
-                                <li>make sure the dir <?= $dataDirPath ?> and /api/private_temp are <strong>WRITABLE</strong> by your webserver</li>
+                                <li>make sure these directories are <strong>WRITABLE</strong> by your webserver</li>
                                 <ul>
                                     <li><strong>Credentails Directory: </strong><?= $credsDirRealPath ?> : <?= $privateCredsWritable ? '<span style="color:green">OK! WRITABLE</span>' : '<span style="color:red">NOT WRITABLE</span>' ?>
                                     <li><strong>Private Data Directory: </strong><?= $dataDirRealPath ?> : <?= $privateDataWritable ? '<span style="color:green">OK! WRITABLE</span>' : '<span style="color:red">NOT WRITABLE</span>' ?>

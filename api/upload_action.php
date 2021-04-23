@@ -59,7 +59,7 @@ function adminUploadPost($uploadedFile, string $libKey) {
     }
 
     if ($uploadedFile) {
-        $dir = "private_temp/";
+        $dir = Config::getLocalFilePath('','temp');
         $path = $dir . basename($uploadedFile['name']);
 
         try {
@@ -82,9 +82,12 @@ function adminUploadPost($uploadedFile, string $libKey) {
                     $bib['partDesc'] = $_POST['partDesc'];
                 }
 
+                $shouldCreateNoOcr = filter_var($_POST['should_create_no_ocr'], FILTER_VALIDATE_BOOLEAN);
                 //do all the works!
-                generateNoOcrVersion($path);
-                upload($path, $bib, $libKey, $uploadedFile);
+                if ($shouldCreateNoOcr) {
+                    generateNoOcrVersion($path);
+                }
+                upload($path, $bib, $libKey, $uploadedFile['name'], $shouldCreateNoOcr);
             } else {
                 $errMsg = "There was an error uploading the file, please try again in a little bit! Let your admins know if problem persists";
                 if (!$respondFormat) {
@@ -132,13 +135,11 @@ function generateNoOcrVersion($filePath)
     }
 }
 
-function upload($filePath, $bib, $libKey, $uploadedFile)
+function upload($filePath, $bib, $libKey, $orgFileName, $shouldCreateNoOcr = true)
 {
     global $user;
     global $config;
     global $service;
-    $noOcrFolderId;
-    $withOcrFolderId;
 
     $respondFormat = $_POST['respondFormat'] ?? null;
     if (!isset($config->libraries[$libKey])) {
@@ -156,6 +157,7 @@ function upload($filePath, $bib, $libKey, $uploadedFile)
     $withOcrFile->setDescription($bib['title']);
     $withOcrFile->setParents([$withOcrFolderId]);
     $withOcrFile->setCopyRequiresWriterPermission(false); //allow viewer to copy/download
+    if (!$shouldCreateNoOcr) $bib['shouldCreateNoOcr'] = false;
     $withOcrFile->setAppProperties($bib);
     $data = file_get_contents($filePath);
     $withOcrFile = retry(function () use ($service, $withOcrFile, $data) {
@@ -165,15 +167,21 @@ function upload($filePath, $bib, $libKey, $uploadedFile)
             'uploadType' => 'multipart'
         ));
     });
-
+    
     $noOcrFile = new Google_Service_Drive_DriveFile;
-    $noOcrFile->setName($bib['itemId'] . "-No-OCR.pdf");
+    if ($shouldCreateNoOcr) {
+        $noOcrFile->setName($bib['itemId'] . "-No-OCR.pdf");
+        $data = file_get_contents("$filePath-NO-OCR.pdf");
+    } else {
+        $noOcrFile->setName($bib['itemId']);
+        $data = file_get_contents($filePath);
+    }
+
     $noOcrFile->setDescription($bib['title']);
     $noOcrFile->setParents([$noOcrFolderId]);
     $noOcrFile->setCopyRequiresWriterPermission(true);
     $bib['fileWithOcrId'] = $withOcrFile->getId();
     $noOcrFile->setAppProperties($bib);
-    $data = file_get_contents("$filePath-NO-OCR.pdf");
     $noOcrFile = retry(function () use ($service, $noOcrFile, $data) {
         return $service->files->create($noOcrFile, array(
             'data' => $data,
@@ -188,13 +196,13 @@ function upload($filePath, $bib, $libKey, $uploadedFile)
 
     if (!$respondFormat) {
         $html = "<h1>Success!</h1>";
-        $html .= "<div>The file ".  basename($uploadedFile['name']) . " has been uploaded, processed, and added the the CDL app</div><br><div><strong><a href='./?action=admin_upload'>Upload another one</a></strong></div><br>";
+        $html .= "<div>The file ".  basename($orgFileName) . " has been uploaded, processed, and added the the CDL app</div><br><div><strong><a href='./?action=admin_upload'>Upload another one</a></strong></div><br>";
         $html .= "<div style='color: brown'>Click the link above to add more. <strong>Do NOT refresh this page</strong>, otherwise, it'll re-upload the same file you've just added!</div>";
         respondWithHtml($html);
     } else {
         respondWithData([
             'success' => true,
-            'fileName' => basename($uploadedFile['name']),
+            'fileName' => basename($orgFileName),
             'uploadedNoOcrFileId' => $noOcrFile->getId()
         ]);
     }

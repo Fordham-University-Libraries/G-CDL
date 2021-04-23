@@ -154,6 +154,7 @@ export class DriveService {
     formData.append('action', 'upload');
     formData.append("libKey", libKey);
     formData.append("uploaded_file", file.file);
+    formData.append('should_create_no_ocr', file.shouldCreateNoOcr);
     for (const [key, value] of Object.entries(file)) {
       if (file[key].value && key != 'file') formData.append(key, file[key].value);
     }

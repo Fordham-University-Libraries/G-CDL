@@ -20,7 +20,8 @@
     <button *ngIf="itemIdInFilenameRegexPattern && !isIlsApiEnabled" id="regex-itemid-indicator" class="indicator"
         mat-stroked-button [matMenuTriggerFor]="regexItemId"
         [matTooltip]="'Good news! this library has automatically get item ID forom filename enabled! click for more info!'">
-        <mat-icon *ngIf="getItemIdFromFilename" class="success">check</mat-icon><mat-icon *ngIf="!getItemIdFromFilename" class="fail">close</mat-icon> Get Item ID from filename
+        <mat-icon *ngIf="getItemIdFromFilename" class="success">check</mat-icon>
+        <mat-icon *ngIf="!getItemIdFromFilename" class="fail">close</mat-icon> Get Item ID from filename
     </button>
     <mat-menu #regexItemId="matMenu">
         <div id="regex-itemid-indicator-text" class="indicator-text">
@@ -40,7 +41,8 @@
     <button *ngIf="itemIdInFilenameRegexPattern && isIlsApiEnabled" id="ils-api-indicator" class="indicator"
         mat-stroked-button [matMenuTriggerFor]="ilsEnabled"
         [matTooltip]="'Good news! this library has ILS API enabled! click for more info!'">
-        <mat-icon *ngIf="getBibFromILS" class="success">check</mat-icon><mat-icon *ngIf="!getBibFromILS" class="fail">close</mat-icon> Get Metadata from ILS API
+        <mat-icon *ngIf="getBibFromILS" class="success">check</mat-icon>
+        <mat-icon *ngIf="!getBibFromILS" class="fail">close</mat-icon> Get Metadata from ILS API
     </button>
     <mat-menu #ilsEnabled="matMenu">
         <div id="ils-api-indicator-text" class="indicator-text">
@@ -53,7 +55,8 @@
             </a>
             <div>
                 <p>You can enable/disable it here (for this session)</p>
-                <mat-slide-toggle [(ngModel)]="getBibFromILS" (ngModelChange)="onToggleChange('getBibFromILS', $event)">Enable</mat-slide-toggle>
+                <mat-slide-toggle [(ngModel)]="getBibFromILS" (ngModelChange)="onToggleChange('getBibFromILS', $event)">
+                    Enable</mat-slide-toggle>
             </div>
         </div>
 
@@ -117,21 +120,30 @@
             <br><br>
             <input id="file-input" class="wells" type="file" accept="application/pdf"
                 (change)="handleFileInput($event.target.files)" />
+            <br>
+            <mat-slide-toggle [(ngModel)]="pdfItem.shouldCreateNoOcr">Create a No-OCR version?</mat-slide-toggle>
+            <div *ngIf="!pdfItem.shouldCreateNoOcr" class="alert alert-warning">
+                <p>HEADS UP! You've chosen to NOT create a
+                NO-OCR version, hence a regular user will given the original PDF you uploaded.</p>
+                <p> If the original PDF you uploaded contains texts or OCR data, the users will be able to save them to
+                to text a file and keep it forever, therefore breaking the CDL principle</p></div>
         </div>
         <!-- err -->
         <div *ngIf="error" class="err-msg">ERROR: {{ error }}</div>
         <div *ngIf="warning && !pdfItem.part.value" class="alert alert-warning">{{ warning }}</div>
         <br>
         <!-- submit -->
-        <button [disabled]="error || fieldError || !formWasTouched || !pdfItem.fileName.value || !pdfItem.bibId.value || !pdfItem.itemId.value || !pdfItem.title.value" mat-raised-button color="primary"
-            (click)="upload()">Upload</button>
+        <button
+            [disabled]="error || fieldError || !formWasTouched || !pdfItem.fileName.value || !pdfItem.bibId.value || !pdfItem.itemId.value || !pdfItem.title.value"
+            mat-raised-button color="primary" (click)="upload()">Upload</button>
     </div>
     <!-- success message -->
     <div *ngIf="uploadedFileInfo" id="upload-success-message" class="margin-top-default">
         <h2>Success!</h2>
         <p>The file <em>{{ uploadedFileInfo.fileName }}</em> has been upload!</p>
-        <p>A No-OCR version of the file has been automatically generated, you can <button mat-stroked-button
-                (click)="downLoadNoOcrVersion()">download it</button> to make sure everything looks ok!</p>
+        <p *ngIf="pdfItem.shouldCreateNoOcr">A No-OCR version of the file has been automatically generated, you can
+            <button mat-stroked-button (click)="downLoadNoOcrVersion()">download it</button> to make sure everything
+            looks ok!</p>
         <div>
             <button mat-raised-button color="primary" (click)="resetForm()">Upload another one</button>
             &nbsp;&nbsp;

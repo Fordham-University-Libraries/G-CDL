@@ -45,6 +45,7 @@ export class AdminUploadComponent implements OnInit {
     partTotal? : pdfFileField,
     partDesc? : pdfFileField,
     uploadedWithOcrId? : pdfFileField,
+    shouldCreateNoOcr?: boolean,
     uploadedNoOcrId? : pdfFileField,
   } = {};
   itemIdInFilenameRegexPattern: string;
@@ -141,6 +142,7 @@ export class AdminUploadComponent implements OnInit {
     this.pdfItem.partDesc = {group: 'part', label: 'Part Description', value: null, hint: 'a description so end users have more info e.g. "Chaper 1-13" or "Letter A-F"'};
     this.pdfItem.fileName = {group: 'file', label: 'File Name', value: null};
     this.pdfItem.fileSize = {group: 'file', label: 'File Size', value: null};
+    this.pdfItem.shouldCreateNoOcr = true;
     //console.log(this.pdfItem);
   }
 
@@ -245,7 +247,7 @@ export class AdminUploadComponent implements OnInit {
     })
   }
 
-  upload() {
+  upload() {        
     if (this.error) return;
     Object.keys(this.pdfItem).forEach(key => {
       if (this.pdfItem[key].required && !this.pdfItem[key].value) this.error = 'Please fill in the required fields';
