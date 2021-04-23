@@ -23,7 +23,7 @@ if ($method == 'webHook') {
 }
 
 date_default_timezone_set($config->timeZone);
-$fileName = $config->privateDataDirPath . $config->notifications['emailOnAutoReturn']['dataFile'];
+$fileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
 if (!file_exists($fileName)) die('no items currenlty checked out');
 
 require 'CdlItem.php';

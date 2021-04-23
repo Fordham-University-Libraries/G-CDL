@@ -46,7 +46,7 @@ class CdlItem
         $this->id = $driveFile->getId();
         $this->parentId = $driveFile->getParents()[0];
         $this->name = $driveFile->getName();
-        $this->title = $driveFile->getDescription();
+        $this->title = $driveFile->getDescription() ?? '';
         $this->createdTime = $driveFile->getCreatedTime() ?? '';
         $this->isTrashed = $driveFile->getTrashed() ?? false;
         //assign all the props
@@ -62,7 +62,7 @@ class CdlItem
                 //bool
                 $this->$key = filter_var($value, FILTER_VALIDATE_BOOLEAN);
             } else {
-                logError("can't assign key: $key with val: $val to CDL item object");
+                logError("can't assign key: $key with val: $value to CDL item object");
             }
         }
         $this->checkPerms($driveFile);
@@ -126,7 +126,7 @@ class CdlItem
 
     public function borrow(User $user)
     {
-        global $isProd;
+        ;
         global $service;
         global $config;
         global $lang;
@@ -236,7 +236,7 @@ class CdlItem
             
 
             //if set to update ILS status on borrow/return
-            if ($config->libraries[$this->library]->ils['api']['enable'] && $config->libraries[$this->library]->ils['api']['changeItemStatusOnBorrowReturn'] && $isProd) {
+            if ($config->libraries[$this->library]->ils['api']['enable'] && $config->libraries[$this->library]->ils['api']['changeItemStatusOnBorrowReturn'] && Config::$isProd) {
                 setIlsItemStatus(true, $appProps['itemId'], $this->library); //borrow = true
             }
 
@@ -244,7 +244,7 @@ class CdlItem
             if ($config->notifications['emailOnAutoReturn']['enable']) {
                 //write it to file so we can look at later
                 $this->due = $expTime;
-                $fileName = $config->privateDataDirPath . $config->notifications['emailOnAutoReturn']['dataFile'];
+                $fileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
                 if (file_exists($fileName)) {
                     $file = file_get_contents($fileName);
                     $currentOutItems = unserialize($file);
@@ -300,8 +300,8 @@ class CdlItem
             }
         } catch (Google_Service_Exception $e) {
             //borrow fail
-            respondWithError(500, "Internal Error - on Borrow");
             logError($e->getMessage());
+            respondWithError(500, "Internal Error - on Borrow");
         }
 
         //if user is in accessible users list
@@ -329,21 +329,21 @@ class CdlItem
                 respondWithData($respond);
             } catch (Google_Service_Exception $e) {
                 //borrow fail
-                respondWithError(500, "Internal Error - on Accessible Borrow");
                 logError($e->getMessage());
+                respondWithError(500, "Internal Error - on Accessible Borrow");
             }
         }
     }
 
     public function return(User $user)
     {
-        global $isProd;
+        ;
         global $config;
         global $service;
         global $lang;
 
         $permissions = $this->driveFile->getPermissions();
-        $permissionId; //to be removed
+        $permissionId = null; //to be removed
         foreach ($permissions as $permission) {
             if ($permission->getRole() == 'reader' && $permission->getEmailAddress() == $user->email) {
                 $permissionId = $permission->getId();
@@ -366,8 +366,8 @@ class CdlItem
             logStats($this, 'manual_return');
 
             //if set to update ILS status on borrow/return
-            if ($config->libraries[$this->library]->ils['api']['enable'] && $config->libraries[$this->library]->ils['api']['changeItemStatusOnBorrowReturn'] && $isProd) {
-                setIlsItemStatus(false, $appProps['itemId'], $this->library); //!borrow = return
+            if ($config->libraries[$this->library]->ils['api']['enable'] && $config->libraries[$this->library]->ils['api']['changeItemStatusOnBorrowReturn'] && Config::$isProd) {
+                setIlsItemStatus(false, $this->itemId, $this->library); //!borrow = return
             }
             
             //it's a manual return, update the lastReturn prop
@@ -391,7 +391,7 @@ class CdlItem
             }
             //remove it from cron watch list since it has been manually returned
             if ($emailOnAutoReturn) {
-                $cronDataFileName = $config->privateDataDirPath . $config->notifications['emailOnAutoReturn']['dataFile'];
+                $cronDataFileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
                 if (file_exists($cronDataFileName)) {
                     $cronDataFile = file_get_contents($cronDataFileName);
                     $currentOutItems = unserialize($cronDataFile);
@@ -464,7 +464,7 @@ class CdlItem
             die();
         }
 
-        $fileId;
+        $fileId = null;
         // echo $accessibleVersion;
         // die();
 
@@ -480,14 +480,13 @@ class CdlItem
         $fileMime = $this->driveFile->getMimeType();
         header("Content-type:$fileMime");
         header("Content-Disposition:attachment;filename=$fileName");
-        $content = $service->files->get($fileId, array("alt" => "media"));
-        echo $content->getBody();
+        $response = (object) $service->files->get($fileId, array("alt" => "media"));
+        echo $response->getBody();
     }
 
     public function suspend($suspend = true)
     {
         global $service;
-        global $config;
         global $user;
 
         if (!count($user->isStaffOfLibraries)) {
@@ -508,8 +507,8 @@ class CdlItem
             });
             $this->isSuspended = $suspend;
         } catch (Google_Service_Exception $e) {
-            respondWithError(500, "Internal Error - on Suspend");
             logError($e->getMessage());
+            respondWithError(500, "Internal Error - on Suspend");
         }
         respondWithData($this->serialize('admin'));
     }
@@ -517,7 +516,6 @@ class CdlItem
     public function trash()
     {
         global $service;
-        global $config;
         global $user;
 
         if (!count($user->isStaffOfLibraries)) {
@@ -538,8 +536,8 @@ class CdlItem
             });
             $this->isTrashed = true;
         } catch (Google_Service_Exception $e) {
-            respondWithError(500, "Internal Error");
             logError($e->getMessage());
+            respondWithError(500, "Internal Error");
         }
       
         //also delete the with OCR version
@@ -549,8 +547,8 @@ class CdlItem
                     $service->files->update($this->fileWithOcrId, $tempFile);
                 });
             } catch (Google_Service_Exception $e) {
-                respondWithError(500, "Internal Error - on Trash");
                 logError($e->getMessage());
+                respondWithError(500, "Internal Error - on Trash");
             }
         }
     
@@ -565,13 +563,13 @@ class CdlItem
         $item = [
             'id' => $this->id,
             'name' => $this->name,
-            'title' => $this->title,
+            'title' => isset($this->title) ? $this->title : null,
             'author' => isset($this->author) ? $this->author : null,
-            'bibId' => $this->bibId,
-            'itemId' => $this->itemId,
+            'bibId' => isset($this->bibId) ? $this->bibId : null,
+            'itemId' => isset($this->itemId) ? $this->itemId : null,
             'available' => $this->available,
             'createdTime' => $this->createdTime,
-            'library' => $this->library,
+            'library' => isset($this->librarey) ? $this->library : null,
         ];
 
         if (!$this->available) {

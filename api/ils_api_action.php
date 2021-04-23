@@ -30,8 +30,7 @@ function getIlsBibByItemId($libKey, $itemId)
 
 function getIlsLocationsDefinition($libKey)
 {
-    global $config;
-    $fileName = $config->privateDataDirPath . $libKey . "_ils_locations.json"; //key: loc name //mock for now
+    $fileName = Config::getLocalFilePath($libKey . "_ils_locations.json"); //key: loc name
     if (file_exists($fileName)) {
         $file = file_get_contents($fileName);
         $locations = json_decode($file, true);
@@ -171,17 +170,6 @@ function searchIlsCourseReserves(string $libKey, ?string $field, string $term)
         } else {
             respondWithData(['courses' => $matchedCourses]);
         }
-    }
-}
-
-
-function getIlsCourseReservesByUser($userPk)
-{
-    checkIlsApiSettings($libKey);
-    global $config;
-    if (strtolower($config->libraries[$libKey]->ils['kind']) == 'sirsi') {
-    } elseif (strtolower($config->libraries[$libKey]->ils['kind']) == 'sierra') {
-        respondWithError(501, 'Not Implemented');
     }
 }
 

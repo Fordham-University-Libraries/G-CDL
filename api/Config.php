@@ -2,17 +2,22 @@
 require 'Library.php';
 class Config
 {
-    public $isProd = false;
-    public $mainFolderId; //also stored on G app's data config.json 
-    public $accessibleUsersSheetId; //also stored on G app's data config.json 
-    public $gSuitesDomain; //also stored on G app's data config.json 
-    public $driveOwner; //also stored on G app's data config.json 
+    public static $isProd = false; //change to true when deploy for production. When NOT in production: the API will 1) allow Access-Control-Allow-Origin: http://localhost:4200 and assume that you are running the frontend on port 4200. 2) will NOT change items status in your ILS (if enabled). 3) will NOT apply session cookies settings. 4) will allow unsecure CAS
+    public static $frontEndHost; //if you plan to host front end on different host (full URL e.g. https://mycdlfrontend.moilibrary.edu/mysubdir). Leave unset for same host
+    public static $privateDataDirPath = './private_data'; //dir for configs and cache files
+    public static $credentialsDirPath = './private_data'; //dir for Google API credentails/token.json file
+    public static $tempDirPath = './private_temp'; //dir for temp storing upload pdf file (will be removed after uploaded to GDrive)
+  
+    public $mainFolderId; //also stored on G app's data config_base.json 
+    public $accessibleUsersSheetId; //also stored on G app's data config_base.json 
+    public $gSuitesDomain; //also stored on G app's data config_base.json 
+    public $driveOwner; //also stored on G app's data config_base.json 
     public $timeZone = null; //https://www.php.net/manual/en/timezones.america.php
     public $appName = 'My Library CDL APP';
     public $appSuperAdmins = []; //can change everything and will get email when there's a problem
     public array $auth = [
         'kind' => 'GoogleOAuth', //only option at the moment (since users must login to their Google account to view the Gdrive items any way)
-        'gSuitesDomain' => '',//without @ sign
+        'gSuitesDomain' => '', //without @ sign
         'sessionName' => 'CDL_APP_SESS',
         'sessionTtl' => 180, //minutes
         'clientDomain' => '',
@@ -47,7 +52,6 @@ class Config
     ];
 
     //props that users shoudn't change
-    public $privateDataDirPath = './private_data/';
     public $accessibleUserCachefileName = 'accessible_users.php.serialized';
     public $accessibleUserCacheMinutes = 60;
     public $allItemsCacheFileName = 'all_items.php.serialized';
@@ -60,21 +64,21 @@ class Config
     private $_propertiesInfo = [
         //[help text, editable status, select options]
         //-2 = hide, -1 = read only, 1 = editable, 2 = use caution
-        'isProd' => ['is the app configred for production? When it is NOT in production, the API will 1) allow Access-Control-Allow-Origin: http://localhost:4200 and assume that you are running the frontend on port 4200. 2) will NOT change items status in your ILS (if enabled). 3) will NOT apply session cookies settings. 4) will allow unsecure CAS', 1],
+        //'isProd' => ['is the app configred for production? When it is NOT in production, the API will 1) allow Access-Control-Allow-Origin: http://localhost:4200 and assume that you are running the frontend on port 4200. 2) will NOT change items status in your ILS (if enabled). 3) will NOT apply session cookies settings. 4) will allow unsecure CAS', 1],
         'appName' => ['name of the application (visible to end users)', 1],
         'timeZone' => ['timezone. see https://www.php.net/manual/en/timezones.php', 1],
-        'maxFileSizeInMb' => ['Google PDF Viewer has max fix file size litmit of 100MB (as of early 2021), if you upload something bigger than that, it will not display',2],
-        'useEmbedReader' => ['if enabled, embed Google Drive vieewer inside app\'s page. Else, will open Google Drive viewer directly in a new tab. NOTE: you might want to enable it since, as of early 2021, if end users open a reader and don\'t close it, they\'ll be able to keep reading even AFTER the share has expired. Using the embed reader, the app will embed the Google reader on its own page, and will automatically refresh the page when the item expires' , 1],
+        'maxFileSizeInMb' => ['Google PDF Viewer has max fix file size litmit of 100MB (as of early 2021), if you upload something bigger than that, it will not display', 2],
+        'useEmbedReader' => ['if enabled, embed Google Drive vieewer inside app\'s page. Else, will open Google Drive viewer directly in a new tab. NOTE: you might want to enable it since, as of early 2021, if end users open a reader and don\'t close it, they\'ll be able to keep reading even AFTER the share has expired. Using the embed reader, the app will embed the Google reader on its own page, and will automatically refresh the page when the item expires', 1],
         'appSuperAdmins' => ['user(s) that can edit EVERYTHING incuding app\'s config, and EVERY library. Separate multiple users with a comma', 2],
         'auth' => [
             'kind' => ['how to authenticate user (telling who the user is). Only support Google OAuth (since end users need to be login to Google to view borrowed item)', -1, ['GoogleOAuth']],
             'gSuitesDomain' => ['your GSuites Domain WITHOUT the @ sign e.g. if your work email that you use to log in to GSuites is jdoe@someuniversity.edu, enter someuniversity.edu', -1],
             'sessionName' => ['name of the session cookie (user will NOT see it)', 1],
             'sessionTtl' => ['How long (minutes) before inactive user is logged out of the app (only the app, not GSuites account, nor whatever auth system GSuites uses to authenticate your users)', 1],
-            'clientDomain' => ['see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#Domain_attribute',1],
-            'clientPath' => ['see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#Path_attribute',1],
-            'clientSecure' => ['see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#restrict_access_to_cookies',1],
-            'clientHttpOnly' => ['see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#restrict_access_to_cookies',1]
+            'clientDomain' => ['see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#Domain_attribute', 1],
+            'clientPath' => ['see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#Path_attribute', 1],
+            'clientSecure' => ['see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#restrict_access_to_cookies', 1],
+            'clientHttpOnly' => ['see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#restrict_access_to_cookies', 1]
         ],
         'mainFolderId' => ['FYI, ID of the main CDL folder in Google Drive', -1],
         'driveOwner' => ['FYI, the account that owns the main CDL Folder on Google Drive (drive owner has full/unlimited power, can edit EVERYTHING)', -1],
@@ -92,14 +96,14 @@ class Config
             'emailOnManualReturn' => ['should the app email user when s/he manually returns an item', 1],
             'emailOnAutoReturn' => [
                 'enable' => ['should the app email user when a borrowed item is automatically returned', 1],
-                'method' => ['how? "cronJob" = run a cronjob locally on server e.g. [* * * * * /usr/bin/php /var/www/cdl/api/cron.php], "web" = make cron.php publicly available, then you can use service like uptimerobot.com to ping it a an interval, "webHook" = use Google Webhook which will send the app a meesage everytime borrowed items change (NEEDS ADDITIONAL SETUP see https://developers.google.com/drive/api/v3/push)', 1, ['cronJob','web','webHook']],
+                'method' => ['how? "cronJob" = run a cronjob locally on server e.g. [* * * * * /usr/bin/php /var/www/cdl/api/cron.php], "web" = make cron.php publicly available, then you can use service like uptimerobot.com to ping it a an interval, "webHook" = use Google Webhook which will send the app a meesage everytime borrowed items change (NEEDS ADDITIONAL SETUP see https://developers.google.com/drive/api/v3/push)', 1, ['cronJob', 'web', 'webHook']],
                 'dataFile' => ['filename of local file used to track all the items currenly checked out to users (and when it\'s due)', -1],
                 'publicCronUrl' =>  ['this is the URL that you need to ping at interval if you choose method = "web", will also be used for Google to send webHook notification meesage to the app if you choose method = "webHook"', -1],
                 'secret' => ['if method is set to either "web" or "webHook", set a secret here so you can limit access e.g. /api/cron.php?secret=mySuperSecret (will be checked automatically if you use "webHook")', 1],
             ]
         ],
         'emails' => [
-            'method' => ['How to email users. if choose: gMail, the app will send email with the drive owner GMail account ', 1, ['gMail','SMTP']],
+            'method' => ['How to email users. if choose: gMail, the app will send email with the drive owner GMail account ', 1, ['gMail', 'SMTP']],
             'SMTP' => [
                 'host' => ['hostname of your SMTP server (currently set for SMTP relay with NO authentication)', 1],
                 'port' => ['Standard port: 25, 587, 465', 1],
@@ -117,11 +121,11 @@ class Config
             'statsSheetId' => ['ID of the Google Sheet file to store stats data for this library', -2],
             'borrowingPeriod' => ['how long the item is due back (hours)', 1],
             'backToBackBorrowCoolDown' => ['prevent user from borrwing the same item s/he just returned (minutes) i.e. have to wait for X minutes before can borrow it again', 1],
-            'customUserHomeLibrary' => ['enter usernames here to manually make this library their home library (useful if you have multiple libraries setup) e.g enter \'jdoe\' will make this library a home library of user jdoe -- separate multiple users with a comma',1],
+            'customUserHomeLibrary' => ['enter usernames here to manually make this library their home library (useful if you have multiple libraries setup) e.g enter \'jdoe\' will make this library a home library of user jdoe -- separate multiple users with a comma', 1],
             'admins' => ['admins for this library (can change library\'s config) -- separate multiple users with a comma', 1],
             'staff' => ['staff of this library (can upload, administer items, view statistics) -- separate multiple users with a comma', 1],
             'ils' => [
-                'kind' => ['ILS system', 1, ['Sirsi','Sierra']],
+                'kind' => ['ILS system', 1, ['Sirsi', 'Sierra']],
                 'itemIdInFilenameRegexPattern' => ['Regular Expression pattern with a Capturing group [parentesis symbol] for getting itemId from filename when upload including the / delimiter at the begining and end of the pattern e.g. if your itemId is 13 digits and you plan to tell your staff the name the file "somerandomstring09876543210987.pdf" then enter /(\d{13})+/ the app will use the value of the first matched group as the itemId (first sequence of 13 digits it found)', 1],
                 'api' => [
                     'enable' => ['use ILS api with the app (e.g. get bib info automatically when upload, search ILS reserves and etc.)', 1],
@@ -140,7 +144,7 @@ class Config
                 ]
             ],
             'authorization' => [
-                'enable' => ['enable to also check with your local authentication system to get users attributes.',1],
+                'enable' => ['enable to also check with your local authentication system to get users attributes.', 1],
                 'auth' => [
                     'kind' => ['type of auth system to authenticate and get users attributes from', 1],
                     'CAS' => [
@@ -192,30 +196,49 @@ class Config
 
     public function __construct()
     {
-        //4 basic config stored in GDrive's app's data, else stored locally
-        $fileName = $this->privateDataDirPath . 'config.json';
-        if (file_exists($fileName)) { //local config exists
-            $file = file_get_contents($fileName);
+        $configFilePath = self::getLocalFilePath('config.json');
+        if (file_exists($configFilePath)) { //local config exists
+            $file = file_get_contents($configFilePath);
             $data = json_decode($file);
             $this->_map($data);
-        } else {
-            //if no local config, grab the basic/essential config fron appData
-            $client = getClient();
-            if (!$client) {
-                return null;
-            } else {
-                $service = new Google_Service_Drive($client);
-                $file = $this->getAppDataConfigFile();
-                if ($file) {
-                    $content = $service->files->get($file->getId(), ["alt" => "media"]);
-                    $data = json_decode((string) $content->getBody());
-                    $this->_map($data);
-                    $file = fopen($fileName, 'wb');
-                    fwrite($file, json_encode($data));
-                    fclose($file);
-                } else {
-                    return null;
+        }
+
+        if (!$this->mainFolderId) {
+            //if no local config, try grab the basic/essential config fron appData on GDrive
+            //4 basic configs e.g. mainFolderId also stored in GDrive's app's data, else stored locally
+            try {
+                $client = getClient();
+            } catch (Exception $e) {
+                //echo "cant get client";
+            }
+
+            if ($client) {
+                try {
+                    $service = new Google_Service_Drive($client);
+                    $file = $this->getAppDataConfigFile();
+                    if ($file) {
+                        //if specify ["alt" => "media"] it'll actually return GuzzleHttp\Psr7\Response
+                        //cast it so PHP Intelephense stops complaining about getBody() not defined
+                        $response = (object) $service->files->get($file->getId(), ["alt" => "media"]);
+                        $data = json_decode((string) $response->getBody()->getContents());
+                        $this->_map($data);
+                        $file = fopen($configFilePath, 'wb');
+                        try {
+                            fwrite($file, json_encode($data));
+                            fclose($file);
+                        } catch (Exception $e) {
+                            logError($e);
+                            respondWithError(500, 'internal error');
+                        }
+                    } else {
+                        return null;
+                    }
+                } catch (Exception $e) {
+                    //can't get client, just return default configs
+                    return;
                 }
+            } else {
+                return;
             }
         }
 
@@ -238,17 +261,61 @@ class Config
             $fileList = $service->files->listFiles([
                 'spaces' => 'appDataFolder',
                 'fields' => '*',
-                'pageSize' => 10
+                'pageSize' => 100
             ]);
             foreach ($fileList->getFiles() as $file) {
-                if ($file->getName() == 'config.json') {
+                if ($file->getName() == 'config_base.json') {
                     return $file;
                 }
             }
         } catch (Google_Service_Exception $e) {
             $errMsg = json_decode($e->getMessage());
             logError('cannot get config.json file on Drive AppData... is the app still connect to the drive? Error is: ' . $errMsg->error->message);
+            echo $errMsg->error->message;
             die('Fatal Error: cannot get config file from Drive\'s AppData');
+        }
+    }
+
+    public function listFilesInAppFolder()
+    { //from GDrive's appDataFolder
+        global $user;
+        if (!$user->isSuperAdmin) respondWithError(401, 'Unauthorized');
+
+        $client = getClient();
+        $service = new Google_Service_Drive($client);
+        try {
+            $fileList = $service->files->listFiles([
+                'spaces' => 'appDataFolder',
+                'fields' => '*',
+                'pageSize' => 100
+            ]);
+            respondWithData($fileList->getFiles());
+        } catch (Google_Service_Exception $e) {
+            $errMsg = json_decode($e->getMessage());
+            die('cannot get files from Drive\'s AppData: ' . $errMsg);
+        }
+    }
+
+    function addJsonToGDriveAppFolder(string $fileName, string $jsonStr, $init = false): bool {
+        global $user;
+        if (!$user->isSuperAdmin && !$init) respondWithError(401, 'Unauthorized');
+
+        $client = getClient();
+        $driveService = new Google_Service_Drive($client);
+        $configDriveFileMetadata = new Google_Service_Drive_DriveFile([
+            'name' => $fileName,
+            'parents' => ['appDataFolder']
+        ]);
+        try {
+            $uploadedFile = $driveService->files->create($configDriveFileMetadata, array(
+                'data' => $jsonStr,
+                'mimeType' => 'application/json',
+                'uploadType' => 'multipart',
+                'fields' => 'id'));
+            return $uploadedFile ? true : false;
+        } catch (Exception $e) {
+            logError("failed to create $fileName in AppData: " . $e->getMessage());
+            return false;
         }
     }
 
@@ -289,16 +356,28 @@ class Config
 
     //update ALL config to local config.json
     private function _updatePropsAll()
-    {
-        $fileName = $this->privateDataDirPath . 'config.json';
+    { 
+        $configFilePath = self::getLocalFilePath('config.json');
+        //back up current config
+        $currConfig = file_get_contents($configFilePath);
+        $data = json_decode($currConfig);
+        try {
+            $modTime = date("m_d_Y_g_i_a");
+            $this->addJsonToGDriveAppFolder("config_bak_before_mod_on_$modTime.json", $currConfig);
+        } catch (Exception $e){
+            logError('cannot back up config file: ' . $e->getMessage());
+        }
+
+        //update
         try {
             $data = $this->_reverseMap();
-            $file = fopen($fileName, 'wb');
+            $file = fopen($configFilePath, 'wb');
             fwrite($file, json_encode($data));
             fclose($file);
             $result = ['success' => true];
         } catch (Exception $e) {
             $result = ['success' => false];
+            respondWithError(500,'ERROR: cannot save config data');
         }
         return $result;
     }
@@ -340,19 +419,18 @@ class Config
                 if (is_object($target)) {
                     $target->$key = $value;
                 } else {
-                    $target[$key] = $value;                
+                    $target[$key] = $value;
                 }
             }
         }
 
         //if(!$isRecursive) return (array) $target;
-        if(!$isRecursive) return $this->_updatePropsAll();
+        if (!$isRecursive) return $this->_updatePropsAll();
     }
 
     //for public -- annon acceess allowed
     public function getFrontendConfig()
     {
-        $defaultLibrary;
         $libraries = [];
         foreach ($this->libraries as $key => $library) {
             $libraries[$key] = [
@@ -366,7 +444,7 @@ class Config
 
         $frontEndConfig = [
             'appName' => $this->appName,
-            'defaultLibrary' => $defaultLibrary,
+            'defaultLibrary' => $defaultLibrary ?? null,
             'gSuitesDomain' => $this->auth['gSuitesDomain'],
             'emailDomain' => '@' . $this->auth['gSuitesDomain'],
             'maxFileSizeInMb' => $this->maxFileSizeInMb,
@@ -375,6 +453,23 @@ class Config
         ];
         if ($this->googleTagManagerUA) $frontEndConfig['gTagUA'] = $this->googleTagManagerUA;
         return $frontEndConfig;
+    }
+
+    //@input $kind['data','creds','temp']
+    public static function getLocalFilePath($fileName = '', $kind = 'data')
+    {
+        if ($kind == 'data') {
+            $dir = self::$privateDataDirPath;
+        } else if ($kind == 'creds') {
+            $dir = self::$credentialsDirPath;
+        } else if ($kind == 'temp') {
+            $dir = self::$tempDirPath;
+        } else {
+            die('kind = data, credsm or temp plz');
+        }
+
+        if (substr($dir, -1) != '/') $dir .= '/';
+        return $dir . $fileName;
     }
 
     public function getAdminConfig()
@@ -386,10 +481,10 @@ class Config
         }
 
         $config = [];
-        $config['keys'] = ['key','value','type','desc','editable','options'];
+        $config['keys'] = ['key', 'value', 'type', 'desc', 'editable', 'options'];
         if ($user->isSuperAdmin) {
             $config['global'] = [
-                $this->_createField('isProd'),
+                //$this->_createField('isProd'),
                 $this->_createField('timeZone'),
                 $this->_createField('appName'),
                 $this->_createField('driveOwner'),
@@ -422,9 +517,19 @@ class Config
             unset($this->_propertiesInfo['libraries'][$library->key]);
         }
 
+        if ($user->isSuperAdmin) {
+            $config['staticConfigs'] = [];
+            $config['staticConfigs']['isProd'] = Config::$isProd;
+            $config['staticConfigs']['frontEndHost'] = Config::$frontEndHost;
+            $config['staticConfigs']['privateDataDirPath'] = Config::$privateDataDirPath;
+            $config['staticConfigs']['credentialsDirPath'] = Config::$credentialsDirPath;
+            $config['staticConfigs']['tempDirPath'] = Config::$tempDirPath;
+        }
+
         $config['serverCheck'] = [];
-        $config['serverCheck']['privateDataWritable'] = is_writable('./private_data');
-        $config['serverCheck']['privateTempWritable'] = is_writable('./private_temp');
+        $config['serverCheck']['credsDirWritable'] = is_writable(self::$credentialsDirPath);
+        $config['serverCheck']['privateDataWritable'] = is_writable(self::$privateDataDirPath);
+        $config['serverCheck']['privateTempWritable'] = is_writable(self::$tempDirPath);
         $config['serverCheck']['shellExecEnable'] = is_callable('shell_exec') && false === stripos(ini_get('disable_functions'), 'shell_exec');
 
         return $config;
@@ -432,7 +537,7 @@ class Config
 
     private function _getScopes()
     {
-        $tokenPath = './private_data/token.json';
+        $tokenPath = self::getLocalFilePath('token.json', 'creds');
         $accessToken = json_decode(file_get_contents($tokenPath), true);
         return explode(' ', $accessToken['scope']);
     }
@@ -520,8 +625,8 @@ class Config
                 $driveService->files->update($libConfig->statsSheetId, $tempFile);
             });
         } catch (Google_Service_Exception $e) {
-            respondWithError(500, "Internal Error");
             logError($e->getMessage());
+            respondWithError(500, "Internal Error");
         }
         //remove from cust/lang
         require_once('Customization.php');
@@ -534,7 +639,6 @@ class Config
         unset($this->libraries[$libKey]);
         $result = $this->_updatePropsAll();
         return $result;
-        
     }
 
     private function _createField($key, &$props = null, &$propsInfo = null, $isRecursive = false)
@@ -581,7 +685,7 @@ class Config
 
     private function _array_values_recursive($arr)
     {
-        $arr2=[];
+        $arr2 = [];
         foreach ($arr as $key => $value) {
             // echo "$key : " . implode(', ', $value) . "\n";
 
@@ -591,7 +695,7 @@ class Config
                 $arr2[] =  $value;
             }
         }
-    
+
         return $arr2;
     }
 

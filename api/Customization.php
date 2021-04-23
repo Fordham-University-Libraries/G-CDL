@@ -314,13 +314,13 @@ class Customization
 
 
     public function __construct($forceRefresh = false) {
-        global $config;
-        $fileName = $config->privateDataDirPath . 'customization_app.json';
+        
+        $fileName = Config::getLocalFilePath('customization_app.json');
         if (file_exists($fileName)) {
             $file = file_get_contents($fileName);
             $this->appGlobal = json_decode($file, true);
         }
-        $fileName = $config->privateDataDirPath . 'customization.json';
+        $fileName = Config::getLocalFilePath('customization.json');
         if (file_exists($fileName)) {
             $file = file_get_contents($fileName);
             $this->libraries = json_decode($file, true);
@@ -513,10 +513,15 @@ class Customization
         }
         
         if ($libKey == 'appGlobal') {
-            $fileName = $config->privateDataDirPath . 'customization_app.json';
+            $fileName = Config::getLocalFilePath('customization_app.json');
             $file = fopen($fileName, 'wb');
-            fwrite($file, json_encode($data));
-            fclose($file);
+            try {
+                fwrite($file, json_encode($data));
+                fclose($file);
+            } catch (Exception $e) {
+                logError($e);
+                respondWithError(500, 'ERROR: cannot save customization data');
+            }
             return ['success' => true];
         } else {
             if (!isset($this->libraries[$libKey])) {
@@ -524,10 +529,15 @@ class Customization
             }
             $org = $this->libraries[$libKey];
             $result = $this->_update($data, $this->libraries[$libKey]);
-            $fileName = $config->privateDataDirPath . 'customization.json';
+            $fileName = Config::getLocalFilePath('customization.json');
             $file = fopen($fileName, 'wb');
-            fwrite($file, json_encode($this->libraries));
-            fclose($file);
+            try {
+                fwrite($file, json_encode($this->libraries));
+                fclose($file);
+            } catch (Exception $e) {
+                logError($e);
+                respondWithError(500, 'ERROR: cannot save customization data');
+            }
             return [
             'libKey' => $libKey,
             'data' => $data,
@@ -559,10 +569,15 @@ class Customization
         if(!$this->libraries[$libKey]) return false;
 
         unset($this->libraries[$libKey]);
-        $fileName = $config->privateDataDirPath . 'customization.json';
+        $fileName = Config::getLocalFilePath('customization.json');
         $file = fopen($fileName, 'wb');
-        fwrite($file, json_encode($this->libraries));
-        fclose($file);
+        try {
+            fwrite($file, json_encode($this->libraries));
+            fclose($file);
+        } catch (Exception $e) {
+            logError($e);
+            respondWithError(500, 'ERROR: cannot save customization data');
+        }
         return true;
     }
 }

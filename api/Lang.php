@@ -255,7 +255,7 @@ class Lang {
 
     public function __construct($forceRefresh = false) {
         global $config;
-        $fileName = $config->privateDataDirPath . 'lang.json';
+        $fileName = Config::getLocalFilePath('lang.json');
         if (file_exists($fileName)) {
             $file = file_get_contents($fileName);
             $this->libraries = json_decode($file, true);
@@ -384,10 +384,15 @@ class Lang {
         if (!isset($this->libraries[$libKey])) $this->libraries[$libKey] = [];
         $org = $this->libraries[$libKey];
         $result = $this->_update($data, $this->libraries[$libKey]);
-        $fileName = $config->privateDataDirPath . 'lang.json';
+        $fileName = Config::getLocalFilePath('lang.json');
         $file = fopen($fileName, 'wb');
-        fwrite($file, json_encode($this->libraries));
-        fclose($file);
+        try {
+            fwrite($file, json_encode($this->libraries));
+            fclose($file);
+        } catch (Exception $e) {
+            logError($e);
+            respondWithError(500, 'ERROR: cannot save Language data');
+        }
         return [
             'libKey' => $libKey,
             'data' => $data,
@@ -413,9 +418,8 @@ class Lang {
 
     function getAbout(string $libKey)
     {
-        global $config;
         global $user;
-        $fileName = $config->privateDataDirPath . $libKey . '_about.html';
+        $fileName = Config::getLocalFilePath($libKey . '_about.html');
         if (file_exists($fileName)) {
             $html = file_get_contents($fileName);
         } else {
@@ -426,9 +430,14 @@ class Lang {
 
     function editAbout(string $libKey, string $html)
     {
-        global $config;
         global $user;
-        $fileName = $config->privateDataDirPath . $libKey . '_about.html';
+
+        if (!in_array($libKey, $user->isAdminOfLibraries)) {
+            respondWithError(401, 'Not Authorized');
+            die();
+        }
+        
+        $fileName = Config::getLocalFilePath($libKey . '_about.html');
         $result = ['success' => false];
         try {
             $file = fopen($fileName, 'wb');
@@ -436,24 +445,29 @@ class Lang {
             fclose($file);
             $result['success'] = true;
         } catch (Exception $e) {
-
+            logError($e);
+            respondWithError(500, 'ERROR: cannot save about page data');
         }
         return $result;
     }
 
     public function removeLibrary($libKey): bool {
-        global $config;
         global $user;
         if(!$user->isSuperAdmin) die('unauthorized');
         if(!$this->libraries[$libKey]) return false;
 
         unset($this->libraries[$libKey]);
-        $fileName = $config->privateDataDirPath . 'lang.json';
+        $fileName = Config::getLocalFilePath('lang.json');
         $file = fopen($fileName, 'wb');
-        fwrite($file, json_encode($this->libraries));
-        fclose($file);
+        try {
+            fwrite($file, json_encode($this->libraries));
+            fclose($file);
+        } catch (Exception $e) {
+            logError($e);
+            respondWithError(500, 'ERROR: cannot save Laguage data');
+        }
 
-        $aboutFile = $config->privateDataDirPath . $libKey . '_about.html';
+        $aboutFile = Config::getLocalFilePath($libKey . '_about.html');
         if (file_exists($aboutFile)) unlink($aboutFile);
 
         return true;

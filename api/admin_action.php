@@ -166,7 +166,7 @@ function getAccessibleUsers(string $libKey = null, bool $internal = false)
         respondWithError(401, 'Not Authorized');
         die();
     }
-    $fileName = $config->privateDataDirPath . $config->accessibleUserCachefileName;
+    $fileName = Config::getLocalFilePath($config->accessibleUserCachefileName);
     $range = 'Sheet1!A1:A';
     try {
         $response = $sheetService->spreadsheets_values->get($config->accessibleUsersSheetId, $range);
@@ -181,8 +181,13 @@ function getAccessibleUsers(string $libKey = null, bool $internal = false)
             array_push($accessibleUsers, $row[0]);    
         }
         $file = fopen($fileName, 'wb');
-        fwrite($file, serialize($accessibleUsers));
-        fclose($file);
+        try {
+            fwrite($file, serialize($accessibleUsers));
+            fclose($file);
+        } catch (Exception $e) {
+            logError($e);
+            respondWithError(500, 'ERROR: cannot save accessible cache data');
+        }
     }
     if (!$internal) {
         respondWithData($accessibleUsers);

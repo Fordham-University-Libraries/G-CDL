@@ -49,9 +49,11 @@ function getStats($libKey, $from = null, $to = null)
 
     //if no Titles sheet, create one
     $sSheet = $sheetService->spreadsheets->get($config->libraries[$libKey]->statsSheetId);
-    $titlesSheet;
     foreach ($sSheet->sheets as $sheet) {
-        if ($sheet->properties->title == "Titles") $titlesSheet = $sheet;
+        if ($sheet->properties->title == "Titles") { 
+            $titlesSheet = $sheet;
+            break;
+        }
     }    
     if (!$titlesSheet) {
         $body = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest([
@@ -67,7 +69,7 @@ function getStats($libKey, $from = null, $to = null)
     }
 
     //get stats data
-    $fileName = $config->privateDataDirPath . $libKey . '_stats_cache.php.serialized';
+    $fileName = Config::getLocalFilePath($libKey . '_stats_cache.php.serialized');
     if (file_exists($fileName) && time() - filemtime($fileName) < 1 * 3600) { //1 hour
         // use cache
         $file = file_get_contents($fileName);
@@ -78,8 +80,13 @@ function getStats($libKey, $from = null, $to = null)
         $values = $response->getValues();
         if (!empty($values)) {
             $file = fopen($fileName, 'wb');
-            fwrite($file, serialize($values));
-            fclose($file);
+            try {
+                fwrite($file, serialize($values));
+                fclose($file);
+            } catch (Exception $e) {
+                logError($e);
+                respondWithError(500, 'Error: cannot save cache stats file');
+            }
         }
     }
 
@@ -159,8 +166,7 @@ function getTitleByItemId($itemId, $libKey) {
     global $sheetService;
 
     //get titles data
-    $titles;
-    $fileName = $config->privateDataDirPath . $libKey . '_stats_titles_cache.php.serialized';
+    $fileName = Config::getLocalFilePath($libKey . '_stats_titles_cache.php.serialized');
     if (file_exists($fileName) && time() - filemtime($fileName) < 1 * 3600) { //1 hour
         // use cache
         $file = file_get_contents($fileName);
@@ -171,12 +177,18 @@ function getTitleByItemId($itemId, $libKey) {
         $response = $sheetService->spreadsheets_values->get($config->libraries[$libKey]->statsSheetId, $range);
         $values = $response->getValues();
         if ($values) {
+            $titles = [];
             foreach ($values as $value) {
                 $titles[$value[0]] = $value[1];
             }
             $file = fopen($fileName, 'wb');
-            fwrite($file, serialize($titles));
-            fclose($file);
+            try {
+                fwrite($file, serialize($titles));
+                fclose($file);
+            } catch (Exception $e) {
+                logError($e);
+                respondWithError(500, 'Error: cannot save cached titles data');
+            }
         }
     }
 

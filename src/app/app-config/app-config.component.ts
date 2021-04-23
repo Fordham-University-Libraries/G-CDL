@@ -9,6 +9,7 @@ import { ConfigService } from '../config.service';
 import { AdminService } from '../admin.service';
 import { Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-app-config',
@@ -34,6 +35,8 @@ export class AppConfigComponent implements OnInit {
     privateTempWritable: boolean,
     shellExecEnable: boolean,
   }
+  staticConfigs: any;
+  apiBase: string;
 
   constructor(
     private router: Router,
@@ -42,7 +45,9 @@ export class AppConfigComponent implements OnInit {
     private titleService: Title,
     private adminService: AdminService,
     private snackBar: MatSnackBar,
-  ) { }
+  ) { 
+    this.apiBase = environment.apiBase;
+  }
 
   ngOnInit(): void {
     this.appConfigDirtyCount.isLoading = true;
@@ -77,6 +82,7 @@ export class AppConfigComponent implements OnInit {
         if ((!kind || kind == 'global') && res.global) this._processAdminGlobalConfigData(res.global, keysOrder);
         if ((!kind || kind == 'libraries') && res.libraries) this._processAdminLibrariesConfigData(res.libraries, keysOrder);
         this.serverCheck = res.serverCheck;
+        this.staticConfigs = res.staticConfigs;
       } else {
         this.router.navigate(['/unauthed'], { skipLocationChange: true });
       }
@@ -329,6 +335,11 @@ export class AppConfigComponent implements OnInit {
       this.snackBar.open(`ERROR: unexpected error a.k.a. I haz fail`, '', {duration: 5000})
     })
 
+  }
+
+  //for *ngFor | keyvalue: noSort
+  noSort() {
+    return 0;
   }
 
 }

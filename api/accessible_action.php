@@ -94,7 +94,7 @@ function addAccessibleUsers(array $userNames)
     ];
     try {
         $sheetService->spreadsheets_values->append($config->accessibleUsersSheetId, $range, $body, $params);
-        $fileName = $config->privateDataDirPath . $config->accessibleUserCachefileName;
+        $fileName = Config::getLocalFilePath($config->accessibleUserCachefileName);
         if (file_exists($fileName)) unlink($fileName);
         respondWithData([
             'usersAdded' => $usersAdded,
@@ -156,7 +156,7 @@ function removeAccessibleUsers(array $userNames)
 
         try {
             $result = $sheetService->spreadsheets->batchUpdate($config->accessibleUsersSheetId, $batchUpdateRequest);
-            $fileName = $config->privateDataDirPath . $config->accessibleUserCachefileName;
+            $fileName = Config::getLocalFilePath($config->accessibleUserCachefileName);
             if (file_exists($fileName)) unlink($fileName);
             $usersRemoved = $userNames;
         } catch (Google_Service_Exception $e) {

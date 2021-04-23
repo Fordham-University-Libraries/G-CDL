@@ -5,6 +5,11 @@ use PHPMailer\PHPMailer\Exception;
 function email(string $kind, User $user, CdlItem $cdlItem) {
     global $config;
     global $lang;
+
+    $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
+    $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
+    $baseDir = str_replace('/api', '', $baseDir);
+    
     // gmail
     if ($config->emails['method'] == 'gMail') {
         $client = getClient();
@@ -12,11 +17,8 @@ function email(string $kind, User $user, CdlItem $cdlItem) {
         $sender = 'me'; //The special value **me** can be used to indicate the authenticated user. (in this case, the driveOwner)
         $toName = isset($user->fullName) ? $user->fullName : $user->userName;
         $toEmail = $user->email;
-        $strSubject;
-        $strBody;
-        $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
-        $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
-        $baseDir = str_replace('/api', '', $baseDir);
+        $strSubject = '';
+        $strBody = '';
         if ($kind == 'borrow') {
             $strSubject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowSubject']);
             $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowBody']);
@@ -102,7 +104,7 @@ function errorNotifyEmail($message, $errorId) {
     global $config;
     //check so we don't email about same items too repeatedly
     if ($errorId) {
-        $fileName = $config->privateDataDirPath . 'errorEmailLogs.json';
+        $fileName = Config::getLocalFilePath('errorEmailLogs.json');
         if (file_exists($fileName)) {
             $file = file_get_contents($fileName);
             $logs = json_decode($file, true);
@@ -120,8 +122,12 @@ function errorNotifyEmail($message, $errorId) {
         } else {
             $logs = [$errorId => time()];
             $file = fopen($fileName, 'wb');
-            fwrite($file, json_encode($logs));
-            fclose($file);
+            try {
+                fwrite($file, json_encode($logs));
+                fclose($file);
+            } catch (Exception $e) {
+                logError($e);
+            }
         }
     }
 
