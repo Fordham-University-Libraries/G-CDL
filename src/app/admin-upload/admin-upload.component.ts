@@ -246,12 +246,16 @@ export class AdminUploadComponent implements OnInit {
   }
 
   upload() {
-    if (this.error) return;    
+    if (this.error) return;
+    Object.keys(this.pdfItem).forEach(key => {
+      if (this.pdfItem[key].required && !this.pdfItem[key].value) this.error = 'Please fill in the required fields';
+    });   
     if (!this.pdfItem.fileName.value) {
       this.error = 'Please choose a file to upload';
       this.warning = null;
       return;
     }
+    if (this.error) return;
 
     this.isBusy = true;
     this.uploadedFileInfo = null;

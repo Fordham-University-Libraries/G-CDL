@@ -113,7 +113,7 @@
             </mat-form-field>
         </ng-container>
         <div>
-            <label for="file-input">Choose a PDF file to add to collection</label>
+            <label for="file-input">Choose a PDF file to add to collection<span class="required"> *</span></label>
             <br><br>
             <input id="file-input" class="wells" type="file" accept="application/pdf"
                 (change)="handleFileInput($event.target.files)" />
@@ -123,7 +123,7 @@
         <div *ngIf="warning && !pdfItem.part.value" class="alert alert-warning">{{ warning }}</div>
         <br>
         <!-- submit -->
-        <button [disabled]="error || fieldError || !formWasTouched" mat-raised-button color="primary"
+        <button [disabled]="error || fieldError || !formWasTouched || !pdfItem.fileName.value || !pdfItem.bibId.value || !pdfItem.itemId.value || !pdfItem.title.value" mat-raised-button color="primary"
             (click)="upload()">Upload</button>
     </div>
     <!-- success message -->
