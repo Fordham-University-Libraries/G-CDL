@@ -19,6 +19,7 @@ class CdlItem
     public int $part;
     public int $partTotal;
     public string $partDesc;
+    public bool $shouldCreateNoOcr = true; //to track if uploader explicitely choose to not run OCR removal on this file
     public string $fileWithOcrId;
     public string $due; //zulu date
     public bool $isCheckedOutToMe = false;
@@ -596,6 +597,7 @@ class CdlItem
 
         if ($for == 'admin') {
             $item['fileWithOcrId'] = $this->fileWithOcrId;
+            $item['shouldCreateNoOcr'] = $this->shouldCreateNoOcr;
             $item['lastReturned'] = $this->lastReturned ?? null;
             $item['lastBorrowed'] = $this->lastBorrowed ?? null;
             $item['lastViewer'] = $this->lastViewer ?? null;

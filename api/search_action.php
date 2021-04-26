@@ -1,5 +1,5 @@
 <?php
-function search($field = 'title', $term = null, $library, $admin = null, $internal = false)
+function search($field = 'title', $term = null, $library = null, $admin = null, $internal = false)
 {
     global $service;
     global $config;
@@ -13,6 +13,7 @@ function search($field = 'title', $term = null, $library, $admin = null, $intern
         }
     }
 
+    if (!$library) $library = array_key_first($config->libraries);
     $folderId = $config->libraries[$library]->noOcrFolderId;
     if (!$folderId) {
         respondWithError(404, "unknown library $library");

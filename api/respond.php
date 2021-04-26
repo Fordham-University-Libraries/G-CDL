@@ -57,7 +57,6 @@ function respondWithFatalError(int $code, string $errMsg, $errorCode = null)
 function respondWithError(int $code, string $errMsg, $recommededAction = null)
 {
     //still return 200, but the status code in respond
-    global $config;
     if (!Config::$isProd) {
         header("Access-Control-Allow-Origin: http://localhost:4200");
         header("Access-Control-Allow-Credentials: true");

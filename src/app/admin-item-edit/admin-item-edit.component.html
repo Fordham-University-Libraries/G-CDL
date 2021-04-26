@@ -16,8 +16,8 @@
             <td>File ID:</td>
             <td>{{ item.id }} <button mat-icon-button (click)="adminDownloadFile(item.id)"><mat-icon>cloud_download</mat-icon></button></td>
         <tr>
-            <td>Accessible (With OCR) File ID: </td>
-            <td>{{ item.fileWithOrcId }} <button mat-icon-button (click)="adminDownloadFile(item.id, true)"><mat-icon>cloud_download</mat-icon></button></td>
+            <td>Accessible (With OCR) File ID: <ng-container *ngIf="!item.shouldCreateNoOcr"><mat-icon [matTooltip]="'This item was uploaded as is (uploader choose to NOT run OCR removal on it)'" class="warn">assignment_late</mat-icon></ng-container></td>
+            <td>{{ item.fileWithOcrId }} <button mat-icon-button (click)="adminDownloadFile(item.id, true)"><mat-icon>cloud_download</mat-icon></button></td>
         <tr>
             <td>Biblographic Record ID: </td>
             <td>{{ item.bibId }}</td>

@@ -32,7 +32,6 @@ export class AdminItemEditComponent implements OnInit {
         if (this.item.partDesc) this.partDesc = this.item.partDesc;
         if (this.item.part) this.part = this.item.part;
         if (this.item.partTotal) this.partTotal = this.item.partTotal;
-
         //console.log(this.item);
       })
     }

@@ -121,10 +121,10 @@
             <input id="file-input" class="wells" type="file" accept="application/pdf"
                 (change)="handleFileInput($event.target.files)" />
             <br>
-            <mat-slide-toggle [(ngModel)]="pdfItem.shouldCreateNoOcr">Create a No-OCR version?</mat-slide-toggle>
+            <mat-slide-toggle [(ngModel)]="pdfItem.shouldCreateNoOcr">Create a No-OCR version? <mat-icon>help</mat-icon></mat-slide-toggle>
             <div *ngIf="!pdfItem.shouldCreateNoOcr" class="alert alert-warning">
                 <p>HEADS UP! You've chosen to NOT create a
-                NO-OCR version, hence a regular user will given the original PDF you uploaded.</p>
+                NO-OCR version, hence a regular users (not accessible users) will be given the original PDF you uploaded when they borrow item.</p>
                 <p> If the original PDF you uploaded contains texts or OCR data, the users will be able to save them to
                 to text a file and keep it forever, therefore breaking the CDL principle</p></div>
         </div>
