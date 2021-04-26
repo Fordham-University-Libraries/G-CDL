@@ -355,9 +355,13 @@ function logout()
 
     $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
     if (!Config::$isProd) $host = str_replace(':8080', ':4200', $host);
-    $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
-    $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
-    $baseDir = str_replace('/api', '', $baseDir);
+    if (!Config::$frontEndHost) {
+        $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
+        $baseDir = str_replace('/api', '', $baseDir);
+    } else {
+        $host = rtrim(Config::$frontEndHost,'/');
+        $baseDir = '';
+    }
 
     if ($config->libraries[$user->homeLibrary]->authorization['enable'] && $config->libraries[$user->homeLibrary]->authorization['auth']['kind'] == "CAS") {
         try {
