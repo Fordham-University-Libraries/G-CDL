@@ -2,11 +2,18 @@
 require 'Library.php';
 class Config
 {
-    public static $isProd = false; //change to true when deploy for production. When NOT in production: the API will 1) allow Access-Control-Allow-Origin: http://localhost:4200 and assume that you are running the frontend on port 4200. 2) will NOT change items status in your ILS (if enabled). 3) will NOT apply session cookies settings. 4) will allow unsecure CAS
-    public static $frontEndHost; //if you plan to host front end on different host (full URL e.g. https://mycdlfrontend.moilibrary.edu/mysubdir). Leave unset for same host
-    public static $privateDataDirPath = './private_data'; //dir for configs and cache files
-    public static $credentialsDirPath = './private_data'; //dir for Google API credentails/token.json file
-    public static $tempDirPath = './private_temp'; //dir for temp storing upload pdf file (will be removed after uploaded to GDrive)
+    public static $isProd = false;
+    public static $frontEndHost;
+    public static $privateDataDirPath = './private_data';
+    public static $credentialsDirPath = './private_data';
+    public static $tempDirPath = './private_temp';
+    private static $staticConfigsInfo = [
+        'isProd' => 'change to true when deploy for production. When NOT in production: the API will 1) allow Access-Control-Allow-Origin: http://localhost:4200 and assume that you are running the frontend on localhost on port 4200. 2) will NOT change items status in your ILS (if enabled). 3) will NOT apply session cookies settings. 4) will allow unsecure CAS',
+        'frontEndHost' => 'if you plan to host front end on different host (full URL e.g. https://mycdlfrontend.moilibrary.edu/mysubdir). Leave unset for same host',
+        'privateDataDirPath' => 'directory to store configs and cache files',
+        'credentialsDirPath' => 'directory to store Google API credentails/token.json files',
+        'tempDirPath' => 'directory to temporarily store uploaded pdf files (will be removed after successfully uploaded to GDrive)'
+    ];
   
     public $mainFolderId; //also stored on G app's data config_base.json 
     public $accessibleUsersSheetId; //also stored on G app's data config_base.json 
@@ -64,7 +71,6 @@ class Config
     private $_propertiesInfo = [
         //[help text, editable status, select options]
         //-2 = hide, -1 = read only, 1 = editable, 2 = use caution
-        //'isProd' => ['is the app configred for production? When it is NOT in production, the API will 1) allow Access-Control-Allow-Origin: http://localhost:4200 and assume that you are running the frontend on port 4200. 2) will NOT change items status in your ILS (if enabled). 3) will NOT apply session cookies settings. 4) will allow unsecure CAS', 1],
         'appName' => ['name of the application (visible to end users)', 1],
         'timeZone' => ['timezone. see https://www.php.net/manual/en/timezones.php', 1],
         'maxFileSizeInMb' => ['Google PDF Viewer has max fix file size litmit of 100MB (as of early 2021), if you upload something bigger than that, it will not display', 2],
@@ -494,7 +500,6 @@ class Config
                 $this->_createField('accessibleUsersSheetId'),
                 $this->_createField('maxFileSizeInMb'),
                 $this->_createField('useEmbedReader'),
-                $this->_createField('privateDataDirPath'),
                 $this->_createField('accessibleUserCachefileName'),
                 $this->_createField('accessibleUserCacheMinutes'),
                 $this->_createField('allItemsCacheFileName'),
@@ -523,6 +528,7 @@ class Config
             $config['staticConfigs']['privateDataDirPath'] = Config::$privateDataDirPath;
             $config['staticConfigs']['credentialsDirPath'] = Config::$credentialsDirPath;
             $config['staticConfigs']['tempDirPath'] = Config::$tempDirPath;
+            $config['staticConfigs']['helpText'] = Config::$staticConfigsInfo;
         }
 
         $config['serverCheck'] = [];

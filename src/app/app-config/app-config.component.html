@@ -32,7 +32,12 @@
         HEADS UP!: There's a few static configs that you can change direclty in the /api/config.php file (<small>It's ok to use the default most of the time, EXCEPT the isProd config, if the app is deployed for production, you'll want to set it to <em>true</em></small>)
         </div>
         <ul>
-            <li *ngFor="let config of staticConfigs | keyvalue: noSort">{{ config.key }} : {{ config.value }} </li>
+            <ng-container *ngFor="let config of staticConfigs | keyvalue: noSort">
+                <ng-container *ngIf="config.key != 'helpText'">
+                    <li>{{ config.key }} : {{ config.value }}</li>
+                    <ul><li><small>{{ staticConfigs.helpText[config.key] }}</small></li></ul>
+                </ng-container>
+            </ng-container>
         </ul>
         <div>
             Frontend is configured to access the API at: {{ apiBase }} <small>(you can change this in Angular's environment.ts / environment.prod.ts files -- needs rebuild)</small>
