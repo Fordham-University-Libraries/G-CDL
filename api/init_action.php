@@ -315,7 +315,7 @@ function initMainFolder($client)
             'mainFolderId' => $mainFolder->getId(),
             'accessibleUsersSheetId' => $accessbileUsersSheet->getId()
         ];
-        if (!$config->addJsonToGDriveAppFolder('config_base.json',json_encode($configData),true)) die("failed to create config.json in AppData");
+        if (!$config->updateConfigOnGDriveAppFolder('config_base.json',json_encode($configData),true)) die("failed to create config.json in AppData");
     }
 
     //redirect

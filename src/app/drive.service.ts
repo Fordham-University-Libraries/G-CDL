@@ -145,7 +145,7 @@ export class DriveService {
   }
 
   downloadFileAdmin(fileId: string, accessibleVersion: boolean = false) {
-    window.open(`${this.apiBase}/?action=downalod_file_admin&fileId=${fileId}&accessibleVersion=${accessibleVersion ? 1 : 0}`);
+    window.open(`${this.apiBase}/?action=download_file_admin&fileId=${fileId}&accessibleVersion=${accessibleVersion ? 1 : 0}`);
   }
 
   uploadAdmin(file: any, libKey: string): Observable<any> {

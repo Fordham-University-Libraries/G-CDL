@@ -37,6 +37,8 @@ export class AppConfigComponent implements OnInit {
   }
   staticConfigs: any;
   apiBase: string;
+  configBackups: any;
+
 
   constructor(
     private router: Router,
@@ -58,6 +60,12 @@ export class AppConfigComponent implements OnInit {
         this.user = res;
         //console.log(this.user);
         this._processAdminConfigData();
+        if (this.user.isSuperAdmin) {
+          this.adminService.getFilesInGDriveAppFolder().subscribe(res => {
+            this.configBackups = res;
+            //console.log(this.configBackups);
+          });
+        }
       });
     });
 
@@ -340,6 +348,19 @@ export class AppConfigComponent implements OnInit {
   //for *ngFor | keyvalue: noSort
   noSort() {
     return 0;
+  }
+
+  getRevision(index: number) {
+    //console.log(`getting revision for: ${this.configBackups.id} - ${this.configBackups.revisions[index].id}`);
+    if (!this.configBackups.revisions[index].data) {
+      this.adminService.getFileRevisionData(this.configBackups.id, this.configBackups.revisions[index].id).subscribe( res => {
+        //console.log(res);
+        this.configBackups.revisions[index].data = res.body; 
+      })
+      
+    }
+    this.configBackups.viewRevIndex = index;
+    
   }
 
 }

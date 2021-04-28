@@ -176,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         require 'admin_action.php';
         $fileId = $_GET['fileId'];
         getItemEditAdmin($fileId);
-    } else if ($action == 'downalod_file_admin') {
+    } else if ($action == 'download_file_admin') {
         require 'admin_action.php';
         $fileId = $_GET['fileId']; //noOrc
         $accessibleVersion = $_GET['accessibleVersion'] ?? false;
@@ -184,6 +184,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     } else if ($action == 'get_accessible_users') {
         require 'admin_action.php';
         getAccessibleUsers($libKey);
+    } else if ($action == 'admin_get_backup_config') {
+        $response = [];
+        $driveFile = $config->getFileFromAppFolder('config.json');
+        if ($driveFile) {
+            $response['id'] = $driveFile->getId();
+            $response['name'] = $driveFile->getName();
+            $response['version'] = $driveFile->getVersion();
+            $response['lastModified'] = $driveFile->getModifiedTime();
+            //$response['previousConfig'] = $config->getConfigFromAppFolder();
+            $revList = $service->revisions->listRevisions('1-ZB6nNvrMrCbPXupX-5bDZOVEWMoCBEpwgwPow9smT6mE6t7',['fields' => 'revisions(id,mimeType,modifiedTime,size)']);
+            if ($revList) $response['revisions'] = $revList->getRevisions();
+            respondWithData($response);
+        }
+    } else if ($action == 'admin_get_file_revision_data') {
+        $fileId = $_GET['fileId'] ?? null;
+        $revId = $_GET['revId'] ?? null;
+        if ($fileId && $revId) respondWithData($config->getFileRevisionData($fileId, $revId));
     } else if ($action == 'search_courses') {
         $field = $_GET['field'] ?? null;
         $term = $_GET['term'] ?? null;
@@ -395,10 +412,19 @@ function logError($error) {
 
 function test() {
     global $config;
+    global $service;
+    //$revList = $service->revisions->listRevisions('1-ZB6nNvrMrCbPXupX-5bDZOVEWMoCBEpwgwPow9smT6mE6t7',['fields' => 'revisions(id,mimeType,modifiedTime)']);
+    //respondWithData($revList->getRevisions());
     if ($config) {
-        $config->listFilesInAppFolder();
-        //$config->addJsonToGDriveAppFolder('test.json', '{"foo": "bar2222222"}');
+        //respondWithData([$config->getConfigFromAppFolder()]);
+        //respondWithData([$config->getFileFromAppFolder('config.json')]);
+        //$config->updateConfigOnGDriveAppFolder('config.json', '{"foo": "bar2222222"}');
     }
+    $file = $service->revisions->get('1-ZB6nNvrMrCbPXupX-5bDZOVEWMoCBEpwgwPow9smT6mE6t7','1fltCToBdrwIbDqZppeC9wxe7ouesL9Clmjn1tcG2HfbL9uaaUQ');
+    print_r($file);
+    //To download the revision content, you need to call revisions.get method with the parameter alt=media. Revisions for Google Docs, Sheets, and Slides can't be downloaded.
+
+
     //echo "hello, I'm a quick function for testing";
 }
  

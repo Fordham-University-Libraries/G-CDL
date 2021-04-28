@@ -14,35 +14,71 @@
             <button mat-menu-item [routerLink]="'./lang'">Languages</button>
         </mat-menu>
     </div>
-    <!-- server check -->
-    <div *ngIf="serverCheck && (!serverCheck.privateDataWritable || !serverCheck.privateTempWritable || !serverCheck.shellExecEnable)" class="alert alert-danger">
-        WARNING: there's a problem with you server settings
-        <ul>
-            <ng-container *ngFor="let issue of serverCheck | keyvalue: noSort">
-                <li *ngIf="!issue.value">{{ issue.key }}: is NOT writable/callable</li>
-            </ng-container>
-        </ul>
-    </div>
-    <!-- drive owner wanring -->
-    <div *ngIf="user?.isDriveOwner" class="alert alert-warning">WARNING: You're login as the Drive owner, therefore, you
-        CAN edit EVERYTHING (including stuff you shouldn't be editing). This is super dangerous (thanks captain obvious!). Please be careful.</div>
-    <!-- static config reminder -->
-    <div *ngIf="user?.isDriveOwner" class="alert alert-info">
-        <div>
-        HEADS UP!: There's a few static configs that you can change direclty in the /api/config.php file (<small>It's ok to use the default most of the time, EXCEPT the isProd config, if the app is deployed for production, you'll want to set it to <em>true</em></small>)
-        </div>
-        <ul>
-            <ng-container *ngFor="let config of staticConfigs | keyvalue: noSort">
-                <ng-container *ngIf="config.key != 'helpText'">
-                    <li>{{ config.key }} : {{ config.value }}</li>
-                    <ul><li><small>{{ staticConfigs.helpText[config.key] }}</small></li></ul>
+    <div class="wells">
+        <!-- server check -->
+        <div *ngIf="serverCheck && (!serverCheck.privateDataWritable || !serverCheck.privateTempWritable || !serverCheck.shellExecEnable)"
+            class="alert alert-danger">
+            WARNING: there's a problem with you server settings
+            <ul>
+                <ng-container *ngFor="let issue of serverCheck | keyvalue: noSort">
+                    <li *ngIf="!issue.value">{{ issue.key }}: is NOT writable/callable</li>
                 </ng-container>
-            </ng-container>
-        </ul>
-        <div>
-            Frontend is configured to access the API at: {{ apiBase }} <small>(you can change this in Angular's environment.ts / environment.prod.ts files -- needs rebuild)</small>
+            </ul>
         </div>
-    
+        <!-- drive owner wanring -->
+        <div *ngIf="user?.isDriveOwner" class="alert alert-warning">WARNING: You're login as the Drive owner, therefore,
+            you
+            CAN edit EVERYTHING (including stuff you shouldn't be editing). This is super dangerous (thanks captain
+            obvious!). Please be careful.</div>
+        <mat-accordion [multi]="true">
+            <mat-expansion-panel *ngIf="user?.isDriveOwner" [expanded]="false">
+                <!-- config change log -->
+                <mat-expansion-panel-header>
+                    <mat-panel-title>Static Configs</mat-panel-title>
+                </mat-expansion-panel-header>
+                <!-- static config reminder -->
+                <div class="margin-top-default">
+                    <strong>HEADS UP!</strong>: There's a few static configs that you can change direclty in the
+                    /api/config.php file
+                    (<small>It's ok to use the default most of the time, EXCEPT the isProd config, if the app is
+                        deployed
+                        for production, you'll want to set it to <em>true</em></small>)
+                </div>
+                <div class="alert alert-info margin-top-default">
+                    <ul>
+                        <ng-container *ngFor="let config of staticConfigs | keyvalue: noSort">
+                            <ng-container *ngIf="config.key != 'helpText'">
+                                <li>{{ config.key }} : {{ config.value }}</li>
+                                <ul>
+                                    <li><small>{{ staticConfigs.helpText[config.key] }}</small></li>
+                                </ul>
+                            </ng-container>
+                        </ng-container>
+                    </ul>
+                </div>
+                <div>
+                    Frontend is configured to access the API at: {{ apiBase }} <small>(you can change this in Angular's
+                        environment.ts / environment.prod.ts files -- needs rebuild)</small>
+                </div>
+            </mat-expansion-panel>
+            <mat-expansion-panel *ngIf="configBackups" [expanded]="false">
+                <!-- config change log -->
+                <mat-expansion-panel-header>
+                    <mat-panel-title>Config Revisions History</mat-panel-title>
+                </mat-expansion-panel-header>
+                <div class="alert alert-secondary margin-top-default">
+                    <ul>
+                        <li *ngFor="let rev of configBackups.revisions; let i = index"><a href="#" (click)="getRevision(i); false;">Rev# {{ i }}</a> - {{
+                            rev.modifiedTime | date: 'medium' }} ({{ rev.size | number }} bytes)</li>
+                    </ul>
+                </div>
+                <ng-container *ngIf="configBackups.hasOwnProperty('viewRevIndex')">
+                    <strong>Previous Config {{ configBackups.viewRevIndex }}</strong> ({{ configBackups.revisions[configBackups.viewRevIndex].modifiedTime | date: 'medium' }})<br>
+                    <pre>{{ configBackups.revisions[configBackups.viewRevIndex].data | json }}</pre>
+                </ng-container>
+
+            </mat-expansion-panel>
+        </mat-accordion>
     </div>
     <mat-spinner *ngIf="!appConfig.length && !appConfigLibraries.length"></mat-spinner>
     <mat-accordion [multi]="false">
@@ -103,7 +139,8 @@
                 <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: appConfigCopy }"></ng-container>
             </ul>
             <button *ngIf="!appConfigDirtyCount.isLoading" mat-raised-button color="primary" class="button-primary"
-                [disabled]="!appConfigDirtyCount.count" (click)="updateConfig(appConfigCopy)">Save Global Configs</button>
+                [disabled]="!appConfigDirtyCount.count" (click)="updateConfig(appConfigCopy)">Save Global
+                Configs</button>
         </mat-expansion-panel>
 
         <!-- libraries -->
@@ -128,7 +165,8 @@
                                 <mat-label>Key</mat-label>
                                 <input #newLibKeyField="ngModel" matInput type="text" [(ngModel)]="newLib.key"
                                     pattern="[A-Za-z0-9]*" placeholder="e.g. downtown">
-                                <mat-hint *ngIf="newLibKeyField.invalid" class="error new-lib-hint">Only Alphanumeric Characters Allowed
+                                <mat-hint *ngIf="newLibKeyField.invalid" class="error new-lib-hint">Only Alphanumeric
+                                    Characters Allowed
                                 </mat-hint>
                             </mat-form-field>
                             &nbsp;
@@ -158,7 +196,8 @@
                                 class="alert alert-warning margin-top-default">
                                 <p><strong>{{ appConfigLibrariesDirtyCount[i].count }} Unsaved Changes</strong></p>
                                 <button mat-raised-button color="primary" class="button-primary"
-                                    (click)="updateConfig(appConfigLibrariesCopy[i])">Save Configs for Library {{ appConfigLibrariesDirtyCount[i].name }}</button>
+                                    (click)="updateConfig(appConfigLibrariesCopy[i])">Save Configs for Library {{
+                                    appConfigLibrariesDirtyCount[i].name }}</button>
                             </div>
                             <ul *ngIf="!appConfigLibrariesDirtyCount[i].isLoading" class="root">
                                 <ng-template #recursiveListLibrary let-library>
@@ -210,26 +249,31 @@
                             </ul>
                             <button mat-raised-button color="primary" class="button-primary"
                                 [disabled]="!appConfigLibrariesDirtyCount[i].count"
-                                (click)="updateConfig(appConfigLibrariesCopy[i])">Save Configs for Library {{ appConfigLibrariesDirtyCount[i].name }}</button>
+                                (click)="updateConfig(appConfigLibrariesCopy[i])">Save Configs for Library {{
+                                appConfigLibrariesDirtyCount[i].name }}</button>
                             &nbsp;
                             <!-- more menu -->
-                            <button *ngIf="(!appConfigLibrariesDirtyCount[i].isDefault  || user.isDriveOwner)&& user.isSuperAdmin" mat-button
-                                [matMenuTriggerFor]="menu" [matTooltip]="'more options...'">
+                            <button
+                                *ngIf="(!appConfigLibrariesDirtyCount[i].isDefault  || user.isDriveOwner)&& user.isSuperAdmin"
+                                mat-button [matMenuTriggerFor]="menu" [matTooltip]="'more options...'">
                                 <mat-icon>more_horiz</mat-icon>
                             </button>
                             <mat-menu #menu="matMenu">
                                 <button mat-menu-item class="danger" [matMenuTriggerFor]="delConfirm">
-                                    <mat-icon>delete</mat-icon>REMOVE LIBRARY <em>{{ appConfigLibrariesDirtyCount[i].name }}</em>
+                                    <mat-icon>delete</mat-icon>REMOVE LIBRARY <em>{{
+                                        appConfigLibrariesDirtyCount[i].name }}</em>
                                 </button>
                             </mat-menu>
                             <mat-menu #delConfirm="matMenu">
                                 <div id="del-confirm">
                                     <div class="alert alert-warning">
-                                    DANGER!! This will delete the library <em>{{ appConfigLibrariesDirtyCount[i].name }}</em> and all of its items, statistics and etc.
-                                    <br><br>
-                                    <button mat-raised-button color="warn" (click)="removeLibrary(i)">
-                                        DELETE THIS LIBRARY
-                                    </button>
+                                        DANGER!! This will delete the library <em>{{
+                                            appConfigLibrariesDirtyCount[i].name }}</em> and all of its items,
+                                        statistics and etc.
+                                        <br><br>
+                                        <button mat-raised-button color="warn" (click)="removeLibrary(i)">
+                                            DELETE THIS LIBRARY
+                                        </button>
                                     </div>
                                 </div>
                             </mat-menu>

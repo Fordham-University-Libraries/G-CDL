@@ -220,7 +220,7 @@ class Config
             if ($client) {
                 try {
                     $service = new Google_Service_Drive($client);
-                    $file = $this->getAppDataConfigFile();
+                    $file = $this->getFileFromAppFolder('config_base.json');
                     if ($file) {
                         //if specify ["alt" => "media"] it'll actually return GuzzleHttp\Psr7\Response
                         //cast it so PHP Intelephense stops complaining about getBody() not defined
@@ -258,30 +258,7 @@ class Config
         }
     }
 
-    private function getAppDataConfigFile()
-    { //from GDrive's appDataFolder
-        $client = getClient();
-        $service = new Google_Service_Drive($client);
-        try {
-            $fileList = $service->files->listFiles([
-                'spaces' => 'appDataFolder',
-                'fields' => '*',
-                'pageSize' => 100
-            ]);
-            foreach ($fileList->getFiles() as $file) {
-                if ($file->getName() == 'config_base.json') {
-                    return $file;
-                }
-            }
-        } catch (Google_Service_Exception $e) {
-            $errMsg = json_decode($e->getMessage());
-            logError('cannot get config.json file on Drive AppData... is the app still connect to the drive? Error is: ' . $errMsg->error->message);
-            echo $errMsg->error->message;
-            die('Fatal Error: cannot get config file from Drive\'s AppData');
-        }
-    }
-
-    public function listFilesInAppFolder()
+    public function getFileFromAppFolder($fileName)
     { //from GDrive's appDataFolder
         global $user;
         if (!$user->isSuperAdmin) respondWithError(401, 'Unauthorized');
@@ -290,38 +267,103 @@ class Config
         $service = new Google_Service_Drive($client);
         try {
             $fileList = $service->files->listFiles([
+                'q' => 'name = "' . $fileName . '"',
                 'spaces' => 'appDataFolder',
                 'fields' => '*',
                 'pageSize' => 100
             ]);
-            respondWithData($fileList->getFiles());
+            $files = $fileList->getFiles();
+            if (count($files) == 1) {
+                return $files[0];
+            } else {
+                return null;
+            }
         } catch (Google_Service_Exception $e) {
             $errMsg = json_decode($e->getMessage());
             die('cannot get files from Drive\'s AppData: ' . $errMsg);
         }
     }
 
-    function addJsonToGDriveAppFolder(string $fileName, string $jsonStr, $init = false): bool {
+    public function getConfigFromAppFolder($fileName = 'config.json'): object|null
+    { //from GDrive's appDataFolder
+        global $user;
+        if (!$user->isSuperAdmin) respondWithError(401, 'Unauthorized');
+
+        $client = getClient();
+        $service = new Google_Service_Drive($client);
+        try {
+            $fileList = $service->files->listFiles([
+                'q' => 'name = "' . $fileName . '"',
+                'spaces' => 'appDataFolder',
+                'fields' => '*',
+                'pageSize' => 100
+            ]);
+            $files = $fileList->getFiles();
+            if (count($files) == 1) {
+                $response = (object) $service->files->get($files[0]->getId(), ["alt" => "media"]);
+                return json_decode((string) $response->getBody()->getContents());
+            } else {
+                return null;
+            }
+        } catch (Google_Service_Exception $e) {
+            $errMsg = json_decode($e->getMessage());
+            die('cannot get files from Drive\'s AppData: ' . $errMsg);
+        }
+    }
+
+    function updateConfigOnGDriveAppFolder(string $fileName, string $jsonStr, $init = false): bool {
         global $user;
         if (!$user->isSuperAdmin && !$init) respondWithError(401, 'Unauthorized');
 
         $client = getClient();
         $driveService = new Google_Service_Drive($client);
-        $configDriveFileMetadata = new Google_Service_Drive_DriveFile([
-            'name' => $fileName,
-            'parents' => ['appDataFolder']
-        ]);
-        try {
-            $uploadedFile = $driveService->files->create($configDriveFileMetadata, array(
-                'data' => $jsonStr,
-                'mimeType' => 'application/json',
-                'uploadType' => 'multipart',
-                'fields' => 'id'));
-            return $uploadedFile ? true : false;
-        } catch (Exception $e) {
-            logError("failed to create $fileName in AppData: " . $e->getMessage());
-            return false;
+        //check if file already exists, if so, update, else create
+        $file = $this->getFileFromAppFolder($fileName);
+        if ($file) {
+            //update
+            $fileId = $file->getId();
+            try {
+                $emptyFile = new Google_Service_Drive_DriveFile();
+                $updatedFile = $driveService->files->update($fileId, $emptyFile, array(
+                    'data' => $jsonStr,
+                    'mimeType' => 'application/json',
+                    'uploadType' => 'multipart'
+                ));
+                return $updatedFile ? true : false;
+            } catch (Exception $e) {
+                logError("failed to update $fileName in AppData: " . $e->getMessage());
+                return false;
+            }
+        } else {
+            //create
+            $configDriveFileMetadata = new Google_Service_Drive_DriveFile([
+                'name' => $fileName,
+                'parents' => ['appDataFolder']
+            ]);
+            try {
+                $uploadedFile = $driveService->files->create($configDriveFileMetadata, array(
+                    'data' => $jsonStr,
+                    'mimeType' => 'application/json',
+                    'uploadType' => 'multipart',
+                    'fields' => 'id'));
+                return $uploadedFile ? true : false;
+            } catch (Exception $e) {
+                logError("failed to create $fileName in AppData: " . $e->getMessage());
+                return false;
+            }
         }
+    }
+
+    public function getFileRevisionData($fileId, $revId) {
+        global $user;
+        if (!$user->isSuperAdmin) respondWithError(401, 'Unauthorized');
+
+        //To download the revision content, you need to call revisions.get method with the parameter alt=media. Revisions for Google Docs, Sheets, and Slides can't be downloaded.
+        $client = getClient();
+        $driveService = new Google_Service_Drive($client);
+        $response = (object) $driveService->revisions->get($fileId, $revId, ["alt" => "media"]);
+        $revBody = json_decode((string) $response->getBody()->getContents());
+        return ['body' => $revBody];
     }
 
     private function _map($data)
@@ -367,8 +409,7 @@ class Config
         $currConfig = file_get_contents($configFilePath);
         $data = json_decode($currConfig);
         try {
-            $modTime = date("m_d_Y_g_i_a");
-            $this->addJsonToGDriveAppFolder("config_bak_before_mod_on_$modTime.json", $currConfig);
+            $this->updateConfigOnGDriveAppFolder("config.json", $currConfig);
         } catch (Exception $e){
             logError('cannot back up config file: ' . $e->getMessage());
         }
