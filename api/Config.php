@@ -84,7 +84,6 @@ class Config
         'driveOwner' => ['FYI, the account that owns the main CDL Folder on Google Drive (drive owner has full/unlimited power, can edit EVERYTHING)', -1],
         'accessibleUsersSheetId' => ['FYI, ID of the Google Sheet that is used to store all the accessible users', -1],
         'accessibleUserCacheMinutes' => ['how long (minutes) should the accessible users data is cached', 1],
-        'privateDataDirPath' => ['DANGER & IMPORTANT! READ ME! path to directory on your server to store credetails and cache files -- MUST be writable be the server, and MUST NOT be accessible to the public', -2],
         'accessibleUserCachefileName' => ['cache filename -- data is stored on Gsheet', -2],
         'allItemsCacheFileName' => ['cache filename -- for search', -2],
         'fields' => ['internal, for GDrive API -- which fields are returned', -2],
