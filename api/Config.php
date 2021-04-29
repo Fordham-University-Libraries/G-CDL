@@ -261,8 +261,6 @@ class Config
     public function getFileFromAppFolder($fileName)
     { //from GDrive's appDataFolder
         global $user;
-        if (!$user->isSuperAdmin) respondWithError(401, 'Unauthorized');
-
         $client = getClient();
         $service = new Google_Service_Drive($client);
         try {
@@ -273,7 +271,8 @@ class Config
                 'pageSize' => 100
             ]);
             $files = $fileList->getFiles();
-            if (count($files) == 1) {
+            if (count($files) == 1) {        
+                if ($user && !$user->isSuperAdmin && $fileName != "config_base.json") respondWithError(401, 'Unauthorized');
                 return $files[0];
             } else {
                 return null;

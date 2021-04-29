@@ -315,7 +315,18 @@ function initMainFolder($client)
             'mainFolderId' => $mainFolder->getId(),
             'accessibleUsersSheetId' => $accessbileUsersSheet->getId()
         ];
-        if (!$config->updateConfigOnGDriveAppFolder('config_base.json',json_encode($configData),true)) die("failed to create config.json in AppData");
+        //write config.json locally
+        $configFilePath = Config::getLocalFilePath('config.json');
+        try {
+            $file = fopen($configFilePath, 'wb');
+            fwrite($file, json_encode($configData));
+            fclose($file);
+        } catch (Exception $e) {
+            logError($e);
+            respondWithError(500, 'internal error');
+        }
+        //also save to GDrive appFolder
+        if (!$config->updateConfigOnGDriveAppFolder('config_base.json',json_encode($configData),true)) logError("failed to create config.json in AppData");
     }
 
     //redirect

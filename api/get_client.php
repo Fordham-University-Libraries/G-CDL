@@ -56,6 +56,11 @@ function getClient($authCode = null, $state = null)
             }
 
             $client->setAccessToken($accessToken);
+            //check
+            if(!$client->verifyIdToken()) {
+                respondWithFatalError('401', 'Invalid Token');
+                die();
+            }
             // Save the token to a file.
             if (!file_exists(dirname($tokenPath))) {
                 mkdir(dirname($tokenPath), 0700, true);
@@ -76,6 +81,13 @@ function getClient($authCode = null, $state = null)
             if ($client->getRefreshToken()) {
                 $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
             }
+            //check
+            if(!$client->verifyIdToken()) {
+                logError('Cannot Refresh OAuth Token, most likely its been revolked / app is disconnected from GDrive');
+                respondWithFatalError('401', 'Cannot Refresh Token');
+                die();
+            }
+
             // Save the token to a file.
             if (!file_exists(dirname($tokenPath))) {
                 mkdir(dirname($tokenPath), 0700, true);

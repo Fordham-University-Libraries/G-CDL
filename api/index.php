@@ -192,8 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $response['name'] = $driveFile->getName();
             $response['version'] = $driveFile->getVersion();
             $response['lastModified'] = $driveFile->getModifiedTime();
-            //$response['previousConfig'] = $config->getConfigFromAppFolder();
-            $revList = $service->revisions->listRevisions('1-ZB6nNvrMrCbPXupX-5bDZOVEWMoCBEpwgwPow9smT6mE6t7',['fields' => 'revisions(id,mimeType,modifiedTime,size)']);
+            $revList = $service->revisions->listRevisions($driveFile->getId(),['fields' => 'revisions(id,mimeType,modifiedTime,size)']);
             if ($revList) $response['revisions'] = $revList->getRevisions();
             respondWithData($response);
         }
