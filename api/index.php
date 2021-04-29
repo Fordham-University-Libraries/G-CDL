@@ -410,20 +410,6 @@ function logError($error) {
 }
 
 function test() {
-    global $config;
-    global $service;
-    //$revList = $service->revisions->listRevisions('1-ZB6nNvrMrCbPXupX-5bDZOVEWMoCBEpwgwPow9smT6mE6t7',['fields' => 'revisions(id,mimeType,modifiedTime)']);
-    //respondWithData($revList->getRevisions());
-    if ($config) {
-        //respondWithData([$config->getConfigFromAppFolder()]);
-        //respondWithData([$config->getFileFromAppFolder('config.json')]);
-        //$config->updateConfigOnGDriveAppFolder('config.json', '{"foo": "bar2222222"}');
-    }
-    $file = $service->revisions->get('1-ZB6nNvrMrCbPXupX-5bDZOVEWMoCBEpwgwPow9smT6mE6t7','1fltCToBdrwIbDqZppeC9wxe7ouesL9Clmjn1tcG2HfbL9uaaUQ');
-    print_r($file);
-    //To download the revision content, you need to call revisions.get method with the parameter alt=media. Revisions for Google Docs, Sheets, and Slides can't be downloaded.
-
-
     //echo "hello, I'm a quick function for testing";
 }
  
