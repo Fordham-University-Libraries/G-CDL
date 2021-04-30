@@ -152,7 +152,10 @@ function init($step = 1, $authCode = null)
                 $client = getClient();
                 $service = new Google_Service_Drive($client);
                 $mainFolder = $service->files->get($config->mainFolderId);
-                $view->data['appIsConnected'] = true;
+                if ($mainFolder) { 
+                    $view->data['appIsConnected'] = true;
+                    $view->data['mainFolderId'] = $mainFolder->getId();
+                }
             } catch (Google_Service_Exception $e) {
                 $view->data['appIsConnected'] = false;
                 $view->data['showNext'] = false;
@@ -192,7 +195,7 @@ function init($step = 1, $authCode = null)
             $view->data['borrowPeriod'] =  $config->libraries[$view->data['libKey']]->borrowingPeriod ?? 2;
             $view->data['cooldown'] = $config->libraries[$view->data['libKey']]->backToBackBorrowCoolDown ?? 60;
             $view->data['driveOwner'] = $config->driveOwner;
-            $view->data['gSuitesDomain'] = $config->auth['gSuitesDomain'];
+            $view->data['gSuitesDomain'] = $config->gSuitesDomain;
             if (count($config->libraries)) {
                 $view->data['admins'] = implode(',', $config->libraries[$view->data['libKey']]->admins);
                 $view->data['staff'] = implode(',', $config->libraries[$view->data['libKey']]->staff);
@@ -326,7 +329,7 @@ function initMainFolder($client)
             respondWithError(500, 'internal error');
         }
         //also save to GDrive appFolder
-        if (!$config->updateConfigOnGDriveAppFolder('config_base.json',json_encode($configData),true)) logError("failed to create config.json in AppData");
+        if (!$config->updateConfigOnGDriveAppFolder('config.json',json_encode($configData),true)) logError("failed to create config.json in AppData");
     }
 
     //redirect

@@ -138,10 +138,10 @@ function errorNotifyEmail($message, $errorId) {
     $strSubject = $config->appName . ' (CDL app) ERROR notification!';
     $to = '<' . $config->driveOwner . '>';
     if (count($config->appSuperAdmins) > 1) {
-        $appSuperAdmins = array_map(function ($user, $gSuitesDomain) { return '<' . $user . '@' . $gSuitesDomain . '>'; }, $config->appSuperAdmins, array_fill(0, count($config->appSuperAdmins), $config->auth['gSuitesDomain']));
+        $appSuperAdmins = array_map(function ($user, $gSuitesDomain) { return '<' . $user . '@' . $gSuitesDomain . '>'; }, $config->appSuperAdmins, array_fill(0, count($config->appSuperAdmins), $config->gSuitesDomain));
         $to .= "," . implode(',', $appSuperAdmins);
     } else if (count($config->appSuperAdmins) == 1) {
-        $to .= ',<' . $config->appSuperAdmins[0] . '@' . $config->auth['gSuitesDomain'] . '>';
+        $to .= ',<' . $config->appSuperAdmins[0] . '@' . $config->gSuitesDomain . '>';
     }
     $strRawMessage = "From: CDL APP ERROR NOTIFIER <$config->driveOwner>\r\n";
     $strRawMessage .= "To: $to\r\n";

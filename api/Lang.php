@@ -279,7 +279,8 @@ class Lang {
     }
 
     private function _serialize(&$default, &$libLang) {
-        if ($this->infiniteLoop++ > 500) die('to infinity and beyond!');
+        if ($this->infiniteLoop++ > 1000) respondWithFatalError(500, 'Error Processing Languages (infinit loop)');
+
         foreach ($default as $dKey => $dValue) {
             if (is_array($dValue) && $this->_has_string_keys($dValue)) {
                 $this->_serialize($default[$dKey], $libLang[$dKey]);
@@ -296,8 +297,7 @@ class Lang {
         global $config;
         global $user;
         if (!$user->isAdminOfLibraries || !count($user->isAdminOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Languages Admin');
         }
 
         $lang = [];
@@ -325,7 +325,7 @@ class Lang {
     private function _createField($key, &$props = null, &$definitions = null, &$library = null, $isRecursive = false)
     {
         if (!$isRecursive) $this->infiniteLoop = 0;
-        if ($this->infiniteLoop++ > 500) die('something is wrong! infinite loop!!!!');
+        if ($this->infiniteLoop++ > 1000) respondWithFatalError(500, 'Error Processing Languages (infinit loop)');
         if (!$props) $props = &$this->default[$key];
         if (!$definitions) $definitions = &$this->_definitions[$key];
         if (!$library && isset($this->libraries[$this->_currentLibray][$key])) $library = &$this->libraries[$this->_currentLibray][$key];
@@ -374,11 +374,9 @@ class Lang {
     }
 
     public function update($data, $libKey) {
-        global $config;
         global $user;
         if (!in_array($libKey, $user->isAdminOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Edit Languages');
         }
 
         if (!isset($this->libraries[$libKey])) $this->libraries[$libKey] = [];
@@ -433,8 +431,7 @@ class Lang {
         global $user;
 
         if (!in_array($libKey, $user->isAdminOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Edit About');
         }
         
         $fileName = Config::getLocalFilePath($libKey . '_about.html');
@@ -453,7 +450,7 @@ class Lang {
 
     public function removeLibrary($libKey): bool {
         global $user;
-        if(!$user->isSuperAdmin) die('unauthorized');
+        if(!$user->isSuperAdmin) respondWithFatalError(401, 'Unauthorized - Remove Library Languages');
         if(!$this->libraries[$libKey]) return false;
 
         unset($this->libraries[$libKey]);

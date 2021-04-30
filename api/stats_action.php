@@ -7,7 +7,6 @@ function logStats(CdlItem $item, $action, $usersLibrary = '', $isAccessibleUser 
     $statsSheetId = $config->libraries[$item->library]->statsSheetId;
     if(!$statsSheetId) {
         respondWithError(500, 'No Stats Sheet Configured');
-        die();
     }
 
     $range = 'Sheet1!A1:H';
@@ -38,13 +37,11 @@ function getStats($libKey, $from = null, $to = null)
     global $config;
     global $user;
     if (!count($user->isStaffOfLibraries) || !in_array($libKey,$user->isStaffOfLibraries)) {
-        respondWithError(401, 'Not Authorized');
-        die();
+        respondWithError(401, 'Not Authorized - Get Stats');
     }
 
     if(!$config->libraries[$libKey]->statsSheetId) {
         respondWithError(500, 'No Stats Sheet Configured');
-        die();
     }
 
     //if no Titles sheet, create one
@@ -93,7 +90,6 @@ function getStats($libKey, $from = null, $to = null)
     //process
     if (empty($values)) {
         respondWithError(404, 'No Stats Data!');
-        die();
     } else {
         $data = [];
         $totalBorrow = 0;
@@ -128,7 +124,6 @@ function getStats($libKey, $from = null, $to = null)
         //sigh....
         if (!isset($data[$libKey])){
             respondWithError(404, 'No Stats Data for this Library!');
-            die();
         }
 
         foreach ($data[$libKey] as $key => $val) {

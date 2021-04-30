@@ -8,8 +8,7 @@ function search($field = 'title', $term = null, $library = null, $admin = null, 
 
     if ($admin) {
         if (!in_array($library, $user->isStaffOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Get Items Admin');
         }
     }
 
@@ -17,7 +16,6 @@ function search($field = 'title', $term = null, $library = null, $admin = null, 
     $folderId = $config->libraries[$library]->noOcrFolderId;
     if (!$folderId) {
         respondWithError(404, "unknown library $library");
-        die();
     }
     $fileName = Config::getLocalFilePath($library . "_" . $config->allItemsCacheFileName);
 

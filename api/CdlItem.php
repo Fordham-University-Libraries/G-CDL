@@ -32,12 +32,6 @@ class CdlItem
     public string $accessibleFileId;
     public string $webContentLink; //A link for downloading the content of the file in a browser using cookie based authentication - unused
     public string $downloadLink;
-    // public $ilsMetadata = [
-    //     'publisher' => '',
-    //     'pubDate' => '',
-    //     'physDesc' => '',
-    //     'isbn' => ''
-    // ];
     
     public function __construct(Google_Service_Drive_DriveFile $driveFile)
     {
@@ -53,7 +47,7 @@ class CdlItem
         //assign all the props
         foreach ($driveFile->getAppProperties() as $key => $value) {
             $rp = new ReflectionProperty($this, $key);
-            $propType = $rp->getType();
+            $propType = (object) $rp->getType(); //make php Intelephense stops complaining, technically \ReflectionType doesn't have method getName() but it does work
             if ($propType && ($propType->getName() == gettype($value))) {
                 $this->$key = $value;
             } else if ($propType && $propType->getName() == 'int' && gettype($value) == "string") {
@@ -79,15 +73,12 @@ class CdlItem
         }
         if (!isset($this->library)) {
             respondWithError(401, $lang['libraries'][$defaultLibrary]['error']['item']['notPartOfCollecton']);
-            die();
         }
 
         //check that the app is the owner of the file -- needs to be to be able to setCopyRequiresWriterPermission()
         if (!$this->driveFile->getOwnedByMe()) {
             respondWithError(401, $lang['libraries'][$this->library]['error']['item']['notOwnedByMe']);
-            die();
         }
-        //$this->ilsMetadata = $driveFile->getId();
     }
 
     private function checkPerms()
@@ -115,8 +106,8 @@ class CdlItem
                     $this->url = $this->driveFile->getWebViewLink();
                     if ($user->isAccessibleUser) {
                         //NOT SURE
-                        $this->url = "https://drive.google.com/a/" . $config->auth['gSuitesDomain'] . "/uc?id=" . $this->fileWithOcrId;
-                        $this->downloadLink = "https://drive.google.com/a/" . $config->auth['gSuitesDomain'] . "/uc?id=" . $this->fileWithOcrId . "&export=download";
+                        $this->url = "https://drive.google.com/a/" . $config->gSuitesDomain . "/uc?id=" . $this->fileWithOcrId;
+                        $this->downloadLink = "https://drive.google.com/a/" . $config->gSuitesDomain . "/uc?id=" . $this->fileWithOcrId . "&export=download";
                     }
                 } else {
                     $this->isCheckedOutToMe = false;
@@ -135,17 +126,14 @@ class CdlItem
         //check that file don't already have a viewer
         if (!$this->available) {
             respondWithError(401, $lang['libraries'][$this->library]['error']['borrow']['notAvailHaveOtherViewer']);
-            die();
         }
         //check that the file is net trashed or being suspended
         if ($this->isSuspended || $this->isTrashed) {
             respondWithError(401, $lang['libraries'][$this->library]['error']['borrow']['notAvailGeneric']);
-            die();
         }
         //check if user is drive owner
         if ($user->isDriveOwner) {
             respondWithError(400, 'can NOT borrow item since you are logged in as the drive owner (cannot add you as a "viewer" since you are already the owner of the file)');
-            die();
         }
 
         $permissions = $this->driveFile->getPermissions();
@@ -172,7 +160,6 @@ class CdlItem
                             $errMsg = str_replace('{{$backToBackBorrowCoolDown}}', $this->backToBackBorrowCoolDown, $lang['libraries'][$this->library]['error']['borrow']['backToBackCopy']);
                             respondWithError(401, $errMsg);
                         }
-                        die();
                     }
                 }
             } else {
@@ -186,7 +173,6 @@ class CdlItem
                             $errMsg = str_replace('{{$backToBackBorrowCoolDown}}', $this->backToBackBorrowCoolDown, $lang['libraries'][$this->library]['error']['borrow']['backToBackCopy']);
                             respondWithError(401, $errMsg);
                         }
-                        die();
                     }
                 }
             }
@@ -456,19 +442,14 @@ class CdlItem
         global $config;
         global $user;
         if (!count($user->isStaffOfLibraries)) {
-            respondWithError(401, "Unauthorized");
-            die();
+            respondWithError(401, "Unauthorized - Download File Admin");
         }
     
         if (!in_array($this->library, $user->isStaffOfLibraries)) {
             respondWithError(401, "Unauthorized - item is of library $this->library, you are " . join(", ", $user->isStaffOfLibraries) . " Staff");
-            die();
         }
 
         $fileId = null;
-        // echo $accessibleVersion;
-        // die();
-
         if(!$accessibleVersion) {
             $fileId = $this->id;
             $fileName = $this->name;
@@ -491,13 +472,11 @@ class CdlItem
         global $user;
 
         if (!count($user->isStaffOfLibraries)) {
-            respondWithError(401, "Unauthorized");
-            die();
+            respondWithError(401, "Unauthorized - suspend item");
         }
     
         if (!in_array($this->library, $user->isStaffOfLibraries)) {
             respondWithError(401, "Unauthorized - item is of library $this->library, you are " . join(", ", $user->isStaffOfLibraries) . " Staff");
-            die();
         }
 
         $tempFile = new Google_Service_Drive_DriveFile;
@@ -520,13 +499,11 @@ class CdlItem
         global $user;
 
         if (!count($user->isStaffOfLibraries)) {
-            respondWithError(401, "Unauthorized");
-            die();
+            respondWithError(401, "Unauthorized - trash item");
         }
     
         if (!in_array($this->library, $user->isStaffOfLibraries)) {
             respondWithError(401, "Unauthorized - item is of library $this->library, you are " . join(", ", $user->isStaffOfLibraries) . " Staff");
-            die();
         }
 
         $tempFile = new Google_Service_Drive_DriveFile;

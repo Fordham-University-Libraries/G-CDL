@@ -6,7 +6,6 @@ function lookupUser(array $names)
     //accessible users sheet is shared by all libraries
     if (!count($user->isStaffOfLibraries)) {
         respondWithError(401, 'Not Authorized');
-        die();
     }
 
     // Get the API client and construct the service object.
@@ -15,10 +14,6 @@ function lookupUser(array $names)
     $foundUsers = [];
     $notFoundNames = [];
     $multipleMatchesNames = [];
-
-    // respondWithData($names);
-    // die();
-
     $i = 0;
     foreach ($names as $name) {
         $optParam = [
@@ -68,7 +63,6 @@ function addAccessibleUsers(array $userNames)
     //accessible users sheet is shared by all libraries
     if (!count($user->isStaffOfLibraries)) {
         respondWithError(401, 'Not Authorized');
-        die();
     }
     
     $currentUsers = getAccessibleUsers(null, true); //internal call
@@ -101,7 +95,7 @@ function addAccessibleUsers(array $userNames)
             'usersNotAdded' => $usersAlreadyInSystem
         ]);
     } catch (Google_Service_Exception $e) {
-        respondWithError(500, 'Internal Error');
+        respondWithError(500, 'Internal Error - Adding Accessible User');
     }
 }
 
@@ -112,8 +106,7 @@ function removeAccessibleUsers(array $userNames)
     global $config;
     global $user;
     if (!count($user->isStaffOfLibraries)) {
-        respondWithError(401, 'Not Authorized');
-        die();
+        respondWithError(401, 'Not Authorized - Remove Accessible User');
     }
 
     $rowsIndexToDelete = [];
@@ -128,10 +121,6 @@ function removeAccessibleUsers(array $userNames)
             array_push($usersNotRemoved, $userName);
         }
     }
-
-    // !!!!!!debug
-    // respondWithData(['currentUsers' => $currentUsers, 'userName' => $userNames, 'rowsIndexToDelete' => $rowsIndexToDelete, 'usersNotRemoved' => $usersNotRemoved]);
-    // die();
 
     if (count($rowsIndexToDelete)) {
         rsort($rowsIndexToDelete);
@@ -150,9 +139,6 @@ function removeAccessibleUsers(array $userNames)
         $batchUpdateRequest = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest();
         $batchUpdateRequest->setResponseIncludeGridData(true);
         $batchUpdateRequest->setRequests($sheetsRequests);
-
-        // respondWithData(['debug' => $batchUpdateRequest]);
-        // die();
 
         try {
             $result = $sheetService->spreadsheets->batchUpdate($config->accessibleUsersSheetId, $batchUpdateRequest);

@@ -6,16 +6,15 @@ function adminUploadGet(string $libKey = null) {
     global $config;
     global $user;
 
-    if (!count($user->isStaffOfLibraries)) die('unauthorized');
-
+    if (!count($user->isStaffOfLibraries)) respondWithFatalError(401, 'Unauthorized - Get Items Admin');
     if(!$libKey) $libKey = $user->isStaffOfLibraries[0];
 
     if (!isset($config->libraries[$libKey])) {
-        die('Error: Unknown Library: ' . $libKey);
+        respondWithFatalError(400, 'Error: Unknown Library: ' . $libKey);
     }
 
     if (!in_array($libKey, $user->isStaffOfLibraries) && $user->email != $config->driveOwner) {
-        die('This application is only available to certain ' . $config->libraries[$libKey]->name . ' Staff. You are logged in as: ' . $user->userName);
+        respondWithFatalError(401, 'This application is only available to certain ' . $config->libraries[$libKey]->name . ' Staff. You are logged in as: ' . $user->userName);
     }
 
     $view = new View();
@@ -41,21 +40,17 @@ function adminUploadPost($uploadedFile, string $libKey) {
     global $user;
     $respondFormat = $_POST['respondFormat'] ?? null;
 
-    // print_r($_POST);
-    // print_r($uploadedFile);
-    // die();
-
     if (!isset($config->libraries[$libKey])) {
-        die('Error: Unknown Library: ' . $libKey);
+        respondWithFatalError(400, 'Error: Unknown Library: ' . $libKey);
     }
 
     if (!in_array($libKey, $user->isStaffOfLibraries) && $user->email != $config->driveOwner) {
-        die('This application is only available to certain ' . $config->libraries[$libKey]->name . ' Staff. You are logged in as: ' . $user->userName);
+        respondWithFatalError(401, 'This application is only available to certain ' . $config->libraries[$libKey]->name . ' Staff. You are logged in as: ' . $user->userName);
     }
 
     $folderId = $config->libraries[$libKey]->noOcrFolderId;
     if (empty($folderId)) {
-        die('folderId must be set otherwise it will list all of your files in the whole GDrive');
+        respondWithFatalError(400,'NO Upload Directory for this Library');
     }
 
     if ($uploadedFile) {
@@ -98,9 +93,7 @@ function adminUploadPost($uploadedFile, string $libKey) {
             }
         } catch (Exception $e) {
             respondWithError(500, $e);
-
         }
-        die();
     } else {
         respondWithError(500, 'No File!');
     }
@@ -131,7 +124,6 @@ function generateNoOcrVersion($filePath)
         $cpdfErrror = 'Fail to create a NO_OCR version.';
         if ($output) $cpdfErrror .= " cpdf output: $output";
         respondWithError(500, $cpdfErrror);
-        die();
     }
 }
 
@@ -143,10 +135,10 @@ function upload($filePath, $bib, $libKey, $orgFileName, $shouldCreateNoOcr = tru
 
     $respondFormat = $_POST['respondFormat'] ?? null;
     if (!isset($config->libraries[$libKey])) {
-        die('Error: Unknown Library: ' . $libKey);
+        respondWithFatalError(400, 'Error: Unknown Library: ' . $libKey);
     }
     if (!in_array($libKey, $user->isStaffOfLibraries) && $user->email != $config->driveOwner) {
-        die('This application is only available to certain ' . $config->libraries[$libKey]->name . ' Staff. You are logged in as: ' . $user->userName);
+        respondWithFatalError(401, 'This application is only available to certain ' . $config->libraries[$libKey]->name . ' Staff. You are logged in as: ' . $user->userName);
     }
 
     $noOcrFolderId = $config->libraries[$libKey]->noOcrFolderId;

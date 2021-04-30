@@ -13,7 +13,6 @@ function checkAvailability($key, $keyType, $libKey)
 
     if (!isset($q)) {
         respondWithFatalError(400, "Bad Request: query not supported");
-        die();
     }
 
     $optParams = [
@@ -43,12 +42,8 @@ function checkAvailability($key, $keyType, $libKey)
         }
     } else {
         respondWithFatalError(404, "no item by that $keyType: $key found");
-        die();
     }
 
-    header("Access-Control-Allow-Origin: *");
-    header('Content-type: application/json');
-    echo json_encode(['status' => 200, "data" => $reponse]);
-    die();
+    respondWithData($reponse);
 }
 ?>

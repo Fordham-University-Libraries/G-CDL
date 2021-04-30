@@ -21,6 +21,7 @@ class User
     public function __construct($internal = false)
     {
         global $config;
+
         // can only authenticate with GoogleOAuth, if need to get users attrs, use authorization()
         if ($config->auth['kind'] == 'GoogleOAuth') {
             if (session_status() == PHP_SESSION_NONE) {
@@ -30,15 +31,13 @@ class User
             }
 
             if (isset($_SESSION['gUserName']) && $_SESSION['gExpire'] > time()) {
-                $this->userName = str_replace('@' . $config->auth['gSuitesDomain'], '', $_SESSION['gEmail']);
+                $this->userName = str_replace('@' . $config->gSuitesDomain, '', $_SESSION['gEmail']);
                 $this->email = $_SESSION['gEmail'];
                 if ($_SESSION["photoUrl"]) $this->photoUrl = $_SESSION["photoUrl"];
                 if (!Config::$isProd) {
                     //dev -- become somebody else
                     //$this->userName = 'djohn';
                     //$this->email = 'djohn@mustard.edu';
-                    // $this->userName = 'librarycatalog';
-                    // $this->email = 'librarycatalog@fordham.edu';
                 }
                 $this->fullName = $_SESSION['gFullName'];
                 $_SESSION['gExpire'] = time() + ($config->auth['sessionTtl'] * 60);
@@ -48,25 +47,24 @@ class User
                 session_destroy();
                 setcookie('cdlLogin','0',time(),'/');
                 if (!$internal) {
-                    respondWithFatalError(401, 'unauthorized');
-                    die();
+                    respondWithFatalError(401, 'Unauthorized User');
                 } else {
                     throw new Exception("Not Logged In");
-                    die(); //for good measure :D
+                    die();
                 }
                 //front end will send user to login at ?action=login when get 401
             }
         }
         
         if (!isset($this->userName)) {
-            respondWithFatalError(401, 'unauthorized');
-            die();
+            respondWithFatalError(401, 'Unauthorized User');
         }
 
         //user is Authed
         //check if user is owner of the drive
         if (!$config->driveOwner) {
-            die('cannot get driveOwner info');
+            logError('NO driveOwner info in config');
+            $this->isDriveOwner = false;
         } else if ($this->email == $config->driveOwner) {
             $this->isDriveOwner = true;
             $this->isSuperAdmin = true;

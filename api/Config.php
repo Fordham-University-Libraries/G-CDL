@@ -14,11 +14,11 @@ class Config
         'credentialsDirPath' => 'directory to store Google API credentails/token.json files',
         'tempDirPath' => 'directory to temporarily store uploaded pdf files (will be removed after successfully uploaded to GDrive)'
     ];
-  
-    public $mainFolderId; //also stored on G app's data config_base.json 
-    public $accessibleUsersSheetId; //also stored on G app's data config_base.json 
-    public $gSuitesDomain; //also stored on G app's data config_base.json 
-    public $driveOwner; //also stored on G app's data config_base.json 
+
+    public $mainFolderId;
+    public $accessibleUsersSheetId;
+    public $gSuitesDomain;
+    public $driveOwner;
     public $timeZone = null; //https://www.php.net/manual/en/timezones.america.php
     public $appName = 'My Library CDL APP';
     public $appSuperAdmins = []; //can change everything and will get email when there's a problem
@@ -76,9 +76,9 @@ class Config
         'maxFileSizeInMb' => ['Google PDF Viewer has max fix file size litmit of 100MB (as of early 2021), if you upload something bigger than that, it will not display', 2],
         'useEmbedReader' => ['if enabled, embed Google Drive vieewer inside app\'s page. Else, will open Google Drive viewer directly in a new tab. NOTE: you might want to enable it since, as of early 2021, if end users open a reader and don\'t close it, they\'ll be able to keep reading even AFTER the share has expired. Using the embed reader, the app will embed the Google reader on its own page, and will automatically refresh the page when the item expires', 1],
         'appSuperAdmins' => ['user(s) that can edit EVERYTHING incuding app\'s config, and EVERY library. Separate multiple users with a comma', 2],
+        'gSuitesDomain' => ['FYI, your GSuites Domain, this value is set automatically when admin initialized the app', -1],
         'auth' => [
             'kind' => ['how to authenticate user (telling who the user is). Only support Google OAuth (since end users need to be login to Google to view borrowed item)', -1, ['GoogleOAuth']],
-            'gSuitesDomain' => ['your GSuites Domain WITHOUT the @ sign e.g. if your work email that you use to log in to GSuites is jdoe@someuniversity.edu, enter someuniversity.edu', -1],
             'sessionName' => ['name of the session cookie (user will NOT see it)', 1],
             'sessionTtl' => ['How long (minutes) before inactive user is logged out of the app (only the app, not GSuites account, nor whatever auth system GSuites uses to authenticate your users)', 1],
             'clientDomain' => ['see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#Domain_attribute', 1],
@@ -209,115 +209,101 @@ class Config
         }
 
         if (!$this->mainFolderId) {
-            //if no local config, try grab the basic/essential config fron appData on GDrive
-            //4 basic configs e.g. mainFolderId also stored in GDrive's app's data, else stored locally
+            //if no local config, try grab the backup config stored in appData on GDrive
             try {
-                $client = getClient();
-            } catch (Exception $e) {
-                //echo "cant get client";
-            }
-
-            if ($client) {
+                $backupConfig = $this->_getConfigFromAppFolder();
+                $this->_map($backupConfig);
+                $file = fopen($configFilePath, 'wb');
                 try {
-                    $service = new Google_Service_Drive($client);
-                    $file = $this->getFileFromAppFolder('config_base.json');
-                    if ($file) {
-                        //if specify ["alt" => "media"] it'll actually return GuzzleHttp\Psr7\Response
-                        //cast it so PHP Intelephense stops complaining about getBody() not defined
-                        $response = (object) $service->files->get($file->getId(), ["alt" => "media"]);
-                        $data = json_decode((string) $response->getBody()->getContents());
-                        $this->_map($data);
-                        $file = fopen($configFilePath, 'wb');
-                        try {
-                            fwrite($file, json_encode($data));
-                            fclose($file);
-                        } catch (Exception $e) {
-                            logError($e);
-                            respondWithError(500, 'internal error');
-                        }
-                    } else {
-                        return null;
-                    }
+                    fwrite($file, json_encode($backupConfig));
+                    fclose($file);
                 } catch (Exception $e) {
-                    //can't get client, just return default configs
-                    return;
+                    logError($e);
+                    respondWithError(500, 'internal error');
                 }
-            } else {
+            } catch (Exception $e) {
+                //no backup or can't get backup config
+                //stop constructing
                 return;
             }
         }
 
-        $this->auth['gSuitesDomain'] = $this->gSuitesDomain;
         if (!isset($this->timeZone)) {
             $this->timeZone = date_default_timezone_get();
         }
-        if (($this->notifications['emailOnAutoReturn']['method'] == 'web' || $this->notifications['emailOnAutoReturn']['method'] == 'webHook') && !isset($this->notifications['emailOnAutoReturn']['publicCronUrl']) || 1 == 1) {
+        if (($this->notifications['emailOnAutoReturn']['method'] == 'web' || $this->notifications['emailOnAutoReturn']['method'] == 'webHook') && !isset($this->notifications['emailOnAutoReturn']['publicCronUrl'])) {
             $url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
             $url .= preg_replace('/\/api.*/', '/api/cron.php', $_SERVER["REQUEST_URI"]);
             $this->notifications['emailOnAutoReturn']['publicCronUrl'] = $url;
         }
     }
 
-    public function getFileFromAppFolder($fileName)
+    public function getFileFromAppFolder($fileName, $init = false): ?object
     { //from GDrive's appDataFolder
         global $user;
+        if (!$user->isSuperAdmin && !$init) respondWithError(401, 'Unauthorized - access AppFolder');
         $client = getClient();
-        $service = new Google_Service_Drive($client);
-        try {
-            $fileList = $service->files->listFiles([
-                'q' => 'name = "' . $fileName . '"',
-                'spaces' => 'appDataFolder',
-                'fields' => '*',
-                'pageSize' => 100
-            ]);
-            $files = $fileList->getFiles();
-            if (count($files) == 1) {        
-                if ($user && !$user->isSuperAdmin && $fileName != "config_base.json") respondWithError(401, 'Unauthorized');
-                return $files[0];
-            } else {
-                return null;
+        if ($client) {
+            $service = new Google_Service_Drive($client);
+            try {
+                $fileList = $service->files->listFiles([
+                    'q' => 'name = "' . $fileName . '"',
+                    'spaces' => 'appDataFolder',
+                    'fields' => '*',
+                    'pageSize' => 100
+                ]);
+                $files = $fileList->getFiles();
+                if (count($files) == 1) {
+                    return $files[0];
+                }
+            } catch (Google_Service_Exception $e) {
+                $errMsg = $e->getErrors();
+                logError("cannot get getFileFromAppFolder($fileName)");
+                logError($errMsg);
+                if ($errMsg[0]['reason'] == 'authError') {
+                    throw new Exception($errMsg[0]['reason'], 401);
+                }
             }
-        } catch (Google_Service_Exception $e) {
-            $errMsg = json_decode($e->getMessage());
-            die('cannot get files from Drive\'s AppData: ' . $errMsg);
         }
+        return null;
     }
 
-    public function getConfigFromAppFolder($fileName = 'config.json'): object|null
-    { //from GDrive's appDataFolder
-        global $user;
-        if (!$user->isSuperAdmin) respondWithError(401, 'Unauthorized');
-
+    private function _getConfigFromAppFolder($fileName = 'config.json'): ?object
+    {
+        //from GDrive's appDataFolder
         $client = getClient();
-        $service = new Google_Service_Drive($client);
-        try {
-            $fileList = $service->files->listFiles([
-                'q' => 'name = "' . $fileName . '"',
-                'spaces' => 'appDataFolder',
-                'fields' => '*',
-                'pageSize' => 100
-            ]);
-            $files = $fileList->getFiles();
-            if (count($files) == 1) {
-                $response = (object) $service->files->get($files[0]->getId(), ["alt" => "media"]);
-                return json_decode((string) $response->getBody()->getContents());
-            } else {
-                return null;
+        if ($client) {
+            $service = new Google_Service_Drive($client);
+            try {
+                $fileList = $service->files->listFiles([
+                    'q' => 'name = "' . $fileName . '"',
+                    'spaces' => 'appDataFolder',
+                    'fields' => '*',
+                    'pageSize' => 100
+                ]);
+                $files = $fileList->getFiles();
+                if (count($files) == 1) {
+                    $response = (object) $service->files->get($files[0]->getId(), ["alt" => "media"]);
+                    return json_decode((string) $response->getBody()->getContents());
+                }
+            } catch (Google_Service_Exception $e) {
+                $errMsg = json_decode($e->getMessage());
+                logError($errMsg);
+                respondWithFatalError(500, 'cannot get files from Drive\'s AppData');
             }
-        } catch (Google_Service_Exception $e) {
-            $errMsg = json_decode($e->getMessage());
-            die('cannot get files from Drive\'s AppData: ' . $errMsg);
         }
+        return null;
     }
 
-    function updateConfigOnGDriveAppFolder(string $fileName, string $jsonStr, $init = false): bool {
+    function updateConfigOnGDriveAppFolder(string $fileName, string $jsonStr, $init = false): bool
+    {
         global $user;
-        if (!$user->isSuperAdmin && !$init) respondWithError(401, 'Unauthorized');
+        if (!$user->isSuperAdmin && !$init) respondWithError(401, 'Unauthorized - updateConfigOnGDriveAppFolder');
 
         $client = getClient();
         $driveService = new Google_Service_Drive($client);
         //check if file already exists, if so, update, else create
-        $file = $this->getFileFromAppFolder($fileName);
+        $file = $this->getFileFromAppFolder($fileName, $init);
         if ($file) {
             //update
             $fileId = $file->getId();
@@ -344,7 +330,8 @@ class Config
                     'data' => $jsonStr,
                     'mimeType' => 'application/json',
                     'uploadType' => 'multipart',
-                    'fields' => 'id'));
+                    'fields' => 'id'
+                ));
                 return $uploadedFile ? true : false;
             } catch (Exception $e) {
                 logError("failed to create $fileName in AppData: " . $e->getMessage());
@@ -353,9 +340,10 @@ class Config
         }
     }
 
-    public function getFileRevisionData($fileId, $revId) {
+    public function getFileRevisionData($fileId, $revId)
+    {
         global $user;
-        if (!$user->isSuperAdmin) respondWithError(401, 'Unauthorized');
+        if (!$user->isSuperAdmin) respondWithError(401, 'Unauthorized - get revisions');
 
         //To download the revision content, you need to call revisions.get method with the parameter alt=media. Revisions for Google Docs, Sheets, and Slides can't be downloaded.
         $client = getClient();
@@ -402,17 +390,8 @@ class Config
 
     //update ALL config to local config.json
     private function _updatePropsAll()
-    { 
+    {
         $configFilePath = self::getLocalFilePath('config.json');
-        //back up current config
-        $currConfig = file_get_contents($configFilePath);
-        $data = json_decode($currConfig);
-        try {
-            $this->updateConfigOnGDriveAppFolder("config.json", $currConfig);
-        } catch (Exception $e){
-            logError('cannot back up config file: ' . $e->getMessage());
-        }
-
         //update
         try {
             $data = $this->_reverseMap();
@@ -420,9 +399,15 @@ class Config
             fwrite($file, json_encode($data));
             fclose($file);
             $result = ['success' => true];
+            //also save to Gdrive AppFolder
+            try {
+                $this->updateConfigOnGDriveAppFolder("config.json", json_encode($data));
+            } catch (Exception $e) {
+                logError('cannot back up config file: ' . $e->getMessage());
+            }
         } catch (Exception $e) {
             $result = ['success' => false];
-            respondWithError(500,'ERROR: cannot save config data');
+            respondWithError(500, 'ERROR: cannot save config data');
         }
         return $result;
     }
@@ -433,19 +418,16 @@ class Config
         global $user;
         if (!count($user->isAdminOfLibraries)) {
             respondWithError(401, 'Not Authorized');
-            die();
         }
         //if update library
         if ($libKey) {
             if (!in_array($libKey, $user->isAdminOfLibraries)) {
                 respondWithError(401, 'Not Authorized to edit config of this library');
-                die();
             }
             return $this->_updatePropsDeep($chagedProperties, $this->libraries[$libKey]);
         } else {
             if (!$user->isSuperAdmin) {
                 respondWithError(401, 'Not Authorized to edit app global config');
-                die();
             }
             return $this->_updatePropsDeep($chagedProperties, $this);
         }
@@ -510,7 +492,7 @@ class Config
         } else if ($kind == 'temp') {
             $dir = self::$tempDirPath;
         } else {
-            die('kind = data, credsm or temp plz');
+            respondWithFatalError(400,'incorrect file type requested');
         }
 
         if (substr($dir, -1) != '/') $dir .= '/';
@@ -521,8 +503,7 @@ class Config
     {
         global $user;
         if (!count($user->isAdminOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Read Config');
         }
 
         $config = [];
@@ -532,6 +513,7 @@ class Config
                 //$this->_createField('isProd'),
                 $this->_createField('timeZone'),
                 $this->_createField('appName'),
+                $this->_createField('gSuitesDomain'),
                 $this->_createField('driveOwner'),
                 $this->_createField('appSuperAdmins'),
                 $this->_createField('googleTagManagerUA'),
@@ -591,8 +573,7 @@ class Config
     {
         global $user;
         if (!$user->isSuperAdmin) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Add new Library');
         }
 
         //create folders
@@ -607,7 +588,8 @@ class Config
         try {
             $noOcrFolder = $driveService->files->create($driveFile);
         } catch (Exception $e) {
-            die('creating folder failed');
+            logError($e->getMessage());
+            respondWithFatalError(500, 'can NOT create directory for library');
         }
         //with ocr
         $driveFile->setName("$libKey - WITH OCR");
@@ -615,7 +597,8 @@ class Config
         try {
             $withOcrFolder = $driveService->files->create($driveFile);
         } catch (Exception $e) {
-            die('creating folder failed');
+            logError($e->getMessage());
+            respondWithFatalError(500, 'can NOT create directory for library');
         }
 
         //create sheet to store stats
@@ -627,7 +610,8 @@ class Config
         try {
             $statsSheet = $driveService->files->create($driveFile);
         } catch (Exception $e) {
-            die('failed');
+            logError($e->getMessage());
+            respondWithFatalError(500, 'can NOT create sheet to store accessible users data');
         }
 
         //add library to config
@@ -652,8 +636,7 @@ class Config
     {
         global $user;
         if (!$user->isSuperAdmin) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Delete Library');
         }
 
         //delete stuff on GDrive

@@ -44,7 +44,7 @@ function get($libKey, $nextPageToken = null) {
         logError($gError);
         $errMsg = $gError->error->message ?? $gError->error . ': ' . $gError->error_description;
         $errCode = $gError->error->code ?? 500;
-        respondWithFatalError($errCode, $errMsg);
+        respondWithFatalError($errCode, "cannnot get items on GDrive, reason: " . $errMsg);
         die();
     }
     $nextPageToken = $driveList->getNextPageToken();

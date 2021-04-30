@@ -74,10 +74,7 @@ class Library {
 
     public function __construct($library) {
         $this->_map($library);
-        //print_r($this);
-        //die();
     }
-
 
     private function _map($library) {
         foreach($library as $key => $val) {
@@ -94,8 +91,7 @@ class Library {
     public function serialize() {
         global $user;
         if (!in_array($this->key, $user->isAdminOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Languages Admin');
         }
 
         $config = [];

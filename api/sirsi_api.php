@@ -6,7 +6,7 @@ function getSirsiBib($key, $library, $keyType = 'barcode') {
     } else if ($keyType = 'ckey') {
         $url = $config->libraries[$library]->ils['api']['base'] . "/rest/standard/lookupTitleInfo?json=true&includeOPACInfo=true&includeItemInfo=true&includeItemCategory=true&titleID=$key";
     } else {
-        die('only support barcode or ckey');
+        respondWithError(400, 'only support barcode or ckey (Sirsi\' lingo for BibId)');
     }
     
     $curl = curl_init();
@@ -31,8 +31,6 @@ function getSirsiBib($key, $library, $keyType = 'barcode') {
     $json = json_decode($response);
     if (isset($json->TitleInfo[0])) {
         $obj = $json->TitleInfo[0];
-        // print_r($obj);
-        // die();
         $items = [];
         foreach ($obj->CallInfo as $library) {
             foreach ($library->ItemInfo as $item) {

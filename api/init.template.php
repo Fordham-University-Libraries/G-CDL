@@ -209,7 +209,7 @@
                     <!-- has token and connected to Drive -->
                     <?php if ($hasCreds && $hasToken && $appIsConnected) : ?>
                         <div class="alert alert-success" role="alert">
-                            token.json found, looking good. The App is now connected to your Google Drive. You can proceed to the next step (set up library)!
+                            token.json found, looking good. The App is now connected to your Google Drive, the main folder for the app is: <em><?= $mainFolderId ?></em>. You can proceed to the next step (set up library)!
                         </div>
                         <div id="user-info">
                             <strong>Token Info</strong>

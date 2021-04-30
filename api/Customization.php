@@ -419,8 +419,7 @@ class Customization
         global $config;
         global $user;
         if (!$user->isAdminOfLibraries || !count($user->isAdminOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - View Customization');
         }
 
         $cust = [];
@@ -472,7 +471,7 @@ class Customization
                     array_unshift($definitions, $key, $xValue, $type, $isDefault);
                 }
             } else {
-               die('no definition of: ' . $value);
+               logError("no definition for customzation: $value");
             }
         }
 
@@ -505,11 +504,9 @@ class Customization
     }
 
     public function update($data, $libKey) {
-        global $config;
         global $user;
         if (!in_array($libKey, $user->isAdminOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Edit Customization');
         }
         
         if ($libKey == 'appGlobal') {
@@ -565,7 +562,7 @@ class Customization
     public function removeLibrary($libKey): bool {
         global $config;
         global $user;
-        if(!$user->isSuperAdmin) die('unauthorized');
+        if(!$user->isSuperAdmin) respondWithFatalError(401, 'Unauthorized - Remove Library Customization');
         if(!$this->libraries[$libKey]) return false;
 
         unset($this->libraries[$libKey]);

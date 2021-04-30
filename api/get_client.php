@@ -56,16 +56,25 @@ function getClient($authCode = null, $state = null)
             }
 
             $client->setAccessToken($accessToken);
-            //check
+            //check that token is valid p.s. default leeway is 1, increase it in case clocks are not quite synced
+            $jwt = new \Firebase\JWT\JWT;
+            $jwt::$leeway = 5;
             if(!$client->verifyIdToken()) {
                 respondWithFatalError('401', 'Invalid Token');
-                die();
             }
             // Save the token to a file.
             if (!file_exists(dirname($tokenPath))) {
-                mkdir(dirname($tokenPath), 0700, true);
+                try {
+                    mkdir(dirname($tokenPath), 0700, true);
+                } catch (Exception $e) {
+                    respondWithFatalError(500, 'directory for credentials does not exist, cannot auto automatically create');
+                }
             }
-            file_put_contents($tokenPath, json_encode($client->getAccessToken()));
+            try {
+                file_put_contents($tokenPath, json_encode($client->getAccessToken()));
+            } catch (Exception $e) {
+                respondWithFatalError(500, 'cannot save token');
+            }
             return $client;
         } else { 
             //no auth code, not trying to login
@@ -81,11 +90,12 @@ function getClient($authCode = null, $state = null)
             if ($client->getRefreshToken()) {
                 $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
             }
-            //check
+            //check that the refreshed token is valid p.s. default JWT leeway is 1, increase it in case clocks are not quite synced
+            $jwt = new \Firebase\JWT\JWT;
+            $jwt::$leeway = 5;
             if(!$client->verifyIdToken()) {
                 logError('Cannot Refresh OAuth Token, most likely its been revolked / app is disconnected from GDrive');
                 respondWithFatalError('401', 'Cannot Refresh Token');
-                die();
             }
 
             // Save the token to a file.
@@ -138,7 +148,6 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
             if ($target) $url .= $target;
             echo $url;
             header("Location: " . $url);
-
             die();
         }
     }
@@ -154,7 +163,7 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
     ];
     $client->addScope($scopes);
 
-    $client->setHostedDomain($config->auth['gSuitesDomain']);
+    $client->setHostedDomain($config->gSuitesDomain);
     $redirectUrl = $host . $baseDir . "/?action=login";
     $client->setRedirectUri($redirectUrl);
     if (!$authCode) {
@@ -173,13 +182,13 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
         $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
         if (array_key_exists('error', $accessToken)) {
             logError('end users G-OAuth failed ' . join(', ', $accessToken));
-            die('Login Error');
+            respondWithFatalError(500, 'Access Token Error');
             //throw new Exception(join(', ', $accessToken));
         }
         $oauth2 = new \Google_Service_Oauth2($client);
         $userInfo = $oauth2->userinfo->get();
 
-        if ($userInfo->hd == $config->auth['gSuitesDomain']) {
+        if ($userInfo->hd == $config->gSuitesDomain) {
             $_SESSION["gUserName"] = str_replace($config->emailDomain, '', $userInfo->email);
             $_SESSION["gEmail"] = $userInfo->email;
             $_SESSION["gFullName"] = $userInfo->name;
@@ -213,7 +222,7 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
                 die();
             }
         } else {
-            echo "Please login with " . $config->auth['gSuitesDomain']  . " email";
+            echo "Please login with " . $config->gSuitesDomain  . " email";
         }
     }
 }

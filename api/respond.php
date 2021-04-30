@@ -28,7 +28,7 @@ function respondWithHtml(string $html, bool $allowCreds = false)
     echo $html;
 }
 
-function respondWithFatalError(int $code, string $errMsg, $errorCode = null)
+function respondWithFatalError(int $code, string $errMsg)
 {
     global $config;
     if (!Config::$isProd) {
