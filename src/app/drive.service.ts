@@ -99,7 +99,7 @@ export class DriveService {
     return this.httpClient.get(`${this.apiBase}/?action=search&field=${field}&term=${term}&libKey=${library}`, {withCredentials: true}).pipe(map(val => val['data']));
   }
 
-  getItemsForAdmin(libKey: string): Observable<{field: string, term: string, library: string, results: Item[], staff: string[], admins: string[], configs: any[]}> {
+  getItemsForAdmin(libKey: string): Observable<{field: string, term: string, library: string, results: Item[], staff: string[], admins: string[], configs: any[], mainFolder: any[], about: any[], user: any[]}> {
     return this.httpClient.get(`${this.apiBase}/?action=admin&libKey=${libKey}`, {withCredentials: true}).pipe(map(val => val['data']));
   }
 

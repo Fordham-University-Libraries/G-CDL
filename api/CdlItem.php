@@ -9,6 +9,7 @@ class CdlItem
     public string $id;
     public string $parentId;
     public string $name; //file name
+    public int $size;
     public string $title;
     public string $author;
     public string $bibId; //some system use '.b123456' and etc. so string it is
@@ -573,6 +574,7 @@ class CdlItem
         }
 
         if ($for == 'admin') {
+            $item['size'] = $this->driveFile->getSize();
             $item['fileWithOcrId'] = $this->fileWithOcrId;
             $item['shouldCreateNoOcr'] = $this->shouldCreateNoOcr;
             $item['lastReturned'] = $this->lastReturned ?? null;

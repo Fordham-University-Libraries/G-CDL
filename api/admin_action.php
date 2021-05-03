@@ -1,6 +1,7 @@
 <?php
 function getItemsAdmin($libKey)
 {
+    global $service;
     global $config;
     global $user;
     require_once 'search_action.php';
@@ -12,7 +13,8 @@ function getItemsAdmin($libKey)
     foreach ($items as $item) {
         array_push($results, $item->serialize('admin'));
     }
-    respondWithData([
+
+    $result = [
         'library' => $libKey,
         'results' => $results,
         'admins' => $config->libraries[$libKey]->admins,
@@ -21,7 +23,20 @@ function getItemsAdmin($libKey)
            'borrowingPeriod' => $config->libraries[$libKey]->borrowingPeriod,
            'backToBackBorrowCoolDown' => $config->libraries[$libKey]->backToBackBorrowCoolDown,
         ]
-    ]);
+    ];
+
+    $folderId = $config->libraries[$libKey]->noOcrFolderId;
+    $mainFolder = $service->files->get($folderId, ['fields' => 'id,name,trashed']);
+    $result['mainFolder'] = [
+        'id' => $mainFolder->getId(),
+        'isTrashed' => $mainFolder->getTrashed(),
+        'name' => $mainFolder->getName()
+    ];
+
+    $about = $service->about->get(['fields' => 'appInstalled,canCreateDrives,maxUploadSize,user,storageQuota']);
+    $result['about'] = $about;
+
+    respondWithData($result);
 }
 
 function getItemEditAdmin($fileId)

@@ -11,6 +11,7 @@
             <button mat-menu-item [routerLink]="'./config/lang'" [matTooltip]="'edit languages for this library e.g. about page, error message and etc.'">Languages</button>
         </mat-menu>
     </div>
+    <div *ngIf="mainFolder?.isTrashed" class="alert alert-danger">You main folder: <em>{{ mainFolder.name }}</em> ({{ mainFolder.id }}) is trashed on Google Drive!</div>
     <mat-accordion>
         <mat-expansion-panel>
             <mat-expansion-panel-header>
@@ -39,6 +40,18 @@
                         </ul>
                     </div>
                 </ng-container>
+                <div *ngIf="user.isSuperAdmin" class="wells">
+                    <strong>More Techincal Info</strong>
+                    <div>
+                        <ul>
+                            <li>Drive Owner: {{ about?.user?.emailAddress }}</li>
+                            <li>Storage Info (of the whole G Workspace / Google Drive - not only the CDL app)</li>
+                            <ul *ngIf="about">
+                                <li *ngFor="let info of about.storageQuota|keyvalue">{{ info.key }}: {{info.value | fileSize}}</li>
+                            </ul>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </mat-expansion-panel>
     </mat-accordion>

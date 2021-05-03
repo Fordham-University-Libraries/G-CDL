@@ -22,7 +22,6 @@ if (strpos($_SERVER["REQUEST_URI"], 'api/') === FALSE) {
     die();
 }
 
-
 //get config
 try {
     $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
