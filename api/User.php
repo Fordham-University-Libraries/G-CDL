@@ -146,12 +146,14 @@ class User
                 return;
             }
 
-            phpCAS::client(
-                $authzConfig['auth']['CAS']['version'],
-                $authzConfig['auth']['CAS']['host'],
-                intval($authzConfig['auth']['CAS']['port']),
-                $authzConfig['auth']['CAS']['context']
-            );
+            if (!phpCAS::isInitialized()) {
+                phpCAS::client(
+                    $authzConfig['auth']['CAS']['version'],
+                    $authzConfig['auth']['CAS']['host'],
+                    intval($authzConfig['auth']['CAS']['port']),
+                    $authzConfig['auth']['CAS']['context']
+                );
+            }
             
             if (Config::$isProd) {
                 phpCAS::setCasServerCACert($authzConfig['auth']['CAS']['caCertPath']);
