@@ -31,7 +31,8 @@ Example of App/GDrive Interactions
 ## Installation
 - Requirements
     - Google
-      - your institution must have G Suite/Google Workspace      
+      - your institution must have G Suite/Google Workspace
+      - the account you chose to hosts all the files in G-Drive to must be able to create a ["project"](https://cloud.google.com/resource-manager/docs/access-control-proj)      
     - local machine
         - PHP 7.4+
             - [Composer](https://getcomposer.org/download/)
