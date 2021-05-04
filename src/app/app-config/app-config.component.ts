@@ -137,10 +137,12 @@ export class AppConfigComponent implements OnInit {
 
   }
 
-  private _processConfigField(filed, keysOrder) {
+  private _processConfigField(_field, keysOrder) {    
     let i = 0;
     let field = {};
-    for (const [key, value] of Object.entries(filed)) {
+    if (!_field) return field;
+
+    for (const [key, value] of Object.entries(_field)) {
       //console.log(value);
       if (keysOrder[i] == 'editable') {
         let icon = 'edit'
