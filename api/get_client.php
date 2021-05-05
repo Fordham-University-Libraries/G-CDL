@@ -183,7 +183,7 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
         $userInfo = $oauth2->userinfo->get();
 
         if ($userInfo->hd == $config->gSuitesDomain) {
-            $_SESSION["gUserName"] = str_replace($config->emailDomain, '', $userInfo->email);
+            $_SESSION["gUserName"] = str_replace('@' + $config->gSuitesDomain, '', $userInfo->email);
             $_SESSION["gEmail"] = $userInfo->email;
             $_SESSION["gFullName"] = $userInfo->name;
             $_SESSION["photoUrl"] = $userInfo->picture;
