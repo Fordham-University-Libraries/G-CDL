@@ -133,20 +133,14 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
         } else {
             //redirect to front end
             if (!Config::$isProd) { 
-                echo "not prod";
                 $host = str_replace(':8080', ':4200', $host);
             } else {
                 if ($config::$frontEndHost) {
                     $host = rtrim($config::$frontEndHost, '/');
                     $url = $host;
-                } else {
-                    //samehost as API
-                    $baseDir = str_replace('/api', '', $baseDir);
-                    $url = $host . $baseDir;
                 }
             }
             if ($target) $url .= $target;
-            echo $url;
             header("Location: " . $url);
             die();
         }
@@ -211,9 +205,6 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
                 } else {
                     if ($config::$frontEndHost) {
                         $host = rtrim($config::$frontEndHost, '/');
-                    } else {
-                        //samehost as API
-                        $host .= str_replace('/api','',$baseDir);
                     }
                 }
                 if ($states) $target = $states[1];
