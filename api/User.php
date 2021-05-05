@@ -141,8 +141,6 @@ class User
     //get users arrtibutes from auth system
     public function authorization($authzConfig, $libKey)
     {
-        global $config;
-
         // CAS
         if ($authzConfig['auth']['kind'] == 'CAS') {
             if (!phpCAS::isInitialized()) {
@@ -150,7 +148,7 @@ class User
                 if (!$authzConfig['auth']['CAS']['version'] || !$authzConfig['auth']['CAS']['host'] || !$authzConfig['auth']['CAS']['port'] || !$authzConfig['auth']['CAS']['context']) {
                     return;
                 }
-                
+
                 phpCAS::client(
                     $authzConfig['auth']['CAS']['version'],
                     $authzConfig['auth']['CAS']['host'],
