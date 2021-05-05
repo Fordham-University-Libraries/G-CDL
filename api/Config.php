@@ -471,8 +471,8 @@ class Config
         $frontEndConfig = [
             'appName' => $this->appName,
             'defaultLibrary' => $defaultLibrary ?? null,
-            'gSuitesDomain' => $this->auth['gSuitesDomain'],
-            'emailDomain' => '@' . $this->auth['gSuitesDomain'],
+            'gSuitesDomain' => $this->gSuitesDomain,
+            'emailDomain' => '@' . $this->gSuitesDomain,
             'maxFileSizeInMb' => $this->maxFileSizeInMb,
             'useEmbedReader' => $this->useEmbedReader,
             'libraries' => $libraries
