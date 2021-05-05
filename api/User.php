@@ -1,4 +1,7 @@
 <?php
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
 class User
 {
     public bool $isDriveOwner = false;
@@ -142,23 +145,28 @@ class User
 
         // CAS
         if ($authzConfig['auth']['kind'] == 'CAS') {
-            if (!$authzConfig['auth']['CAS']['version'] || !$authzConfig['auth']['CAS']['host'] || !$authzConfig['auth']['CAS']['port'] || !$authzConfig['auth']['CAS']['context']) {
-                return;
-            }
-
             if (!phpCAS::isInitialized()) {
+                
+                if (!$authzConfig['auth']['CAS']['version'] || !$authzConfig['auth']['CAS']['host'] || !$authzConfig['auth']['CAS']['port'] || !$authzConfig['auth']['CAS']['context']) {
+                    return;
+                }
+                
                 phpCAS::client(
                     $authzConfig['auth']['CAS']['version'],
                     $authzConfig['auth']['CAS']['host'],
                     intval($authzConfig['auth']['CAS']['port']),
                     $authzConfig['auth']['CAS']['context']
                 );
+            } else {
+                //if CAS client already init but config not the same
             }
             
             if (Config::$isProd) {
                 phpCAS::setCasServerCACert($authzConfig['auth']['CAS']['caCertPath']);
             } else {
-                phpCAS::setDebug(Config::getLocalFilePath('CAS-debug.log'));
+                $logger = new Logger('cas');
+                $logger->pushHandler(new StreamHandler(Config::getLocalFilePath('CAS-debug.log'), Logger::DEBUG));
+                phpCAS::setLogger($logger);
                 phpCAS::setVerbose(true);
                 phpCAS::setNoCasServerValidation();
                 if ($authzConfig['auth']['CAS']['protocol'] == 'http://') {
