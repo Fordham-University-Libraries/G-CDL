@@ -548,7 +548,7 @@ class CdlItem
             'itemId' => isset($this->itemId) ? $this->itemId : null,
             'available' => $this->available,
             'createdTime' => $this->createdTime,
-            'library' => isset($this->librarey) ? $this->library : null,
+            'library' => isset($this->library) ? $this->library : null,
         ];
 
         if (!$this->available) {
