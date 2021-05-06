@@ -270,7 +270,7 @@ class Lang {
             $this->_serialize($this->default, $this->libraries[$libKey]);
             $this->libraries[$libKey]['about']['html'] = $this->getAbout($libKey);
             //replace token -- oh god PHP
-            array_walk_recursive($this->libraries, function(&$value, &$key, $library) {
+            array_walk_recursive($this->libraries, function(&$value, $key, $library) {
                 $value = str_replace('{{$libraryName}}', $library->name , $value);
             }, $library);
         }
