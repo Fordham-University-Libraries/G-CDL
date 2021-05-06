@@ -5,6 +5,7 @@
 
 //this file is accessible to the public! make sure to NOT leak any sensitive info
 require 'Config.php';
+
 $config = new Config();
 $isEnabled = $config->notifications['emailOnAutoReturn']['enable'];
 $method = $config->notifications['emailOnAutoReturn']['method'];
@@ -26,10 +27,16 @@ date_default_timezone_set($config->timeZone);
 $fileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
 if (!file_exists($fileName)) die('no items currenlty checked out');
 
+require 'Lang.php';
+require 'get_client.php';
 require 'CdlItem.php';
 require 'User.php';
 require 'email.php';
 require __DIR__ . '/vendor/autoload.php'; //for Google_Service_Drive_DriveFile
+
+$langObj = new Lang();
+$lang = $langObj->serialize();
+
 $file = file_get_contents($fileName);
 $currentOutItems = unserialize($file); //serialized CdlItem object 
 if (!$currentOutItems) die('no items currenlty checked out');
