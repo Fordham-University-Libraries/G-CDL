@@ -252,16 +252,15 @@ class CdlItem
                     $postBody->setType('web_hook');
                     $postBody->setAddress($config->notifications['emailOnAutoReturn']['publicCronUrl']);
                     //the docs said it's supposed to default to one day -- but... sometime it set to just an hour????
-                    //let's set it to four hours, the channel will be stopped by webhook anyway
-                    $fourHoursFromNowInMilliSec = round(microtime(true) * 1000) + 1.44e+7;
-                    $postBody->setExpiration($fourHoursFromNowInMilliSec);
+                    $twentyFourHoursFromNowInMilliSec = round(microtime(true) * 1000) + 8.64e+7;
+                    $postBody->setExpiration($twentyFourHoursFromNowInMilliSec);
                     $watchOptParams = [];
                     try {
                         $channel = retry(function () use ($service, $postBody, $watchOptParams) {
                             return $service->files->watch($this->id, $postBody, $watchOptParams);
                         });
                         //debug
-                        $respond['channelExp'] = $channel->getExpiration();
+                        //$respond['channelExp'] = $channel->getExpiration();
                     } catch (Google_Service_Exception $e) {
                         //watch fail
                         $respond['watchError'] = json_decode($e->getMessage());

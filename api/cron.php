@@ -18,7 +18,7 @@ if ($method == 'web') {
 }
 if ($method == 'webHook') {
     if ($secret) {
-        if (!isset($headers['X-Goog-Channel-Id']) || strpos($headers['X-Goog-Channel-Id'], $secret) !== false) die('unauthorized');
+        if (!isset($headers['X-Goog-Channel-Id']) || strpos($headers['X-Goog-Channel-Id'], $secret) === false) die('unauthorized');
     }
 }
 
