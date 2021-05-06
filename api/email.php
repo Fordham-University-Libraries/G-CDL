@@ -1,16 +1,18 @@
 <?php
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-function email(string $kind, User $user, CdlItem $cdlItem) {
+function email(string $kind, User $user, CdlItem $cdlItem)
+{
     global $config;
     global $lang;
     if (!$lang) $lang = getLanguages();
 
     $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
-    $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
+    $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'), "/");
     $baseDir = str_replace('/api', '', $baseDir);
-    
+
     // gmail
     if ($config->emails['method'] == 'gMail') {
         $client = getClient();
@@ -66,12 +68,12 @@ function email(string $kind, User $user, CdlItem $cdlItem) {
         $mailer->Port = $config->emails['SMTP']['port'];
         $mailer->SMTPAuth = false;
         $mailer->SMTPOptions = array(
-        'ssl' => array(
-            'verify_peer' => false,
-            'verify_peer_name' => false,
-            'allow_self_signed' => true
-        )
-    );
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        );
         $mailer->isHTML(true);
         $mailer->setFrom($fromEmail, $fromName);
         $mailer->addAddress($user->email);
@@ -81,8 +83,8 @@ function email(string $kind, User $user, CdlItem $cdlItem) {
             $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowBody']);
             $strBody = str_replace('{{$libraryName}}', $config->libraries[$cdlItem->library]->name, $strBody);
             $strBody = str_replace('{{$borrowingPeriod}}', '' . $config->libraries[$cdlItem->library]->borrowingPeriod, $strBody);
-            $strBody = str_replace('{{$readLink}}', $host . $baseDir , '/read', $strBody);
-            $mailer->Body = str_replace('{{$returnLink}}', $host . $baseDir , '/return', $strBody);
+            $strBody = str_replace('{{$readLink}}', $host . $baseDir . '/read', $strBody);
+            $mailer->Body = str_replace('{{$returnLink}}', $host. $baseDir . '/return', $strBody);
         } elseif ($kind == 'return') {
             $mailer->Subject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnSubject']);
             $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnBody']);
@@ -101,7 +103,8 @@ function email(string $kind, User $user, CdlItem $cdlItem) {
     }
 }
 
-function errorNotifyEmail($message, $errorId) {
+function errorNotifyEmail($message, $errorId)
+{
     global $config;
     //check so we don't email about same items too repeatedly
     if ($errorId) {
@@ -139,7 +142,9 @@ function errorNotifyEmail($message, $errorId) {
     $strSubject = $config->appName . ' (CDL app) ERROR notification!';
     $to = '<' . $config->driveOwner . '>';
     if (count($config->appSuperAdmins) > 1) {
-        $appSuperAdmins = array_map(function ($user, $gSuitesDomain) { return '<' . $user . '@' . $gSuitesDomain . '>'; }, $config->appSuperAdmins, array_fill(0, count($config->appSuperAdmins), $config->gSuitesDomain));
+        $appSuperAdmins = array_map(function ($user, $gSuitesDomain) {
+            return '<' . $user . '@' . $gSuitesDomain . '>';
+        }, $config->appSuperAdmins, array_fill(0, count($config->appSuperAdmins), $config->gSuitesDomain));
         $to .= "," . implode(',', $appSuperAdmins);
     } else if (count($config->appSuperAdmins) == 1) {
         $to .= ',<' . $config->appSuperAdmins[0] . '@' . $config->gSuitesDomain . '>';
