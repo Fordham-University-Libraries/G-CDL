@@ -5,6 +5,7 @@ use PHPMailer\PHPMailer\Exception;
 function email(string $kind, User $user, CdlItem $cdlItem) {
     global $config;
     global $lang;
+    if (!$lang) $lang = getLanguages();
 
     $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
     $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
@@ -23,7 +24,7 @@ function email(string $kind, User $user, CdlItem $cdlItem) {
             $strSubject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowSubject']);
             $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowBody']);
             $strBody = str_replace('{{$libraryName}}', $config->libraries[$cdlItem->library]->name, $strBody);
-            $strBody = str_replace('{{$borrowingPeriod}}', $config->libraries[$cdlItem->library]->borrowingPeriod, $strBody);
+            $strBody = str_replace('{{$borrowingPeriod}}', '' . $config->libraries[$cdlItem->library]->borrowingPeriod, $strBody);
             $strBody = str_replace('{{$readLink}}', $host . $baseDir . '/read', $strBody);
             $strBody = str_replace('{{$returnLink}}', $host . $baseDir . '/return', $strBody);
         } elseif ($kind == 'return') {
@@ -79,7 +80,7 @@ function email(string $kind, User $user, CdlItem $cdlItem) {
             $mailer->Subject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowSubject']);
             $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowBody']);
             $strBody = str_replace('{{$libraryName}}', $config->libraries[$cdlItem->library]->name, $strBody);
-            $strBody = str_replace('{{$borrowingPeriod}}', $config->libraries[$cdlItem->library]->borrowingPeriod, $strBody);
+            $strBody = str_replace('{{$borrowingPeriod}}', '' . $config->libraries[$cdlItem->library]->borrowingPeriod, $strBody);
             $strBody = str_replace('{{$readLink}}', $host . $baseDir , '/read', $strBody);
             $mailer->Body = str_replace('{{$returnLink}}', $host . $baseDir , '/return', $strBody);
         } elseif ($kind == 'return') {

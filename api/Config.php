@@ -230,7 +230,8 @@ class Config
         if (!isset($this->timeZone)) {
             $this->timeZone = date_default_timezone_get();
         }
-        if (($this->notifications['emailOnAutoReturn']['method'] == 'web' || $this->notifications['emailOnAutoReturn']['method'] == 'webHook') && !isset($this->notifications['emailOnAutoReturn']['publicCronUrl'])) {
+
+        if (($this->notifications['emailOnAutoReturn']['method'] == 'web' || $this->notifications['emailOnAutoReturn']['method'] == 'webHook')) {
             $url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
             $url .= preg_replace('/\/api.*/', '/api/cron.php', $_SERVER["REQUEST_URI"]);
             $this->notifications['emailOnAutoReturn']['publicCronUrl'] = $url;

@@ -4,8 +4,6 @@ class CdlItem
     private Google_Service_Drive_DriveFile $driveFile;
     private int $borrowingPeriod;
     private int $backToBackBorrowCoolDown;
-    private array $lang;
-    private string $currentlyCheckedOutToUser;
     public string $id;
     public string $parentId;
     public string $name; //file name
@@ -38,6 +36,7 @@ class CdlItem
     {
         global $config;
         global $lang;
+        if (!$lang) $lang = getLanguages();
         $this->driveFile = $driveFile;
         $this->id = $driveFile->getId();
         $this->parentId = $driveFile->getParents()[0];
@@ -119,10 +118,10 @@ class CdlItem
 
     public function borrow(User $user)
     {
-        ;
         global $service;
         global $config;
         global $lang;
+        if (!$lang) $lang = getLanguages();
         
         //check that file don't already have a viewer
         if (!$this->available) {
@@ -325,10 +324,10 @@ class CdlItem
 
     public function return(User $user)
     {
-        ;
         global $config;
         global $service;
         global $lang;
+        if (!$lang) $lang = getLanguages();
 
         $permissions = $this->driveFile->getPermissions();
         $permissionId = null; //to be removed

@@ -73,7 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
         getConfig();
         die();
     } else if ($action == 'get_lang') {
-        getLanguages();
+        $lang = getLanguages();
+        respondWithData($lang);
         die();
     } else if ($action == 'get_customization') {
         getCustomizations();
@@ -330,8 +331,7 @@ function getLanguages() {
     require_once('Lang.php');
     $langObj = new Lang();
     $lang = $langObj->serialize();
-    respondWithData($lang);
-    die();
+    return $lang;
 }
 
 //for admin config
