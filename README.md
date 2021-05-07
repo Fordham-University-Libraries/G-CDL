@@ -83,5 +83,5 @@ Example of App/GDrive Interactions
    - [project ReShare](https://projectreshare.org/products/reshare-controlled-digital-lending/)
    - [CIRC project](https://www.cdlproject.org/)
    - Commercial System
-      -  [DLSG](https://www.dlsg.com/)
+      -  [DLSG](https://www.dlsg.com/) -- you might want to wear a safety glasses before visiting this website
 
