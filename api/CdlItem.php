@@ -93,9 +93,11 @@ class CdlItem
                 $viewerCount++;
                 if ($viewerCount > 1) {
                     compliantBreachNotify('File ' . $this->name . '(' . $this->id . ') has more than one viewer!', $this->id);
+                    //the app is hardcoded to only allow 1 viewer (CDL thing), if there's more than one let's just assign the first viewer and alert the admin
+                    if ($this->currentlyCheckedOutToUser) break;
                 }
                 $this->available = false;
-                $this->currentlyCheckedOutToUser = $permission->getEmailAddress();
+                if($this->currentlyCheckedOutToUser) $this->currentlyCheckedOutToUser = $permission->getEmailAddress();
                 if (!$permission->getExpirationTime()) {
                     compliantBreachNotify('File ' . $this->name . '(' . $this->id . ') is shared to viewer WITHOUT expiration time!', $this->id);
                 } else {
@@ -105,7 +107,7 @@ class CdlItem
                     $this->isCheckedOutToMe = true;
                     $this->url = $this->driveFile->getWebViewLink();
                     if ($user->isAccessibleUser) {
-                        //NOT SURE
+                        //accessible user will get PDF with OCR data and can also download
                         $this->url = "https://drive.google.com/a/" . $config->gSuitesDomain . "/uc?id=" . $this->fileWithOcrId;
                         $this->downloadLink = "https://drive.google.com/a/" . $config->gSuitesDomain . "/uc?id=" . $this->fileWithOcrId . "&export=download";
                     }
