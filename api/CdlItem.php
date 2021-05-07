@@ -4,6 +4,7 @@ class CdlItem
     private Google_Service_Drive_DriveFile $driveFile;
     private int $borrowingPeriod;
     private int $backToBackBorrowCoolDown;
+    private string $currentlyCheckedOutToUser;
     public string $id;
     public string $parentId;
     public string $name; //file name
@@ -97,13 +98,13 @@ class CdlItem
                     if ($this->currentlyCheckedOutToUser) break;
                 }
                 $this->available = false;
-                if($this->currentlyCheckedOutToUser) $this->currentlyCheckedOutToUser = $permission->getEmailAddress();
+                if ($permission->getEmailAddress()) $this->currentlyCheckedOutToUser = $permission->getEmailAddress();
                 if (!$permission->getExpirationTime()) {
                     compliantBreachNotify('File ' . $this->name . '(' . $this->id . ') is shared to viewer WITHOUT expiration time!', $this->id);
                 } else {
                     $this->due = $permission->getExpirationTime();
                 }
-                if ($user->email == $permission->getEmailAddress() &&  $permission->getRole() == 'reader') {
+                if ($user->email == $this->currentlyCheckedOutToUser &&  $permission->getRole() == 'reader') {
                     $this->isCheckedOutToMe = true;
                     $this->url = $this->driveFile->getWebViewLink();
                     if ($user->isAccessibleUser) {
