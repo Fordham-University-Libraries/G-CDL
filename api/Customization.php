@@ -314,13 +314,13 @@ class Customization
 
 
     public function __construct($forceRefresh = false) {
-        global $config;
-        $fileName = $config->privateDataDirPath . 'customization_app.json';
+        
+        $fileName = Config::getLocalFilePath('customization_app.json');
         if (file_exists($fileName)) {
             $file = file_get_contents($fileName);
             $this->appGlobal = json_decode($file, true);
         }
-        $fileName = $config->privateDataDirPath . 'customization.json';
+        $fileName = Config::getLocalFilePath('customization.json');
         if (file_exists($fileName)) {
             $file = file_get_contents($fileName);
             $this->libraries = json_decode($file, true);
@@ -419,8 +419,7 @@ class Customization
         global $config;
         global $user;
         if (!$user->isAdminOfLibraries || !count($user->isAdminOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - View Customization');
         }
 
         $cust = [];
@@ -472,7 +471,7 @@ class Customization
                     array_unshift($definitions, $key, $xValue, $type, $isDefault);
                 }
             } else {
-               die('no definition of: ' . $value);
+               logError("no definition for customzation: $value");
             }
         }
 
@@ -505,18 +504,21 @@ class Customization
     }
 
     public function update($data, $libKey) {
-        global $config;
         global $user;
         if (!in_array($libKey, $user->isAdminOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Edit Customization');
         }
         
         if ($libKey == 'appGlobal') {
-            $fileName = $config->privateDataDirPath . 'customization_app.json';
+            $fileName = Config::getLocalFilePath('customization_app.json');
             $file = fopen($fileName, 'wb');
-            fwrite($file, json_encode($data));
-            fclose($file);
+            try {
+                fwrite($file, json_encode($data));
+                fclose($file);
+            } catch (Exception $e) {
+                logError($e);
+                respondWithError(500, 'ERROR: cannot save customization data');
+            }
             return ['success' => true];
         } else {
             if (!isset($this->libraries[$libKey])) {
@@ -524,10 +526,15 @@ class Customization
             }
             $org = $this->libraries[$libKey];
             $result = $this->_update($data, $this->libraries[$libKey]);
-            $fileName = $config->privateDataDirPath . 'customization.json';
+            $fileName = Config::getLocalFilePath('customization.json');
             $file = fopen($fileName, 'wb');
-            fwrite($file, json_encode($this->libraries));
-            fclose($file);
+            try {
+                fwrite($file, json_encode($this->libraries));
+                fclose($file);
+            } catch (Exception $e) {
+                logError($e);
+                respondWithError(500, 'ERROR: cannot save customization data');
+            }
             return [
             'libKey' => $libKey,
             'data' => $data,
@@ -555,14 +562,19 @@ class Customization
     public function removeLibrary($libKey): bool {
         global $config;
         global $user;
-        if(!$user->isSuperAdmin) die('unauthorized');
+        if(!$user->isSuperAdmin) respondWithFatalError(401, 'Unauthorized - Remove Library Customization');
         if(!$this->libraries[$libKey]) return false;
 
         unset($this->libraries[$libKey]);
-        $fileName = $config->privateDataDirPath . 'customization.json';
+        $fileName = Config::getLocalFilePath('customization.json');
         $file = fopen($fileName, 'wb');
-        fwrite($file, json_encode($this->libraries));
-        fclose($file);
+        try {
+            fwrite($file, json_encode($this->libraries));
+            fclose($file);
+        } catch (Exception $e) {
+            logError($e);
+            respondWithError(500, 'ERROR: cannot save customization data');
+        }
         return true;
     }
 }

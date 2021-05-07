@@ -7,7 +7,6 @@ function logStats(CdlItem $item, $action, $usersLibrary = '', $isAccessibleUser 
     $statsSheetId = $config->libraries[$item->library]->statsSheetId;
     if(!$statsSheetId) {
         respondWithError(500, 'No Stats Sheet Configured');
-        die();
     }
 
     $range = 'Sheet1!A1:H';
@@ -38,20 +37,20 @@ function getStats($libKey, $from = null, $to = null)
     global $config;
     global $user;
     if (!count($user->isStaffOfLibraries) || !in_array($libKey,$user->isStaffOfLibraries)) {
-        respondWithError(401, 'Not Authorized');
-        die();
+        respondWithError(401, 'Not Authorized - Get Stats');
     }
 
     if(!$config->libraries[$libKey]->statsSheetId) {
         respondWithError(500, 'No Stats Sheet Configured');
-        die();
     }
 
     //if no Titles sheet, create one
     $sSheet = $sheetService->spreadsheets->get($config->libraries[$libKey]->statsSheetId);
-    $titlesSheet;
     foreach ($sSheet->sheets as $sheet) {
-        if ($sheet->properties->title == "Titles") $titlesSheet = $sheet;
+        if ($sheet->properties->title == "Titles") { 
+            $titlesSheet = $sheet;
+            break;
+        }
     }    
     if (!$titlesSheet) {
         $body = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest([
@@ -67,7 +66,7 @@ function getStats($libKey, $from = null, $to = null)
     }
 
     //get stats data
-    $fileName = $config->privateDataDirPath . $libKey . '_stats_cache.php.serialized';
+    $fileName = Config::getLocalFilePath($libKey . '_stats_cache.php.serialized');
     if (file_exists($fileName) && time() - filemtime($fileName) < 1 * 3600) { //1 hour
         // use cache
         $file = file_get_contents($fileName);
@@ -78,15 +77,19 @@ function getStats($libKey, $from = null, $to = null)
         $values = $response->getValues();
         if (!empty($values)) {
             $file = fopen($fileName, 'wb');
-            fwrite($file, serialize($values));
-            fclose($file);
+            try {
+                fwrite($file, serialize($values));
+                fclose($file);
+            } catch (Exception $e) {
+                logError($e);
+                respondWithError(500, 'Error: cannot save cache stats file');
+            }
         }
     }
 
     //process
     if (empty($values)) {
         respondWithError(404, 'No Stats Data!');
-        die();
     } else {
         $data = [];
         $totalBorrow = 0;
@@ -121,7 +124,6 @@ function getStats($libKey, $from = null, $to = null)
         //sigh....
         if (!isset($data[$libKey])){
             respondWithError(404, 'No Stats Data for this Library!');
-            die();
         }
 
         foreach ($data[$libKey] as $key => $val) {
@@ -159,8 +161,7 @@ function getTitleByItemId($itemId, $libKey) {
     global $sheetService;
 
     //get titles data
-    $titles;
-    $fileName = $config->privateDataDirPath . $libKey . '_stats_titles_cache.php.serialized';
+    $fileName = Config::getLocalFilePath($libKey . '_stats_titles_cache.php.serialized');
     if (file_exists($fileName) && time() - filemtime($fileName) < 1 * 3600) { //1 hour
         // use cache
         $file = file_get_contents($fileName);
@@ -171,12 +172,18 @@ function getTitleByItemId($itemId, $libKey) {
         $response = $sheetService->spreadsheets_values->get($config->libraries[$libKey]->statsSheetId, $range);
         $values = $response->getValues();
         if ($values) {
+            $titles = [];
             foreach ($values as $value) {
                 $titles[$value[0]] = $value[1];
             }
             $file = fopen($fileName, 'wb');
-            fwrite($file, serialize($titles));
-            fclose($file);
+            try {
+                fwrite($file, serialize($titles));
+                fclose($file);
+            } catch (Exception $e) {
+                logError($e);
+                respondWithError(500, 'Error: cannot save cached titles data');
+            }
         }
     }
 

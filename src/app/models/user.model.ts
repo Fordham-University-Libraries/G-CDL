@@ -13,6 +13,7 @@ export class User implements Deserializable {
     public isGradStudent?: boolean;
     public isStaffOfLibraries?: string[];
     public isAdminOfLibraries?: string[];
+    public isSuperAdmin?: boolean;
     public isDriveOwner?: boolean;
 
     deserialize(input: any): this {

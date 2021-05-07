@@ -6,7 +6,7 @@ function getSirsiBib($key, $library, $keyType = 'barcode') {
     } else if ($keyType = 'ckey') {
         $url = $config->libraries[$library]->ils['api']['base'] . "/rest/standard/lookupTitleInfo?json=true&includeOPACInfo=true&includeItemInfo=true&includeItemCategory=true&titleID=$key";
     } else {
-        die('only support barcode or ckey');
+        respondWithError(400, 'only support barcode or ckey (Sirsi\' lingo for BibId)');
     }
     
     $curl = curl_init();
@@ -31,8 +31,6 @@ function getSirsiBib($key, $library, $keyType = 'barcode') {
     $json = json_decode($response);
     if (isset($json->TitleInfo[0])) {
         $obj = $json->TitleInfo[0];
-        // print_r($obj);
-        // die();
         $items = [];
         foreach ($obj->CallInfo as $library) {
             foreach ($library->ItemInfo as $item) {
@@ -67,7 +65,7 @@ function getSirsiCourses($library)
 {
     global $config;
     $cacheSec = $config->libraries[$library]->ils['api']['courseCacheFileRefreshMinutes'] * 60;
-    $fileName = $config->privateDataDirPath . $library . "_" . $config->libraries[$library]->ils['api']['courseCacheFile'];
+    $fileName = Config::getLocalFilePath($library . "_" . $config->libraries[$library]->ils['api']['courseCacheFile']);
     if (file_exists($fileName) && time() - filemtime($fileName) < $cacheSec) {
         //use cache
         $file = file_get_contents($fileName);
@@ -98,8 +96,13 @@ function getSirsiCourses($library)
         if ($data) {
             if (!isset($data['faultResponse'])) {
                 $file = fopen($fileName, 'wb');
-                fwrite($file, serialize($data));
-                fclose($file);
+                try {
+                    fwrite($file, serialize($data));
+                    fclose($file);
+                } catch (Exception $e) {
+                    logError($e);
+                    respondWithError(500, 'Internal Error');
+                }
             } else {
                 respondWithError(500, $data['faultResponse']['code']);
             }
@@ -127,7 +130,7 @@ function getSirsiCoursesProf($library)
 {
     global $config;
     $cacheSec = $config->libraries[$library]->ils['api']['courseCacheFileRefreshMinutes'] * 60;
-    $fileName = $config->privateDataDirPath . $library . "_prof_" . $config->libraries[$library]->ils['api']['courseCacheFile'];
+    $fileName = Config::getLocalFilePath($library . "_prof_" . $config->libraries[$library]->ils['api']['courseCacheFile']);
     if (file_exists($fileName) && time() - filemtime($fileName) < $cacheSec) {
         //use cache
         $file = file_get_contents($fileName);
@@ -158,8 +161,13 @@ function getSirsiCoursesProf($library)
         if ($data) {
             if (!isset($data['faultResponse'])) {
                 $file = fopen($fileName, 'wb');
-                fwrite($file, serialize($data));
-                fclose($file);
+                try {
+                    fwrite($file, serialize($data));
+                    fclose($file);
+                } catch (Exception $e) {
+                    logError($e);
+                    respondWithError(500, 'Internal Error');
+                }
             } else {
                 respondWithError(500, $data['faultResponse']['code']);
             }

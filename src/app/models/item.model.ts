@@ -33,6 +33,7 @@ export class Item implements Deserializable {
     //     lastBorrowed?: string;
     // };
     //admin - stats
+    public shouldCreateNoOcr?: boolean;
     public fileWithOcrId?: string;
     public isSuspended?: number;
     public created?: string;

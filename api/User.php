@@ -1,4 +1,7 @@
 <?php
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
 class User
 {
     public bool $isDriveOwner = false;
@@ -21,19 +24,20 @@ class User
     public function __construct($internal = false)
     {
         global $config;
+
         // can only authenticate with GoogleOAuth, if need to get users attrs, use authorization()
         if ($config->auth['kind'] == 'GoogleOAuth') {
             if (session_status() == PHP_SESSION_NONE) {
                 session_name($config->auth['sessionName']);
-                if ($config->isProd) session_set_cookie_params(0, $config->auth['clientPath'], $config->auth['clientDomain'], $config->auth['clientSecure'], $config->auth['clientHttpOnly']);
+                if (Config::$isProd) session_set_cookie_params(0, $config->auth['clientPath'], $config->auth['clientDomain'], $config->auth['clientSecure'], $config->auth['clientHttpOnly']);
                 session_start();
             }
 
             if (isset($_SESSION['gUserName']) && $_SESSION['gExpire'] > time()) {
-                $this->userName = str_replace('@' . $config->auth['gSuitesDomain'], '', $_SESSION['gEmail']);
+                $this->userName = str_replace('@' . $config->gSuitesDomain, '', $_SESSION['gEmail']);
                 $this->email = $_SESSION['gEmail'];
                 if ($_SESSION["photoUrl"]) $this->photoUrl = $_SESSION["photoUrl"];
-                if (!$config->isProd) {
+                if (!Config::$isProd) {
                     //dev -- become somebody else
                     //$this->userName = 'djohn';
                     //$this->email = 'djohn@mustard.edu';
@@ -46,24 +50,25 @@ class User
                 session_destroy();
                 setcookie('cdlLogin','0',time(),'/');
                 if (!$internal) {
-                    respondWithFatalError(401, 'unauthorized');
-                    die();
+                    respondWithFatalError(401, 'Unauthorized User');
                 } else {
                     throw new Exception("Not Logged In");
-                    die(); //for good measure :D
+                    die();
                 }
                 //front end will send user to login at ?action=login when get 401
             }
         }
         
         if (!isset($this->userName)) {
-            respondWithFatalError(401, 'unauthorized');
-            die();
+            respondWithFatalError(401, 'Unauthorized User');
         }
 
         //user is Authed
         //check if user is owner of the drive
-        if ($this->email == $config->driveOwner) {
+        if (!$config->driveOwner) {
+            logError('NO driveOwner info in config');
+            $this->isDriveOwner = false;
+        } else if ($this->email == $config->driveOwner) {
             $this->isDriveOwner = true;
             $this->isSuperAdmin = true;
         } else if (in_array($this->userName, $config->appSuperAdmins)) {
@@ -83,7 +88,7 @@ class User
             }
             //if authz is enabled (check users attrs)
             if ($_library->authorization['enable']) {
-                $this->authorization($_library->authorization);
+                $this->authorization($_library->authorization, $libKey);
             }
             //customUserHomeLibrary overrides the attrs check 
             if ($_library->customUserHomeLibrary && in_array($this->userName, $_library->customUserHomeLibrary)) {
@@ -99,7 +104,7 @@ class User
         }
 
         //check accessible user
-        $fileName = $config->privateDataDirPath . $config->accessibleUserCachefileName;
+        $fileName = Config::getLocalFilePath($config->accessibleUserCachefileName);
         if (file_exists($fileName) && time() - filemtime($fileName) < $config->accessibleUserCacheMinutes * 3600) {
             // use cache
             $file = file_get_contents($fileName);
@@ -134,28 +139,32 @@ class User
     }
 
     //get users arrtibutes from auth system
-    public function authorization($authzConfig)
+    public function authorization($authzConfig, $libKey)
     {
-        //echo "call\n";
-        //$this->debug = $authzConfig;
-
         // CAS
         if ($authzConfig['auth']['kind'] == 'CAS') {
-            if (!$authzConfig['auth']['CAS']['version'] || !$authzConfig['auth']['CAS']['host'] || !$authzConfig['auth']['CAS']['port'] || !$authzConfig['auth']['CAS']['context']) {
-                return;
-            }
+            if (!phpCAS::isInitialized()) {
+                
+                if (!$authzConfig['auth']['CAS']['version'] || !$authzConfig['auth']['CAS']['host'] || !$authzConfig['auth']['CAS']['port'] || !$authzConfig['auth']['CAS']['context']) {
+                    return;
+                }
 
-            phpCAS::client(
-                $authzConfig['auth']['CAS']['version'],
-                $authzConfig['auth']['CAS']['host'],
-                intval($authzConfig['auth']['CAS']['port']),
-                $authzConfig['auth']['CAS']['context']
-            );
+                phpCAS::client(
+                    $authzConfig['auth']['CAS']['version'],
+                    $authzConfig['auth']['CAS']['host'],
+                    intval($authzConfig['auth']['CAS']['port']),
+                    $authzConfig['auth']['CAS']['context']
+                );
+            } else {
+                //if CAS client already init but config not the same
+            }
             
-            if ($config->isProd) {
+            if (Config::$isProd) {
                 phpCAS::setCasServerCACert($authzConfig['auth']['CAS']['caCertPath']);
             } else {
-                phpCAS::setDebug('./private_data/CAS-debug.log');
+                $logger = new Logger('cas');
+                $logger->pushHandler(new StreamHandler(Config::getLocalFilePath('CAS-debug.log'), Logger::DEBUG));
+                phpCAS::setLogger($logger);
                 phpCAS::setVerbose(true);
                 phpCAS::setNoCasServerValidation();
                 if ($authzConfig['auth']['CAS']['protocol'] == 'http://') {

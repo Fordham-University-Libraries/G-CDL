@@ -99,7 +99,7 @@ export class DriveService {
     return this.httpClient.get(`${this.apiBase}/?action=search&field=${field}&term=${term}&libKey=${library}`, {withCredentials: true}).pipe(map(val => val['data']));
   }
 
-  getItemsForAdmin(libKey: string): Observable<{field: string, term: string, library: string, results: Item[], staff: string[], admins: string[], configs: any[]}> {
+  getItemsForAdmin(libKey: string): Observable<{field: string, term: string, library: string, results: Item[], staff: string[], admins: string[], configs: any[], mainFolder: any[], about: any[], user: any[]}> {
     return this.httpClient.get(`${this.apiBase}/?action=admin&libKey=${libKey}`, {withCredentials: true}).pipe(map(val => val['data']));
   }
 
@@ -145,7 +145,7 @@ export class DriveService {
   }
 
   downloadFileAdmin(fileId: string, accessibleVersion: boolean = false) {
-    window.open(`${this.apiBase}/?action=downalod_file_admin&fileId=${fileId}&accessibleVersion=${accessibleVersion ? 1 : 0}`);
+    window.open(`${this.apiBase}/?action=download_file_admin&fileId=${fileId}&accessibleVersion=${accessibleVersion ? 1 : 0}`);
   }
 
   uploadAdmin(file: any, libKey: string): Observable<any> {
@@ -154,6 +154,7 @@ export class DriveService {
     formData.append('action', 'upload');
     formData.append("libKey", libKey);
     formData.append("uploaded_file", file.file);
+    formData.append('should_create_no_ocr', file.shouldCreateNoOcr);
     for (const [key, value] of Object.entries(file)) {
       if (file[key].value && key != 'file') formData.append(key, file[key].value);
     }

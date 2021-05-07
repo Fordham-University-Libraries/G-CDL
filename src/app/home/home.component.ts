@@ -76,7 +76,7 @@ export class HomeComponent implements OnInit {
           this.route.paramMap.subscribe(paramMap => {
             if (paramMap.get('library')) {
               this.library = paramMap.get('library');
-            } else if (this.user.homeLibrary != this.config.defaultLibrary) {
+            } else if (this.user.homeLibrary && this.user.homeLibrary != this.config.defaultLibrary) {
               this.router.navigate(['/library', this.user.homeLibrary]);
               return;
             } else {

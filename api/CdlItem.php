@@ -4,11 +4,10 @@ class CdlItem
     private Google_Service_Drive_DriveFile $driveFile;
     private int $borrowingPeriod;
     private int $backToBackBorrowCoolDown;
-    private array $lang;
-    private string $currentlyCheckedOutToUser;
     public string $id;
     public string $parentId;
     public string $name; //file name
+    public int $size;
     public string $title;
     public string $author;
     public string $bibId; //some system use '.b123456' and etc. so string it is
@@ -19,6 +18,7 @@ class CdlItem
     public int $part;
     public int $partTotal;
     public string $partDesc;
+    public bool $shouldCreateNoOcr = true; //to track if uploader explicitely choose to not run OCR removal on this file
     public string $fileWithOcrId;
     public string $due; //zulu date
     public bool $isCheckedOutToMe = false;
@@ -31,28 +31,23 @@ class CdlItem
     public string $accessibleFileId;
     public string $webContentLink; //A link for downloading the content of the file in a browser using cookie based authentication - unused
     public string $downloadLink;
-    // public $ilsMetadata = [
-    //     'publisher' => '',
-    //     'pubDate' => '',
-    //     'physDesc' => '',
-    //     'isbn' => ''
-    // ];
     
     public function __construct(Google_Service_Drive_DriveFile $driveFile)
     {
         global $config;
         global $lang;
+        if (!$lang) $lang = getLanguages();
         $this->driveFile = $driveFile;
         $this->id = $driveFile->getId();
         $this->parentId = $driveFile->getParents()[0];
         $this->name = $driveFile->getName();
-        $this->title = $driveFile->getDescription();
+        $this->title = $driveFile->getDescription() ?? '';
         $this->createdTime = $driveFile->getCreatedTime() ?? '';
         $this->isTrashed = $driveFile->getTrashed() ?? false;
         //assign all the props
         foreach ($driveFile->getAppProperties() as $key => $value) {
             $rp = new ReflectionProperty($this, $key);
-            $propType = $rp->getType();
+            $propType = (object) $rp->getType(); //make php Intelephense stops complaining, technically \ReflectionType doesn't have method getName() but it does work
             if ($propType && ($propType->getName() == gettype($value))) {
                 $this->$key = $value;
             } else if ($propType && $propType->getName() == 'int' && gettype($value) == "string") {
@@ -62,7 +57,7 @@ class CdlItem
                 //bool
                 $this->$key = filter_var($value, FILTER_VALIDATE_BOOLEAN);
             } else {
-                logError("can't assign key: $key with val: $val to CDL item object");
+                logError("can't assign key: $key with val: $value to CDL item object");
             }
         }
         $this->checkPerms($driveFile);
@@ -78,15 +73,12 @@ class CdlItem
         }
         if (!isset($this->library)) {
             respondWithError(401, $lang['libraries'][$defaultLibrary]['error']['item']['notPartOfCollecton']);
-            die();
         }
 
         //check that the app is the owner of the file -- needs to be to be able to setCopyRequiresWriterPermission()
         if (!$this->driveFile->getOwnedByMe()) {
             respondWithError(401, $lang['libraries'][$this->library]['error']['item']['notOwnedByMe']);
-            die();
         }
-        //$this->ilsMetadata = $driveFile->getId();
     }
 
     private function checkPerms()
@@ -114,8 +106,8 @@ class CdlItem
                     $this->url = $this->driveFile->getWebViewLink();
                     if ($user->isAccessibleUser) {
                         //NOT SURE
-                        $this->url = "https://drive.google.com/a/" . $config->auth['gSuitesDomain'] . "/uc?id=" . $this->fileWithOcrId;
-                        $this->downloadLink = "https://drive.google.com/a/" . $config->auth['gSuitesDomain'] . "/uc?id=" . $this->fileWithOcrId . "&export=download";
+                        $this->url = "https://drive.google.com/a/" . $config->gSuitesDomain . "/uc?id=" . $this->fileWithOcrId;
+                        $this->downloadLink = "https://drive.google.com/a/" . $config->gSuitesDomain . "/uc?id=" . $this->fileWithOcrId . "&export=download";
                     }
                 } else {
                     $this->isCheckedOutToMe = false;
@@ -126,25 +118,22 @@ class CdlItem
 
     public function borrow(User $user)
     {
-        global $isProd;
         global $service;
         global $config;
         global $lang;
+        if (!$lang) $lang = getLanguages();
         
         //check that file don't already have a viewer
         if (!$this->available) {
             respondWithError(401, $lang['libraries'][$this->library]['error']['borrow']['notAvailHaveOtherViewer']);
-            die();
         }
         //check that the file is net trashed or being suspended
         if ($this->isSuspended || $this->isTrashed) {
             respondWithError(401, $lang['libraries'][$this->library]['error']['borrow']['notAvailGeneric']);
-            die();
         }
         //check if user is drive owner
         if ($user->isDriveOwner) {
             respondWithError(400, 'can NOT borrow item since you are logged in as the drive owner (cannot add you as a "viewer" since you are already the owner of the file)');
-            die();
         }
 
         $permissions = $this->driveFile->getPermissions();
@@ -171,7 +160,6 @@ class CdlItem
                             $errMsg = str_replace('{{$backToBackBorrowCoolDown}}', $this->backToBackBorrowCoolDown, $lang['libraries'][$this->library]['error']['borrow']['backToBackCopy']);
                             respondWithError(401, $errMsg);
                         }
-                        die();
                     }
                 }
             } else {
@@ -185,7 +173,6 @@ class CdlItem
                             $errMsg = str_replace('{{$backToBackBorrowCoolDown}}', $this->backToBackBorrowCoolDown, $lang['libraries'][$this->library]['error']['borrow']['backToBackCopy']);
                             respondWithError(401, $errMsg);
                         }
-                        die();
                     }
                 }
             }
@@ -236,7 +223,7 @@ class CdlItem
             
 
             //if set to update ILS status on borrow/return
-            if ($config->libraries[$this->library]->ils['api']['enable'] && $config->libraries[$this->library]->ils['api']['changeItemStatusOnBorrowReturn'] && $isProd) {
+            if ($config->libraries[$this->library]->ils['api']['enable'] && $config->libraries[$this->library]->ils['api']['changeItemStatusOnBorrowReturn'] && Config::$isProd) {
                 setIlsItemStatus(true, $appProps['itemId'], $this->library); //borrow = true
             }
 
@@ -244,7 +231,7 @@ class CdlItem
             if ($config->notifications['emailOnAutoReturn']['enable']) {
                 //write it to file so we can look at later
                 $this->due = $expTime;
-                $fileName = $config->privateDataDirPath . $config->notifications['emailOnAutoReturn']['dataFile'];
+                $fileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
                 if (file_exists($fileName)) {
                     $file = file_get_contents($fileName);
                     $currentOutItems = unserialize($file);
@@ -265,16 +252,15 @@ class CdlItem
                     $postBody->setType('web_hook');
                     $postBody->setAddress($config->notifications['emailOnAutoReturn']['publicCronUrl']);
                     //the docs said it's supposed to default to one day -- but... sometime it set to just an hour????
-                    //let's set it to four hours, the channel will be stopped by webhook anyway
-                    $fourHoursFromNowInMilliSec = round(microtime(true) * 1000) + 1.44e+7;
-                    $postBody->setExpiration($fourHoursFromNowInMilliSec);
+                    $twentyFourHoursFromNowInMilliSec = round(microtime(true) * 1000) + 8.64e+7;
+                    $postBody->setExpiration($twentyFourHoursFromNowInMilliSec);
                     $watchOptParams = [];
                     try {
                         $channel = retry(function () use ($service, $postBody, $watchOptParams) {
                             return $service->files->watch($this->id, $postBody, $watchOptParams);
                         });
                         //debug
-                        $respond['channelExp'] = $channel->getExpiration();
+                        //$respond['channelExp'] = $channel->getExpiration();
                     } catch (Google_Service_Exception $e) {
                         //watch fail
                         $respond['watchError'] = json_decode($e->getMessage());
@@ -300,8 +286,8 @@ class CdlItem
             }
         } catch (Google_Service_Exception $e) {
             //borrow fail
-            respondWithError(500, "Internal Error - on Borrow");
             logError($e->getMessage());
+            respondWithError(500, "Internal Error - on Borrow");
         }
 
         //if user is in accessible users list
@@ -329,21 +315,21 @@ class CdlItem
                 respondWithData($respond);
             } catch (Google_Service_Exception $e) {
                 //borrow fail
-                respondWithError(500, "Internal Error - on Accessible Borrow");
                 logError($e->getMessage());
+                respondWithError(500, "Internal Error - on Accessible Borrow");
             }
         }
     }
 
     public function return(User $user)
     {
-        global $isProd;
         global $config;
         global $service;
         global $lang;
+        if (!$lang) $lang = getLanguages();
 
         $permissions = $this->driveFile->getPermissions();
-        $permissionId; //to be removed
+        $permissionId = null; //to be removed
         foreach ($permissions as $permission) {
             if ($permission->getRole() == 'reader' && $permission->getEmailAddress() == $user->email) {
                 $permissionId = $permission->getId();
@@ -366,8 +352,8 @@ class CdlItem
             logStats($this, 'manual_return');
 
             //if set to update ILS status on borrow/return
-            if ($config->libraries[$this->library]->ils['api']['enable'] && $config->libraries[$this->library]->ils['api']['changeItemStatusOnBorrowReturn'] && $isProd) {
-                setIlsItemStatus(false, $appProps['itemId'], $this->library); //!borrow = return
+            if ($config->libraries[$this->library]->ils['api']['enable'] && $config->libraries[$this->library]->ils['api']['changeItemStatusOnBorrowReturn'] && Config::$isProd) {
+                setIlsItemStatus(false, $this->itemId, $this->library); //!borrow = return
             }
             
             //it's a manual return, update the lastReturn prop
@@ -391,7 +377,7 @@ class CdlItem
             }
             //remove it from cron watch list since it has been manually returned
             if ($emailOnAutoReturn) {
-                $cronDataFileName = $config->privateDataDirPath . $config->notifications['emailOnAutoReturn']['dataFile'];
+                $cronDataFileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
                 if (file_exists($cronDataFileName)) {
                     $cronDataFile = file_get_contents($cronDataFileName);
                     $currentOutItems = unserialize($cronDataFile);
@@ -455,19 +441,14 @@ class CdlItem
         global $config;
         global $user;
         if (!count($user->isStaffOfLibraries)) {
-            respondWithError(401, "Unauthorized");
-            die();
+            respondWithError(401, "Unauthorized - Download File Admin");
         }
     
         if (!in_array($this->library, $user->isStaffOfLibraries)) {
             respondWithError(401, "Unauthorized - item is of library $this->library, you are " . join(", ", $user->isStaffOfLibraries) . " Staff");
-            die();
         }
 
-        $fileId;
-        // echo $accessibleVersion;
-        // die();
-
+        $fileId = null;
         if(!$accessibleVersion) {
             $fileId = $this->id;
             $fileName = $this->name;
@@ -480,24 +461,21 @@ class CdlItem
         $fileMime = $this->driveFile->getMimeType();
         header("Content-type:$fileMime");
         header("Content-Disposition:attachment;filename=$fileName");
-        $content = $service->files->get($fileId, array("alt" => "media"));
-        echo $content->getBody();
+        $response = (object) $service->files->get($fileId, array("alt" => "media"));
+        echo $response->getBody();
     }
 
     public function suspend($suspend = true)
     {
         global $service;
-        global $config;
         global $user;
 
         if (!count($user->isStaffOfLibraries)) {
-            respondWithError(401, "Unauthorized");
-            die();
+            respondWithError(401, "Unauthorized - suspend item");
         }
     
         if (!in_array($this->library, $user->isStaffOfLibraries)) {
             respondWithError(401, "Unauthorized - item is of library $this->library, you are " . join(", ", $user->isStaffOfLibraries) . " Staff");
-            die();
         }
 
         $tempFile = new Google_Service_Drive_DriveFile;
@@ -508,8 +486,8 @@ class CdlItem
             });
             $this->isSuspended = $suspend;
         } catch (Google_Service_Exception $e) {
-            respondWithError(500, "Internal Error - on Suspend");
             logError($e->getMessage());
+            respondWithError(500, "Internal Error - on Suspend");
         }
         respondWithData($this->serialize('admin'));
     }
@@ -517,17 +495,14 @@ class CdlItem
     public function trash()
     {
         global $service;
-        global $config;
         global $user;
 
         if (!count($user->isStaffOfLibraries)) {
-            respondWithError(401, "Unauthorized");
-            die();
+            respondWithError(401, "Unauthorized - trash item");
         }
     
         if (!in_array($this->library, $user->isStaffOfLibraries)) {
             respondWithError(401, "Unauthorized - item is of library $this->library, you are " . join(", ", $user->isStaffOfLibraries) . " Staff");
-            die();
         }
 
         $tempFile = new Google_Service_Drive_DriveFile;
@@ -538,8 +513,8 @@ class CdlItem
             });
             $this->isTrashed = true;
         } catch (Google_Service_Exception $e) {
-            respondWithError(500, "Internal Error");
             logError($e->getMessage());
+            respondWithError(500, "Internal Error");
         }
       
         //also delete the with OCR version
@@ -549,8 +524,8 @@ class CdlItem
                     $service->files->update($this->fileWithOcrId, $tempFile);
                 });
             } catch (Google_Service_Exception $e) {
-                respondWithError(500, "Internal Error - on Trash");
                 logError($e->getMessage());
+                respondWithError(500, "Internal Error - on Trash");
             }
         }
     
@@ -565,13 +540,13 @@ class CdlItem
         $item = [
             'id' => $this->id,
             'name' => $this->name,
-            'title' => $this->title,
+            'title' => isset($this->title) ? $this->title : null,
             'author' => isset($this->author) ? $this->author : null,
-            'bibId' => $this->bibId,
-            'itemId' => $this->itemId,
+            'bibId' => isset($this->bibId) ? $this->bibId : null,
+            'itemId' => isset($this->itemId) ? $this->itemId : null,
             'available' => $this->available,
             'createdTime' => $this->createdTime,
-            'library' => $this->library,
+            'library' => isset($this->library) ? $this->library : null,
         ];
 
         if (!$this->available) {
@@ -597,7 +572,9 @@ class CdlItem
         }
 
         if ($for == 'admin') {
+            $item['size'] = $this->driveFile->getSize();
             $item['fileWithOcrId'] = $this->fileWithOcrId;
+            $item['shouldCreateNoOcr'] = $this->shouldCreateNoOcr;
             $item['lastReturned'] = $this->lastReturned ?? null;
             $item['lastBorrowed'] = $this->lastBorrowed ?? null;
             $item['lastViewer'] = $this->lastViewer ?? null;

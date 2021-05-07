@@ -3,17 +3,18 @@ require 'View.php';
 
 function init($step = 1, $authCode = null)
 {
-    $hasCreds = file_exists('./private_data/credentials.json');
-    $hasToken = file_exists('./private_data/token.json');
+    global $config;
+    try {
+        $config = new Config();
+    } catch (Google_Service_Exception $e) {
+        $errMsg = json_decode($e->getMessage());
+        die('ERROR: cannot get config ' . $errMsg);
+    }
+    $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
+    $hasCreds = file_exists($credsPath);
+    $tokenPath = Config::getLocalFilePath('token.json', 'creds');
+    $hasToken = file_exists($tokenPath);
     if ($hasCreds && $hasToken) {
-        global $config;
-        try {
-            $config = new Config();
-        } catch (Google_Service_Exception $e) {
-            $errMsg = json_decode($e->getMessage());
-            die('has creds and token BUT cannot get config');
-        }
-
         if ($config) {
             if (count($config->libraries)) {
                 require 'view_all_action.php';
@@ -24,9 +25,6 @@ function init($step = 1, $authCode = null)
                 $service = new Google_Service_Drive($client);
                 if ($defaultLibrary) {
                     $items = getAllFiles($defaultLibrary, null, true);
-                }
-                if (count($items['items'])) {
-                    die('The App has been initialized and has items in collection! You are good to go!');
                 }
             }
         }
@@ -46,10 +44,15 @@ function init($step = 1, $authCode = null)
     }
 
     if ($phpVerWarning) $view->data['phpVerWarning'] = $phpVerWarning;
-
+    $view->data['credsDirPath'] = Config::getLocalFilePath('','creds');
+    $view->data['dataDirPath'] = Config::getLocalFilePath('','data');
+    $view->data['tempDirPath'] = Config::getLocalFilePath('','temp');
+    $view->data['credsDirRealPath'] = realpath(Config::getLocalFilePath('','creds'));
+    $view->data['dataDirRealPath'] = realpath(Config::getLocalFilePath('','data'));
+    $view->data['tempDirRealPath'] = realpath(Config::getLocalFilePath('','temp'));
     $view->data['hasCreds'] = $hasCreds;
     if ($hasCreds) {
-        $creds = file_get_contents('./private_data/credentials.json');
+        $creds = file_get_contents($credsPath);
         $creds = json_decode($creds, true);
         $view->data['creds'] = $creds['web'];
         $view->data['creds']['client_id'] = substr($view->data['creds']['client_id'], 0, 5) . '⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛ googleusercontent.com';
@@ -111,7 +114,18 @@ function init($step = 1, $authCode = null)
         if(!initMainFolder($client)) {
             die('Error: this application is designed to be used with G Suite (now Google Workspace) only i.e. you log in to your work Gmail as jdoe@myinstitution.edu. Looks like you tried to login with @gmail.com account?');
         }
-    } else if ($step == 1) { //create creds
+    } else if ($step == 1) { //create creds - only allow annon access when there's no token (to be able to setup the first time)
+        if ($hasToken) {
+            //will show token info, so make sure user is logged in
+            try {
+                $user = new User(true);
+                if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
+            } catch (Exception $e) {
+                //not login
+                endUserGoogleLogin(null,null,'init&step=1');
+                die();
+            }
+        }
         if (!$hasCreds) $view->data['showRefresh'] = true;
     } else if ($step == 2) { //gen token
         if ($hasToken) {
@@ -122,13 +136,12 @@ function init($step = 1, $authCode = null)
             } catch (Exception $e) {
                 //not login
                 endUserGoogleLogin(null,null,'init&step=2');
+                die();
             }
 
             try {
-                $config = new Config();
                 $view->data['driveOwner'] = $config->driveOwner;
                 $view->data['mainFolderId'] = $config->mainFolderId;
-                $tokenPath = './private_data/token.json';
                 $token = json_decode(file_get_contents($tokenPath), true);
                 $view->data['scopes'] = explode(" ", $token['scope']);
             } catch (Exception $e) {
@@ -139,7 +152,10 @@ function init($step = 1, $authCode = null)
                 $client = getClient();
                 $service = new Google_Service_Drive($client);
                 $mainFolder = $service->files->get($config->mainFolderId);
-                $view->data['appIsConnected'] = true;
+                if ($mainFolder) { 
+                    $view->data['appIsConnected'] = true;
+                    $view->data['mainFolderId'] = $mainFolder->getId();
+                }
             } catch (Google_Service_Exception $e) {
                 $view->data['appIsConnected'] = false;
                 $view->data['showNext'] = false;
@@ -169,6 +185,7 @@ function init($step = 1, $authCode = null)
         } catch (Exception $e) {
             //not login
             endUserGoogleLogin(null,null,'init&step=3');
+            die();
         }
         //GET        
         if (!$_POST['libKey'] && !$_POST['libName']) {
@@ -178,7 +195,7 @@ function init($step = 1, $authCode = null)
             $view->data['borrowPeriod'] =  $config->libraries[$view->data['libKey']]->borrowingPeriod ?? 2;
             $view->data['cooldown'] = $config->libraries[$view->data['libKey']]->backToBackBorrowCoolDown ?? 60;
             $view->data['driveOwner'] = $config->driveOwner;
-            $view->data['gSuitesDomain'] = $config->auth['gSuitesDomain'];
+            $view->data['gSuitesDomain'] = $config->gSuitesDomain;
             if (count($config->libraries)) {
                 $view->data['admins'] = implode(',', $config->libraries[$view->data['libKey']]->admins);
                 $view->data['staff'] = implode(',', $config->libraries[$view->data['libKey']]->staff);
@@ -209,11 +226,13 @@ function init($step = 1, $authCode = null)
             if (!$user->isDriveOwner) die("only drive owner can init stuff! please log in with the account " . $config->driveOwner . '@' . $config->gSuitesDomain);
         } catch (Exception $e) {
             endUserGoogleLogin(null,null,'init&step=4');
+            die();
         }
         $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
         $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
-        $view->data['privateDataWritable'] = is_writable('./private_data');
-        $view->data['privateTempWritable'] = is_writable('./private_temp');
+        $view->data['privateDataWritable'] = is_writable(Config::$privateDataDirPath);
+        $view->data['privateTempWritable'] = is_writable(Config::$tempDirPath);
+        $view->data['privateCredsWritable'] = is_writable(Config::$credentialsDirPath);
         $view->data['shellExecEnable'] = is_callable('shell_exec') && false === stripos(ini_get('disable_functions'), 'shell_exec');
 
         $config = new Config();
@@ -293,25 +312,24 @@ function initMainFolder($client)
         }
 
         //save mainFolder id and etc.to AppConfig
-        $configDriveFileMetadata = new Google_Service_Drive_DriveFile([
-            'name' => 'config.json',
-            'parents' => ['appDataFolder']
-        ]);
-        $config = [
+        $configData = [
             'driveOwner' => $tokenOwner,
             'gSuitesDomain' => $hostedDomain,
             'mainFolderId' => $mainFolder->getId(),
             'accessibleUsersSheetId' => $accessbileUsersSheet->getId()
         ];
+        //write config.json locally
+        $configFilePath = Config::getLocalFilePath('config.json');
         try {
-            $configDriveFile = $driveService->files->create($configDriveFileMetadata, array(
-                'data' => json_encode($config),
-                'mimeType' => 'application/json',
-                'uploadType' => 'multipart',
-                'fields' => 'id'));
+            $file = fopen($configFilePath, 'wb');
+            fwrite($file, json_encode($configData));
+            fclose($file);
         } catch (Exception $e) {
-            die('failed to create config.json in AppData');
+            logError($e);
+            respondWithError(500, 'internal error');
         }
+        //also save to GDrive appFolder
+        if (!$config->updateConfigOnGDriveAppFolder('config.json',json_encode($configData),true)) logError("failed to create config.json in AppData");
     }
 
     //redirect

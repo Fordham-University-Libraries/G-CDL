@@ -145,7 +145,7 @@ function setSierraItemStatus($isBorrow, $itemId, $library)
     $response = curl_exec($curl);
 
     curl_close($curl);
-    echo $response;
+    return ['result' => $response];
 }
 
 //get all course
@@ -153,7 +153,7 @@ function getSierraCourses($library)
 {
     global $config;
     $cacheSec = 86400; //1 day
-    $fileName = $config->privateDataDirPath . $library . '_' . $config->libraries[$library]->ils['api']['courseCacheFile'];
+    $fileName = Config::getLocalFilePath($library . '_' . $config->libraries[$library]->ils['api']['courseCacheFile']);
     if (file_exists($fileName) && time() - filemtime($fileName) < $cacheSec) {
         //use cache
         $file = file_get_contents($fileName);
@@ -179,8 +179,13 @@ function getSierraCourses($library)
         curl_close($curl);
         $data = json_decode($response, true);
         $file = fopen($fileName, 'wb');
-        fwrite($file, serialize($data));
-        fclose($file);
+        try {
+            fwrite($file, serialize($data));
+            fclose($file);
+        } catch (Exception $e) {
+            logError($e);
+            respondWithError(500, 'Internal Error');
+        }
     }
     return $data;
 }
@@ -189,7 +194,7 @@ function getSierraToken($library)
 {
     global $config;
     
-    $fileName = $config->privateDataDirPath . $library . $config->libraries[$library]->ils['api']['tokenFile'];
+    $fileName = Config::getLocalFilePath($library . $config->libraries[$library]->ils['api']['tokenFile']);
     if (file_exists($fileName)) {
         $file = file_get_contents($fileName);
         $sierraTokenInfo = unserialize($file);
@@ -231,9 +236,14 @@ function getNewSierraToken($library)
     $response = curl_exec($curl);
     $sierraToken = json_decode($response, true);
     $sierraToken['expires'] = time() + $sierraToken['expires_in'] - 60; //minus one minute
-    $file = fopen($config->privateDataDirPath . $library . $config->libraries[$library]->ils['api']['tokenFile'], 'wb');
-    fwrite($file, serialize($sierraToken));
-    fclose($file);
+    $file = fopen(Config::getLocalFilePath($library . $config->libraries[$library]->ils['api']['tokenFile']), 'wb');
+    try {
+        fwrite($file, serialize($sierraToken));
+        fclose($file);
+    } catch (Exception $e) {
+        logError($e);
+        respondWithError(500, 'Internal Error');
+    }
 
     curl_close($curl);
     return $sierraToken['access_token'];

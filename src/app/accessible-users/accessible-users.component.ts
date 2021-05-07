@@ -62,7 +62,7 @@ export class AccessibleUsersComponent implements OnInit {
 
   ngOnInit(): void {
     this.configService.getConfig().subscribe(res => {
-      this.config = res;
+      this.config = res;      
       this.titleService.setTitle(`Admin/AccessibleUsers : ${this.config.appName}`);
       this._getCurrentAccessibleUser();
     });
@@ -97,34 +97,34 @@ export class AccessibleUsersComponent implements OnInit {
       const ws: XLSX.WorkSheet = wb.Sheets[wsname];
 
       /* save data */
-      const data: string[] = XLSX.utils.sheet_to_json(ws, { header: 1 }); // to get 2d array pass 2nd parameter as object {header: 1}
+      const data: string[][] = XLSX.utils.sheet_to_json(ws, { header: 1 }); // to get 2d array pass 2nd parameter as object {header: 1}
       //console.log(data.length); // Data will be logged in array format containing objects
 
       //find row that contains the column head
       let r = 0;
-      const validColNames = ['username', 'email', 'fullName', 'firstname', 'lastname'];
-      for (let row of data) {
-        const filteredArray = validColNames.filter(value => row.includes(value));
+      const validColNames = ['username', 'email', 'fullName', 'firstname', 'lastname'];      
+      for (let row of data) {        
+        const filteredArray = row.filter(header => validColNames.includes(header.toLowerCase()));
         if (filteredArray.length) {
           this.firstRowWithDataIndex = r + 1;
-          for (let hCol of filteredArray) {
-            switch (hCol) {
+          for (let hCol of filteredArray) {            
+            switch (hCol.toLowerCase()) {
               case 'username':
-                this.userNameColIndex = row.indexOf('username');
+                this.userNameColIndex = row.indexOf(hCol);
                 break;
               case 'email':
-                this.emailColIndex = row.indexOf('email');
+                this.emailColIndex = row.indexOf(hCol);
                 break;
               case 'fullName':
-                this.fullNameColIndex = row.indexOf('fullName');
+                this.fullNameColIndex = row.indexOf(hCol);
                 break;
               case 'firstname':
-                this.firstnameColIndex = row.indexOf('firstname');
+                this.firstnameColIndex = row.indexOf(hCol);
                 break;
               case 'lastname':
-                this.lastnameColIndex = row.indexOf('lastname');
+                this.lastnameColIndex = row.indexOf(hCol);
                 break;
-              default:
+              default:                
               //
             }
           }

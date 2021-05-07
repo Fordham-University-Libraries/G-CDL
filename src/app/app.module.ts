@@ -33,6 +33,7 @@ import { AngularEditorModule } from '@kolkov/angular-editor';
 
 import { SafePipe } from './pipes/safe.pipe';
 import { SortPipe } from './pipes/sort.pipe';
+import { FileSizePipe } from './pipes/file-size.pipe';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -64,6 +65,7 @@ import { IdleDialogComponent } from './idle-dialog/idle-dialog.component';
   declarations: [
     SafePipe,
     SortPipe,
+    FileSizePipe,
     AppComponent,
     HomeComponent,
     ItemComponent,

@@ -6,6 +6,9 @@
 //for app / as drive owner
 function getClient($authCode = null, $state = null)
 {
+    $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
+    if(!file_exists($credsPath)) throw new Exception('getClient error: no credentials');
+
     $client = new Google_Client();
     $scopes = [
         Google_Service_Drive::DRIVE_FILE,
@@ -17,13 +20,11 @@ function getClient($authCode = null, $state = null)
     ];
     $client->setApplicationName('GDRIVE CDL APP'); //will show as editor of file and etc...
     $client->setScopes($scopes);
-    $credsPath = './private_data/credentials.json';
-    if(!file_exists($credsPath)) respondWithFatalError(500, 'no credentials');
     $client->setAuthConfig($credsPath);
     $client->setAccessType('offline');
     $client->setPrompt('select_account consent');
 
-    $tokenPath = './private_data/token.json';
+    $tokenPath = Config::getLocalFilePath('token.json', 'creds');
     //if no token
     if (!file_exists($tokenPath)) {
         $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
@@ -34,7 +35,7 @@ function getClient($authCode = null, $state = null)
         $authConfig = json_decode($authConfig, true);
         $redirectUrisInCreds = $authConfig[array_keys($authConfig)[0]]['redirect_uris'];
         if (!in_array($redirectUri, $redirectUrisInCreds)) {
-            respondWithFatalError(500, "ERROR! redirectUri NOT set in credentails.json. The app is trying to set it to $redirectUri but your credentials.json only has [" . join(',', $redirectUrisInCreds) . "]. If you add more redirectUri on Gogole Dev Console after you downloaded the credentials.json, try re-download it!");
+            respondWithFatalError(500, "ERROR! redirectUri NOT set in credentials.json. The app is trying to set it to $redirectUri but your credentials.json only has [" . join(',', $redirectUrisInCreds) . "]. If you add more redirectUri on Gogole Dev Console after you downloaded the credentials.json, try re-download it!");
         }
 
         $client->setRedirectUri($redirectUri);
@@ -55,11 +56,25 @@ function getClient($authCode = null, $state = null)
             }
 
             $client->setAccessToken($accessToken);
+            //check that token is valid p.s. default leeway is 1, increase it in case clocks are not quite synced
+            $jwt = new \Firebase\JWT\JWT;
+            $jwt::$leeway = 5;
+            if(!$client->verifyIdToken()) {
+                respondWithFatalError('401', 'Invalid Token');
+            }
             // Save the token to a file.
             if (!file_exists(dirname($tokenPath))) {
-                mkdir(dirname($tokenPath), 0700, true);
+                try {
+                    mkdir(dirname($tokenPath), 0700, true);
+                } catch (Exception $e) {
+                    respondWithFatalError(500, 'directory for credentials does not exist, cannot auto automatically create');
+                }
             }
-            file_put_contents($tokenPath, json_encode($client->getAccessToken()));
+            try {
+                file_put_contents($tokenPath, json_encode($client->getAccessToken()));
+            } catch (Exception $e) {
+                respondWithFatalError(500, 'cannot save token');
+            }
             return $client;
         } else { 
             //no auth code, not trying to login
@@ -75,6 +90,14 @@ function getClient($authCode = null, $state = null)
             if ($client->getRefreshToken()) {
                 $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
             }
+            //check that the refreshed token is valid p.s. default JWT leeway is 1, increase it in case clocks are not quite synced
+            $jwt = new \Firebase\JWT\JWT;
+            $jwt::$leeway = 5;
+            if(!$client->verifyIdToken()) {
+                logError('Cannot Refresh OAuth Token, most likely its been revolked / app is disconnected from GDrive');
+                respondWithFatalError('401', 'Cannot Refresh Token');
+            }
+
             // Save the token to a file.
             if (!file_exists(dirname($tokenPath))) {
                 mkdir(dirname($tokenPath), 0700, true);
@@ -91,7 +114,7 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
     global $config;
     if (session_status() == PHP_SESSION_NONE) {
         session_name($config->auth['sessionName']);
-        if ($config->isProd) session_set_cookie_params(0, $config->auth['clientPath'], $config->auth['clientDomain'], $config->auth['clientSecure'], $config->auth['clientHttpOnly']);
+        if (Config::$isProd) session_set_cookie_params(0, $config->auth['clientPath'], $config->auth['clientDomain'], $config->auth['clientSecure'], $config->auth['clientHttpOnly']);
         session_start();
     }
 
@@ -109,11 +132,14 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
             die();
         } else {
             //redirect to front end
-            if (!$config->isProd) {
+            if (!Config::$isProd) { 
                 $host = str_replace(':8080', ':4200', $host);
+            } else {
+                if ($config::$frontEndHost) {
+                    $host = rtrim($config::$frontEndHost, '/');
+                    $url = $host;
+                }
             }
-            $url = $host . $baseDir;
-            $url = str_replace('/api', '', $url);
             if ($target) $url .= $target;
             header("Location: " . $url);
             die();
@@ -121,8 +147,9 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
     }
 
     $client = new Google_Client();
-    if(!file_exists('./private_data/credentials.json')) respondWithFatalError(500, 'no credentials');
-    $client->setAuthConfig('./private_data/credentials.json');
+    $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
+    if(!file_exists($credsPath)) respondWithFatalError(500, 'no credentials');
+    $client->setAuthConfig($credsPath);
     $client->setAccessType('online');
     $scopes = [
         Google_Service_Oauth2::USERINFO_EMAIL,
@@ -130,11 +157,12 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
     ];
     $client->addScope($scopes);
 
-    $client->setHostedDomain($config->auth['gSuitesDomain']);
+    $client->setHostedDomain($config->gSuitesDomain);
     $redirectUrl = $host . $baseDir . "/?action=login";
     $client->setRedirectUri($redirectUrl);
     if (!$authCode) {
         //send user to login at Google
+        //pass original target user wants to do along, so we can redirect later
         if ($target) {
             $client->setState("target!!$target");
         } else if ($apiAction) {
@@ -148,19 +176,20 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
         $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
         if (array_key_exists('error', $accessToken)) {
             logError('end users G-OAuth failed ' . join(', ', $accessToken));
-            die('Login Error');
+            respondWithFatalError(500, 'Access Token Error');
             //throw new Exception(join(', ', $accessToken));
         }
         $oauth2 = new \Google_Service_Oauth2($client);
         $userInfo = $oauth2->userinfo->get();
 
-        if ($userInfo->hd == $config->auth['gSuitesDomain']) {
-            $_SESSION["gUserName"] = str_replace($config->emailDomain, '', $userInfo->email);
+        if ($userInfo->hd == $config->gSuitesDomain) {
+            $_SESSION["gUserName"] = str_replace('@' . $config->gSuitesDomain, '', $userInfo->email);
             $_SESSION["gEmail"] = $userInfo->email;
             $_SESSION["gFullName"] = $userInfo->name;
             $_SESSION["photoUrl"] = $userInfo->picture;
             $_SESSION['gExpire'] = time() + ($config->auth['sessionTtl'] * 60);
             //redirect
+            //state format: frontOrBackend!!targetPath
             if (isset($_GET['state'])) {
                 $states = explode('!!', $_GET['state']);
             }
@@ -171,16 +200,20 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
                 die();
             } else {
                 //to frontend
-                if (!$config->isProd) $host = str_replace(':8080', ':4200', $host);
+                if (!Config::$isProd) { 
+                    $host = str_replace(':8080', ':4200', $host);
+                } else {
+                    if ($config::$frontEndHost) {
+                        $host = rtrim($config::$frontEndHost, '/');
+                    }
+                }
                 if ($states) $target = $states[1];
                 $url = $host . $target;
-                //$url = $host . $baseDir . $target;
-                $url = str_replace('/api', '', $url);
                 header("Location: " . $url);
                 die();
             }
         } else {
-            echo "Please login with " . $config->auth['gSuitesDomain']  . " email";
+            echo "Please login with " . $config->gSuitesDomain  . " email";
         }
     }
 }

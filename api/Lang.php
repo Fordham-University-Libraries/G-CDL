@@ -255,7 +255,7 @@ class Lang {
 
     public function __construct($forceRefresh = false) {
         global $config;
-        $fileName = $config->privateDataDirPath . 'lang.json';
+        $fileName = Config::getLocalFilePath('lang.json');
         if (file_exists($fileName)) {
             $file = file_get_contents($fileName);
             $this->libraries = json_decode($file, true);
@@ -270,7 +270,7 @@ class Lang {
             $this->_serialize($this->default, $this->libraries[$libKey]);
             $this->libraries[$libKey]['about']['html'] = $this->getAbout($libKey);
             //replace token -- oh god PHP
-            array_walk_recursive($this->libraries, function(&$value, &$key, $library) {
+            array_walk_recursive($this->libraries, function(&$value, $key, $library) {
                 $value = str_replace('{{$libraryName}}', $library->name , $value);
             }, $library);
         }
@@ -279,7 +279,8 @@ class Lang {
     }
 
     private function _serialize(&$default, &$libLang) {
-        if ($this->infiniteLoop++ > 500) die('to infinity and beyond!');
+        if ($this->infiniteLoop++ > 1000) respondWithFatalError(500, 'Error Processing Languages (infinit loop)');
+
         foreach ($default as $dKey => $dValue) {
             if (is_array($dValue) && $this->_has_string_keys($dValue)) {
                 $this->_serialize($default[$dKey], $libLang[$dKey]);
@@ -296,8 +297,7 @@ class Lang {
         global $config;
         global $user;
         if (!$user->isAdminOfLibraries || !count($user->isAdminOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Languages Admin');
         }
 
         $lang = [];
@@ -325,7 +325,7 @@ class Lang {
     private function _createField($key, &$props = null, &$definitions = null, &$library = null, $isRecursive = false)
     {
         if (!$isRecursive) $this->infiniteLoop = 0;
-        if ($this->infiniteLoop++ > 500) die('something is wrong! infinite loop!!!!');
+        if ($this->infiniteLoop++ > 1000) respondWithFatalError(500, 'Error Processing Languages (infinit loop)');
         if (!$props) $props = &$this->default[$key];
         if (!$definitions) $definitions = &$this->_definitions[$key];
         if (!$library && isset($this->libraries[$this->_currentLibray][$key])) $library = &$this->libraries[$this->_currentLibray][$key];
@@ -374,20 +374,23 @@ class Lang {
     }
 
     public function update($data, $libKey) {
-        global $config;
         global $user;
         if (!in_array($libKey, $user->isAdminOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Edit Languages');
         }
 
         if (!isset($this->libraries[$libKey])) $this->libraries[$libKey] = [];
         $org = $this->libraries[$libKey];
         $result = $this->_update($data, $this->libraries[$libKey]);
-        $fileName = $config->privateDataDirPath . 'lang.json';
+        $fileName = Config::getLocalFilePath('lang.json');
         $file = fopen($fileName, 'wb');
-        fwrite($file, json_encode($this->libraries));
-        fclose($file);
+        try {
+            fwrite($file, json_encode($this->libraries));
+            fclose($file);
+        } catch (Exception $e) {
+            logError($e);
+            respondWithError(500, 'ERROR: cannot save Language data');
+        }
         return [
             'libKey' => $libKey,
             'data' => $data,
@@ -413,9 +416,8 @@ class Lang {
 
     function getAbout(string $libKey)
     {
-        global $config;
         global $user;
-        $fileName = $config->privateDataDirPath . $libKey . '_about.html';
+        $fileName = Config::getLocalFilePath($libKey . '_about.html');
         if (file_exists($fileName)) {
             $html = file_get_contents($fileName);
         } else {
@@ -426,9 +428,13 @@ class Lang {
 
     function editAbout(string $libKey, string $html)
     {
-        global $config;
         global $user;
-        $fileName = $config->privateDataDirPath . $libKey . '_about.html';
+
+        if (!in_array($libKey, $user->isAdminOfLibraries)) {
+            respondWithError(401, 'Not Authorized - Edit About');
+        }
+        
+        $fileName = Config::getLocalFilePath($libKey . '_about.html');
         $result = ['success' => false];
         try {
             $file = fopen($fileName, 'wb');
@@ -436,24 +442,29 @@ class Lang {
             fclose($file);
             $result['success'] = true;
         } catch (Exception $e) {
-
+            logError($e);
+            respondWithError(500, 'ERROR: cannot save about page data');
         }
         return $result;
     }
 
     public function removeLibrary($libKey): bool {
-        global $config;
         global $user;
-        if(!$user->isSuperAdmin) die('unauthorized');
+        if(!$user->isSuperAdmin) respondWithFatalError(401, 'Unauthorized - Remove Library Languages');
         if(!$this->libraries[$libKey]) return false;
 
         unset($this->libraries[$libKey]);
-        $fileName = $config->privateDataDirPath . 'lang.json';
+        $fileName = Config::getLocalFilePath('lang.json');
         $file = fopen($fileName, 'wb');
-        fwrite($file, json_encode($this->libraries));
-        fclose($file);
+        try {
+            fwrite($file, json_encode($this->libraries));
+            fclose($file);
+        } catch (Exception $e) {
+            logError($e);
+            respondWithError(500, 'ERROR: cannot save Laguage data');
+        }
 
-        $aboutFile = $config->privateDataDirPath . $libKey . '_about.html';
+        $aboutFile = Config::getLocalFilePath($libKey . '_about.html');
         if (file_exists($aboutFile)) unlink($aboutFile);
 
         return true;

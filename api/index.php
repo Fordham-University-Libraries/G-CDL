@@ -22,8 +22,21 @@ if (strpos($_SERVER["REQUEST_URI"], 'api/') === FALSE) {
     die();
 }
 
+//get config
+try {
+    $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
+    $tokenPath = Config::getLocalFilePath('token.json', 'creds');
+    $config = new Config();
+} catch (Google_Service_Exception $e) {
+    $error = json_decode($e->getMessage());
+    $errMsg = 'ERROR: can\'t get app config';
+    if (isset($error->error->errors[0]->reason)) $errMsg .= ' -- ' . $error->error->errors[0]->reason;
+    respondWithFatalError(500, $errMsg);
+    die();
+}
+
 //init wizard (if no token and etc.)
-if (!file_exists('./private_data/credentials.json') || !file_exists('./private_data/token.json') || $_GET['state'] == 'init' || $_GET['action'] == 'init') {
+if (!file_exists($credsPath) || !file_exists($tokenPath) || $_GET['state'] == 'init' || $_GET['action'] == 'init' || !$config->mainFolderId) {
     //if front end try to access
     if ($_GET['action'] == 'auth') {
         respondWithFatalError(500, 'API not set up');
@@ -40,20 +53,8 @@ if (!file_exists('./private_data/credentials.json') || !file_exists('./private_d
 $client = getClient();
 $service = new Google_Service_Drive($client);
 
-//get config
-try {
-    $config = new Config();
-} catch (Google_Service_Exception $e) {
-    $error = json_decode($e->getMessage());
-    $errMsg = 'ERROR: can\'t get app config';
-    if (isset($error->error->errors[0]->reason)) $errMsg .= ' -- ' . $error->error->errors[0]->reason;
-    respondWithFatalError(500, $errMsg);
-    die();
-}
-
-date_default_timezone_set($config->timeZone);
-$isProd = $config->isProd;
-if ($isProd) error_reporting(0);
+if ($config->timeZone) date_default_timezone_set($config->timeZone);
+if (Config::$isProd) error_reporting(0);
 
 //allow annon access
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
@@ -72,7 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
         getConfig();
         die();
     } else if ($action == 'get_lang') {
-        getLanguages();
+        $lang = getLanguages();
+        respondWithData($lang);
         die();
     } else if ($action == 'get_customization') {
         getCustomizations();
@@ -113,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $host = isset($_SERVER['HTTPS']) ? 'https://' : 'http://';
         $host .= $_SERVER['SERVER_NAME'];
         //if in dev, redirect to local Angular (running on diff port -- 4200)
-        if (!$config->isProd) $host .= ':4200';
+        if (!Config::$isProd) $host .= ':4200';
         header('Location: ' . $host . $target);
     } else if ($action == 'auth') { 
         respondWithData($user->serialize());
@@ -174,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         require 'admin_action.php';
         $fileId = $_GET['fileId'];
         getItemEditAdmin($fileId);
-    } else if ($action == 'downalod_file_admin') {
+    } else if ($action == 'download_file_admin') {
         require 'admin_action.php';
         $fileId = $_GET['fileId']; //noOrc
         $accessibleVersion = $_GET['accessibleVersion'] ?? false;
@@ -182,6 +184,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     } else if ($action == 'get_accessible_users') {
         require 'admin_action.php';
         getAccessibleUsers($libKey);
+    } else if ($action == 'admin_get_backup_config') {
+        $response = [];
+        $driveFile = $config->getFileFromAppFolder('config.json');
+        if ($driveFile) {
+            $response['id'] = $driveFile->getId();
+            $response['name'] = $driveFile->getName();
+            $response['version'] = $driveFile->getVersion();
+            $response['lastModified'] = $driveFile->getModifiedTime();
+            $revList = $service->revisions->listRevisions($driveFile->getId(),['fields' => 'revisions(id,mimeType,modifiedTime,size)']);
+            if ($revList) $response['revisions'] = $revList->getRevisions();
+            respondWithData($response);
+        }
+    } else if ($action == 'admin_get_file_revision_data') {
+        $fileId = $_GET['fileId'] ?? null;
+        $revId = $_GET['revId'] ?? null;
+        if ($fileId && $revId) respondWithData($config->getFileRevisionData($fileId, $revId));
     } else if ($action == 'search_courses') {
         $field = $_GET['field'] ?? null;
         $term = $_GET['term'] ?? null;
@@ -205,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         getIlsLocationsDefinition($libKey);
     } else if ($action == 'test'){
         $fileName = $_GET['fileName'] ?? null;
-        if (!$isProd) test($service, $fileName, $user->email);
+        if (!Config::$isProd) test($service, $fileName, $user->email);
     } 
     ///// POST /////
 } else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -291,7 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         require 'admin_action.php';
         removeLibrary($libKey);
     } else if ($action == 'test') {
-        if (!$isProd) test();
+        if (!Config::$isProd) test();
     } 
 } else {
     die();
@@ -313,8 +331,7 @@ function getLanguages() {
     require_once('Lang.php');
     $langObj = new Lang();
     $lang = $langObj->serialize();
-    respondWithData($lang);
-    die();
+    return $lang;
 }
 
 //for admin config
@@ -343,18 +360,23 @@ function compliantBreachNotify(string $error, string $errorId = null)
 function logout()
 {
     global $config;
+    global $user;
+
     if (session_status() == PHP_SESSION_NONE) {
         session_name($config->auth['sessionName']);
-        if ($config->isProd) session_set_cookie_params(0, $config->auth['clientPath'], $config->auth['clientDomain'], $config->auth['clientSecure'], $config->auth['clientHttpOnly']);
+        if (Config::$isProd) session_set_cookie_params(0, $config->auth['clientPath'], $config->auth['clientDomain'], $config->auth['clientSecure'], $config->auth['clientHttpOnly']);
         session_start();
     }
 
     $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
-    if (!$config->isProd) $host = str_replace(':8080', ':4200', $host);
-    $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
-    $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
-    $baseDir = str_replace('/api', '', $baseDir);
-
+    if (!Config::$isProd) $host = str_replace(':8080', ':4200', $host);
+    if (!Config::$frontEndHost) {
+        $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
+        $baseDir = str_replace('/api', '', $baseDir);
+    } else {
+        $host = rtrim(Config::$frontEndHost,'/');
+        $baseDir = '';
+    }
 
     if ($config->libraries[$user->homeLibrary]->authorization['enable'] && $config->libraries[$user->homeLibrary]->authorization['auth']['kind'] == "CAS") {
         try {
@@ -378,14 +400,15 @@ function logout()
 }
 
 function logError($error) {
+    $logFilePath = Config::getLocalFilePath('error.log');
     if (is_array($error) || is_object($error)) {
-        error_log(time() . ': ' . print_r($error, true), 3, "./private_data/error.log");
+        error_log(time() . ': ' . print_r($error, true), 3, $logFilePath);
     } else {
-        error_log(time() . ": " . $error . "\n", 3, "./private_data/error.log");
+        error_log(time() . ": " . $error . "\n", 3, $logFilePath);
     }
 }
 
 function test() {
-    echo "hello, I'm a quick function for testing";
+    //echo "hello, I'm a quick function for testing";
 }
  

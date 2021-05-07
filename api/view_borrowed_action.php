@@ -6,12 +6,7 @@ function getFilesForViewer()
     global $user;
 
     if ($user->isDriveOwner) {
-        respondWithData(
-            [
-                'error' => 'user is a owner of the drive'
-            ]
-        );
-        die();
+        respondWithError(500, 'user is a owner of the drive');
     }
 
     $parentFolderIds = [];
@@ -30,11 +25,10 @@ function getFilesForViewer()
     $results = retry(function () use ($service, $optParams) {
         return $service->files->listFiles($optParams);
     });
-    $cdlItem;
+
     if (count($results) == 1) {
-        foreach ($results->getFiles() as $file) {
-            $cdlItem = new CdlItem($file);
-        }
+        $files = $results->getFiles();
+        $cdlItem = new CdlItem($files[0]);
         respondWithData(
             [
                 'usersLibrary' => $user->homeLibrary,
@@ -45,9 +39,8 @@ function getFilesForViewer()
     } elseif (count($results) > 1) {
         //this user has viewer access to more than one file, something is wrong
         if ($user->email != $config->driveOwner) {
-            respondWithError(403, "Access Control Error");
             compliantBreachNotify("user $user->email has viewer access to more than one file", $user->email);
-            die();
+            respondWithError(403, "Access Control Error");
         }
     } else {
         respondWithData(null);

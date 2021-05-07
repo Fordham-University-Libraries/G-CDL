@@ -1,24 +1,23 @@
 <?php
-function search($field = 'title', $term = null, $library, $admin = null, $internal = false)
+function search($field = 'title', $term = null, $library = null, $admin = null, $internal = false)
 {
     global $service;
     global $config;
     global $user;
-    $isCachedData;
+    $isCachedData = null;
 
     if ($admin) {
         if (!in_array($library, $user->isStaffOfLibraries)) {
-            respondWithError(401, 'Not Authorized');
-            die();
+            respondWithError(401, 'Not Authorized - Get Items Admin');
         }
     }
 
+    if (!$library) $library = array_key_first($config->libraries);
     $folderId = $config->libraries[$library]->noOcrFolderId;
     if (!$folderId) {
         respondWithError(404, "unknown library $library");
-        die();
     }
-    $fileName = $config->privateDataDirPath . $library . "_" . $config->allItemsCacheFileName;
+    $fileName = Config::getLocalFilePath($library . "_" . $config->allItemsCacheFileName);
 
     //get all items - also used by admin compo, will cache result if it's a normal search
     $cacheSec = 300; //normal search, 5 minutes
@@ -60,8 +59,13 @@ function search($field = 'title', $term = null, $library, $admin = null, $intern
                 //save it to cache file
                 if (count($files)) {
                     $file = fopen($fileName, 'wb');
-                    fwrite($file, serialize($files));
-                    fclose($file);
+                    try {
+                        fwrite($file, serialize($files));
+                        fclose($file);
+                    } catch (Exception $e) {
+                        logError($e);
+                        respondWithError(500, 'Internal Error');
+                    }
                 }
             
                 break; //break out of the loop!

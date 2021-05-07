@@ -35,6 +35,8 @@ export class AdminComponent implements OnInit {
   @ViewChild(MatPaginator, { static: false }) paginator: MatPaginator;
   staff: string[];
   admins: string[];
+  mainFolder: any;
+  about: any;
   itemEditDialogRef: any;
   config: Config;
   adminConfig: any;
@@ -98,6 +100,9 @@ export class AdminComponent implements OnInit {
       this.items.paginator = this.paginator;
       this.items.sort = this.sort;
       this.rawItems = res.results;
+      this.mainFolder = res.mainFolder;
+      this.about = res.about;
+      if (!this.about.storageQuota.limit) this.about.storageQuota.limit = 'unlimited';
       this.isLoading = false;
       //console.log(this.items);
     })

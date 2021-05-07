@@ -9,6 +9,7 @@ import { ConfigService } from '../config.service';
 import { AdminService } from '../admin.service';
 import { Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-app-config',
@@ -34,6 +35,10 @@ export class AppConfigComponent implements OnInit {
     privateTempWritable: boolean,
     shellExecEnable: boolean,
   }
+  staticConfigs: any;
+  apiBase: string;
+  configBackups: any;
+
 
   constructor(
     private router: Router,
@@ -42,7 +47,9 @@ export class AppConfigComponent implements OnInit {
     private titleService: Title,
     private adminService: AdminService,
     private snackBar: MatSnackBar,
-  ) { }
+  ) { 
+    this.apiBase = environment.apiBase;
+  }
 
   ngOnInit(): void {
     this.appConfigDirtyCount.isLoading = true;
@@ -53,6 +60,12 @@ export class AppConfigComponent implements OnInit {
         this.user = res;
         //console.log(this.user);
         this._processAdminConfigData();
+        if (this.user.isSuperAdmin) {
+          this.adminService.getFilesInGDriveAppFolder().subscribe(res => {
+            this.configBackups = res;
+            //console.log(this.configBackups);
+          });
+        }
       });
     });
 
@@ -77,6 +90,7 @@ export class AppConfigComponent implements OnInit {
         if ((!kind || kind == 'global') && res.global) this._processAdminGlobalConfigData(res.global, keysOrder);
         if ((!kind || kind == 'libraries') && res.libraries) this._processAdminLibrariesConfigData(res.libraries, keysOrder);
         this.serverCheck = res.serverCheck;
+        this.staticConfigs = res.staticConfigs;
       } else {
         this.router.navigate(['/unauthed'], { skipLocationChange: true });
       }
@@ -123,10 +137,12 @@ export class AppConfigComponent implements OnInit {
 
   }
 
-  private _processConfigField(filed, keysOrder) {
+  private _processConfigField(_field, keysOrder) {    
     let i = 0;
     let field = {};
-    for (const [key, value] of Object.entries(filed)) {
+    if (!_field) return field;
+
+    for (const [key, value] of Object.entries(_field)) {
       //console.log(value);
       if (keysOrder[i] == 'editable') {
         let icon = 'edit'
@@ -329,6 +345,24 @@ export class AppConfigComponent implements OnInit {
       this.snackBar.open(`ERROR: unexpected error a.k.a. I haz fail`, '', {duration: 5000})
     })
 
+  }
+
+  //for *ngFor | keyvalue: noSort
+  noSort() {
+    return 0;
+  }
+
+  getRevision(index: number) {
+    //console.log(`getting revision for: ${this.configBackups.id} - ${this.configBackups.revisions[index].id}`);
+    if (!this.configBackups.revisions[index].data) {
+      this.adminService.getFileRevisionData(this.configBackups.id, this.configBackups.revisions[index].id).subscribe( res => {
+        //console.log(res);
+        this.configBackups.revisions[index].data = res.body; 
+      })
+      
+    }
+    this.configBackups.viewRevIndex = index;
+    
   }
 
 }

@@ -49,6 +49,14 @@ export class AdminService {
     return this.httpClient.get(`${environment.apiBase}/?action=get_customization_admin`,{withCredentials: true}).pipe(map(val => val['data'])); 
   }
 
+  getFilesInGDriveAppFolder(): Observable<any> {
+    return this.httpClient.get(`${environment.apiBase}/?action=admin_get_backup_config`,{withCredentials: true}).pipe(map(val => val['data'])); 
+  }
+
+  getFileRevisionData(fileId: string, revId: string): Observable<any> {
+    return this.httpClient.get(`${environment.apiBase}/?action=admin_get_file_revision_data&fileId=${fileId}&revId=${revId}`,{withCredentials: true}).pipe(map(val => val['data'])); 
+  }
+
   updateConfigAdmin(props: any, kind: string = 'global', libKey: string = null): Observable<any> {    
     let formData: any = new FormData();
     formData.append("action", 'update_config_admin');

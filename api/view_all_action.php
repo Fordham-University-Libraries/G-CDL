@@ -42,7 +42,9 @@ function get($libKey, $nextPageToken = null) {
     } catch (Google_Service_Exception $e) {
         $gError = json_decode($e->getMessage());
         logError($gError);
-        respondWithFatalError($gError->error->code, $gError->error->message);
+        $errMsg = $gError->error->message ?? $gError->error . ': ' . $gError->error_description;
+        $errCode = $gError->error->code ?? 500;
+        respondWithFatalError($errCode, "cannnot get items on GDrive, reason: " . $errMsg);
         die();
     }
     $nextPageToken = $driveList->getNextPageToken();

@@ -2,10 +2,11 @@
 function respondWithData(array $data = null, bool $allowCreds = false)
 {
     global $config;
-    if (!$config->isProd) {
+    if (!Config::$isProd) {
         header("Access-Control-Allow-Origin: http://localhost:4200");
         header("Access-Control-Allow-Credentials: true");
     } else {
+        if (Config::$frontEndHost) header("Access-Control-Allow-Origin: " . Config::$frontEndHost);
         if ($allowCreds) header("Access-Control-Allow-Credentials: true");
     }
     header('Content-type: application/json');
@@ -16,22 +17,25 @@ function respondWithData(array $data = null, bool $allowCreds = false)
 function respondWithHtml(string $html, bool $allowCreds = false)
 {
     global $config;
-    if (!$config->isProd) {
+    if (!Config::$isProd) {
         header("Access-Control-Allow-Origin: http://localhost:4200");
         header("Access-Control-Allow-Credentials: true");
     } else {
+        if (Config::$frontEndHost) header("Access-Control-Allow-Origin: " . Config::$frontEndHost);
         if ($allowCreds) header("Access-Control-Allow-Credentials: true");
     }
     header("Content-Type: text/html;");
     echo $html;
 }
 
-function respondWithFatalError(int $code, string $errMsg, $errorCode = null)
+function respondWithFatalError(int $code, string $errMsg)
 {
     global $config;
-    if (!$config->isProd) {
+    if (!Config::$isProd) {
         header("Access-Control-Allow-Origin: http://localhost:4200");
         header("Access-Control-Allow-Credentials: true");
+    } else {
+        if (Config::$frontEndHost) header("Access-Control-Allow-Origin: " . Config::$frontEndHost);
     }
     $httpStatues = [
         400 => 'Bad Request',
@@ -53,10 +57,11 @@ function respondWithFatalError(int $code, string $errMsg, $errorCode = null)
 function respondWithError(int $code, string $errMsg, $recommededAction = null)
 {
     //still return 200, but the status code in respond
-    global $config;
-    if (!$config->isProd) {
+    if (!Config::$isProd) {
         header("Access-Control-Allow-Origin: http://localhost:4200");
         header("Access-Control-Allow-Credentials: true");
+    } else {
+        if (Config::$frontEndHost) header("Access-Control-Allow-Origin: " . Config::$frontEndHost);
     }
     header('Content-type: application/json');
     $data = [];
