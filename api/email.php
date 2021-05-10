@@ -16,7 +16,13 @@ function email(string $kind, User $user, CdlItem $cdlItem)
     // gmail
     if ($config->emails['method'] == 'gMail') {
         $client = getClient();
-        $gmailService = new Google_Service_Gmail($client);
+        try {
+            $gmailService = new Google_Service_Gmail($client);
+        } catch (Google_Service_Exception $e) {
+            logError('cannot email with Gmail');
+            logError($e->getMessage());
+            return 0;
+        }
         $sender = 'me'; //The special value **me** can be used to indicate the authenticated user. (in this case, the driveOwner)
         $toName = isset($user->fullName) ? $user->fullName : $user->userName;
         $toEmail = $user->email;
@@ -136,7 +142,13 @@ function errorNotifyEmail($message, $errorId)
     }
 
     $client = getClient();
-    $gmailService = new Google_Service_Gmail($client);
+    try {
+        $gmailService = new Google_Service_Gmail($client);
+    } catch (Google_Service_Exception $e) {
+        logError('cannot email with Gmail');
+        logError($e->getMessage());
+        return;
+    }
 
     $sender = 'me';
     $strSubject = $config->appName . ' (CDL app) ERROR notification!';
