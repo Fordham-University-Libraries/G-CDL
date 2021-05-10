@@ -91,6 +91,9 @@ class CdlItem
         $viewerCount = 0;
         foreach ($permissions as $permission) {
             if ($permission->getRole() == 'reader') {
+                //ignore perm for reader with no email (some institution will have a big brother account with reader role to every employee files)
+                if (!$permission->getEmailAddress()) continue;
+
                 $viewerCount++;
                 if ($viewerCount > 1) {
                     compliantBreachNotify('File ' . $this->name . '(' . $this->id . ') has more than one viewer!', $this->id);
@@ -98,7 +101,7 @@ class CdlItem
                     if ($this->currentlyCheckedOutToUser) break;
                 }
                 $this->available = false;
-                if ($permission->getEmailAddress()) $this->currentlyCheckedOutToUser = $permission->getEmailAddress();
+                $this->currentlyCheckedOutToUser = $permission->getEmailAddress();
                 if (!$permission->getExpirationTime()) {
                     compliantBreachNotify('File ' . $this->name . '(' . $this->id . ') is shared to viewer WITHOUT expiration time!', $this->id);
                 } else {
