@@ -129,7 +129,7 @@ class Config
             'admins' => ['admins for this library (can change library\'s config) -- separate multiple users with a comma', 1],
             'staff' => ['staff of this library (can upload, administer items, view statistics) -- separate multiple users with a comma', 1],
             'ils' => [
-                'kind' => ['ILS system', 1, ['Sirsi', 'Sierra']],
+                'kind' => ['ILS system', 1, ['Sirsi', 'Sierra', 'Alma']],
                 'itemIdInFilenameRegexPattern' => ['Regular Expression pattern with a Capturing group [parentesis symbol] for getting itemId from filename when upload including the / delimiter at the begining and end of the pattern e.g. if your itemId is 13 digits and you plan to tell your staff the name the file "somerandomstring09876543210987.pdf" then enter /(\d{13})+/ the app will use the value of the first matched group as the itemId (first sequence of 13 digits it found)', 1],
                 'api' => [
                     'enable' => ['use ILS api with the app (e.g. get bib info automatically when upload, search ILS reserves and etc.)', 1],
