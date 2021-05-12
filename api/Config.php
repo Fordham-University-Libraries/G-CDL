@@ -133,9 +133,9 @@ class Config
                 'itemIdInFilenameRegexPattern' => ['Regular Expression pattern with a Capturing group [parentesis symbol] for getting itemId from filename when upload including the / delimiter at the begining and end of the pattern e.g. if your itemId is 13 digits and you plan to tell your staff the name the file "somerandomstring09876543210987.pdf" then enter /(\d{13})+/ the app will use the value of the first matched group as the itemId (first sequence of 13 digits it found)', 1],
                 'api' => [
                     'enable' => ['use ILS api with the app (e.g. get bib info automatically when upload, search ILS reserves and etc.)', 1],
-                    'base' => ['API URL base e.g. https://myopac.univ.edu/iii/sierra-api/v6/ or https://siris.univ.edu/sirsi_ilsws', 1],
+                    'base' => ['API URL base e.g. https://myopac.univ.edu/iii/sierra-api/v6/, https://siris.univ.edu/sirsi_ilsws, https://api-{{region}}.hosted.exlibrisgroup.com/almaws/v1', 1],
                     'key' => ['API key', 1],
-                    'tokenFile' => ['name for api token file', 1],
+                    'tokenFile' => ['name for api token file', -2],
                     'clientId' => ['clientId (for Sirsi only)', 1],
                     'appId' => ['appId (for Sirsi only)', 1],
                     'courseCacheFile' => ["file name of cache file of all the courses", -2],
