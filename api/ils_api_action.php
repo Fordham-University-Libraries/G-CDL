@@ -181,10 +181,15 @@ function searchIlsCourseReserves(string $libKey, string $field = null, string $t
         $courses = getAlmaCourses($libKey, $field, $term);
         $cdlCourses = [];
         foreach($courses as $course) {
+            $profs = [];
+            foreach ($course['instructor'] as $instructor) {
+                $profs[] = $instructor['last_name'] . ', ' . $instructor['first_name'];
+            }
             $cdlCourse = [
                 'id' => $course['id'],
                 'courseName' => $course['name'],
                 'courseNumber' => $course['code'],
+                'professors' => $profs,
                 'itemsCount' => 1
             ];
             array_push($cdlCourses, $cdlCourse);

@@ -88,8 +88,9 @@
             </button>
         </div>
         <!-- course details -->
-        <div *ngIf="courseDetailedView && courseDetailedResult" class="content course-details mat-elevation-z2">
-            <h2>{{ lang.libraries[library].reserves.details }}</h2>
+        <h2 *ngIf="courseDetailedView">{{ lang.libraries[library].reserves.details }}</h2>
+        <mat-spinner *ngIf="courseDetailedView && !courseDetailedResult"></mat-spinner>
+        <div *ngIf="courseDetailedView && courseDetailedResult" class="content course-details mat-elevation-z2">      
             <h3><span class="fas fa-graduation-cap"></span> Course: {{ courseDetailedResult.courseName }}
                 {{ courseDetailedResult.courseNumber ? '(' + courseDetailedResult.courseNumber + ')' : '' }} </h3>
             <p *ngIf="courseDetailedResult.professors"><span class="fas fa-user-tie"></span> Professor:

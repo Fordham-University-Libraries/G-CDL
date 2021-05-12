@@ -89,14 +89,13 @@ function getAlmaCourses($library, $field = "courseName", $term = null): array
         if ($term) {
             if ($field == 'courseName') $field = 'name';
             else if ($field == 'courseNumber') $field = 'code';
-            else if ($field == 'courseProf') $field = 'instructor';
+            else if ($field == 'courseProf') $field = 'instructors';
 
             $q = "$field~$term";
             $params .= "&q=$q";
         }
         $response = $client->request('GET', $params);
         $data = json_decode($response->getBody(), true);
-        echo $response->getBody();
         if (!$term && $data) {
             try {
                 $file = fopen($fileName, 'wb');
@@ -108,7 +107,7 @@ function getAlmaCourses($library, $field = "courseName", $term = null): array
         }
     }
 
-    return $data['course'];
+    return $data['course'] ?? [];
 }
 
 function getAlmaCourseIdFromCourseNumber($library, $courseNumber): string
@@ -136,17 +135,20 @@ function getAlmaCourseReservesInfo($library, $courseNumber, $courseId = null): a
     $response = $client->request('GET', $params);
     $data = json_decode($response->getBody(), true);
     $readingLists = $data['reading_list'];
-    $cdlReadingList = [];
-    foreach ($readingLists as $list) {
-        $cdlReadingList[] = ['id' => $courseId . "!!" . $list['id']];
-    }
     if ($readingLists) {
+        $cdlReadingList = [];
+        foreach ($readingLists as $list) {
+            $cdlReadingList[] = [
+                'id' => $courseId . "!!" . $list['id'],
+                'prof' => $list['name'] //sigh...
+            ];
+        }
+
         $instructors = getAlmaCourseInstructors($library, $courseId);
         $profs = [];
         foreach ($instructors as $instructor) {
             $profs[] = $instructor['last_name'] . ', ' . $instructor['first_name'];
         }
-
 
         return [
             'courseName' => $readingLists[0]['name'],
@@ -155,7 +157,10 @@ function getAlmaCourseReservesInfo($library, $courseNumber, $courseId = null): a
             'courseProfs' => $profs,
             'sections' => $cdlReadingList
         ];
+    } else {
+        return [];
     }
+
 }
 
 function getAlmaCitations($library, $courseId, $listId): object

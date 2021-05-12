@@ -210,9 +210,10 @@ export class ReservesComponent implements OnInit {
   }
 
   getDetailedCourseReserve(course: any) {
+    this.isLoading = true;
     //console.log('reservesCompo.getDetailedCourseReserve()');
     //console.log(course);
-
+    this.courseDetailedResult = null;
     let bibIds = [];
     this.catalogService.getDetailedCourseReserve(this.library, course).subscribe(res => {
       if (this.isDefaultLibraryRoute) {
@@ -245,9 +246,11 @@ export class ReservesComponent implements OnInit {
               if (i == this.courseDetailedResult.items.length) this.isCheckingCdlItems = false;
               i++;
             });
+            this.isLoading = false;
             //console.log(this.courseDetailedResultPhysical);
           } else {
             this.error = res.error;
+            this.isLoading = false;
           }
         }, error => {
           console.error(error);
@@ -262,9 +265,7 @@ export class ReservesComponent implements OnInit {
   }
 
   backToResult() {
-    this.courseDetailedResult = null;
-    this.courseDetailedView = false;
-    this.isLoading = false;
+    window.history.back();
   }
 
   openInCatalog(library: string, bibId?: string, itemId?: string) {
