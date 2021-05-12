@@ -1,50 +1,32 @@
 <?php
-function getAlmaApiUrl($library): string
+
+function getAlmaApiClient($library): GuzzleHttp\Client
 {
     global $config;
-    //https://api-na.hosted.exlibrisgroup.com/almaws/v1
     if ($config->libraries[$library]->ils['api']['base']) {
         $url = rtrim($config->libraries[$library]->ils['api']['base'], '/');
     } else {
         $url = 'https://api-na.hosted.exlibrisgroup.com/almaws/v1';
     }
-    return $url;
+    $apiKey = $config->libraries[$library]->ils['api']['key'];
+    $client = new GuzzleHttp\Client([
+        'base_uri' => $url . '/',
+        'headers' => [
+            'Accept' => 'application/json',
+            'Authorization' => "apikey $apiKey"
+        ]
+    ]);
+    return $client;
 }
 
-function getAlmaApiKey($library): string
+function getAlmaBibByBibId($bibId, $library): object
 {
-    global $config;
-    return $config->libraries[$library]->ils['api']['key'];
-}
-
-function getAlmaBibByBibId($bibId, $library)
-{
-    global $config;
     if (!$bibId) respondWithError(400, 'No Bib/Item ID');
-    $url = getAlmaApiUrl($library);
-    $apiKey = getAlmaApiKey($library);
-    $url .= '/bibs/' . $bibId . '/holdings?apikey=' . $apiKey;
+    $client = getAlmaApiClient($library);
+    $params = 'bibs/' . $bibId . '/holdings';
+    $response = $client->request('GET', $params);
 
-    $curl = curl_init();
-    curl_setopt_array($curl, array(
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'GET',
-        CURLOPT_HTTPHEADER => array(
-            'Accept: application/json'
-        ),
-    ));
-
-    $response = curl_exec($curl);
-    curl_close($curl);
-    $obj = json_decode($response);
-
-
+    $obj = json_decode($response->getBody());
     $bib = [
         'title' => $obj->bib_data->title,
         'author' => $obj->bib_data->author,
@@ -59,90 +41,38 @@ function getAlmaBibByBibId($bibId, $library)
 }
 
 //by get item by bercode (NOT pid) -- https://developers.exlibrisgroup.com/alma/apis/docs/bibs/R0VUIC9hbG1hd3MvdjEvYmlicy97bW1zX2lkfS9ob2xkaW5ncy97aG9sZGluZ19pZH0vaXRlbXMve2l0ZW1fcGlkfQ==/
-function getAlmaBibByBarcode($barcode, $library)
+function getAlmaBibByBarcode($barcode, $library): object
 {
-    $url = getAlmaApiUrl($library);
-    $apiKey = getAlmaApiKey($library);
-    $url .= '/items/?item_barcode=' . $barcode . '&apikey=' . $apiKey;
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    // Catch output (do NOT print!)
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-    // Return follow location true
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
-    curl_exec($ch);
-    // Getinfo or redirected URL from effective URL
-    $redirectedUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
-    curl_close($ch);
-
-    preg_match('/\/bibs\/(\d+)\//', $redirectedUrl, $matches);
-    if(count($matches) > 1 && isset($matches[1])) {
-        $bibId = $matches[1];
-        return getAlmaBibByBibId($bibId,$library);
-    } else {
-        respondWithError(404,'not found');
+    $client = getAlmaApiClient($library);
+    $params = 'items/?item_barcode=' . $barcode;
+    $response = $client->request('GET', $params);
+    if ($response->getStatusCode() == 302) {
+        $redirectedUrl = $response->getHeader('Location')[0];
+        preg_match('/\/bibs\/(\d+)\//', $redirectedUrl, $matches);
+        if (count($matches) > 1 && isset($matches[1])) {
+            $bibId = $matches[1];
+            return getAlmaBibByBibId($bibId, $library);
+        } else {
+            respondWithError(404, 'not found');
+        }
+    } else if ($response->getStatusCode() == 200) {
+        $data = json_decode($response->getBody());
+        $bibId = $data->bib_data->mms_id;
+        return getAlmaBibByBibId($bibId, $library);
     }
 }
 
 function getAlmaItemByBarcode($barcode, $library)
 {
-    $url = getAlmaApiUrl($library);
-    $apiKey = getAlmaApiKey($library);
-
-    $ch = curl_init();
-    $getByBarcodeUrl = $url . '/items/?item_barcode=' . $barcode . '&apikey=' . $apiKey;
-    curl_setopt($ch, CURLOPT_URL, $getByBarcodeUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
-    curl_exec($ch);
-    $redirectedUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
-    $i = 0;
-    //sometime the api doesn't redirect
-    while ($redirectedUrl == $getByBarcodeUrl) {
-        curl_exec($ch);
-        $redirectedUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
-        if ($i++ > 100) {
-            sleep($i);
-            curl_close($ch);
-            respondWithFatalError(500,'Internal Error');
-        }
-    }
-    curl_close($ch);
-
-    if ($redirectedUrl) {
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => $redirectedUrl,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_HTTPHEADER => array(
-                'Accept: application/json'
-            ),
-        ));
-        
-        $response = curl_exec($curl);
-        curl_close($curl);
-        $data = json_decode($response);
-        if (!$data) {
-            echo $redirectedUrl;
-            print_r($response);
-        } else {
-            return $data;
-        }
-
-    } else {
-        respondWithError(404,'Not Found');
-    }
+    $client = getAlmaApiClient($library);
+    $params = 'items/?item_barcode=' . $barcode;
+    $response = $client->request('GET', $params);
+    $data = json_decode($response->getBody());
+    return $data;
 }
 
 //get all course
-function getAlmaCourses($library, $field = "courseName", $term = null)
+function getAlmaCourses($library, $field = "courseName", $term = null): array
 {
     global $config;
     $cacheSec = 86400; //1 day
@@ -153,36 +83,20 @@ function getAlmaCourses($library, $field = "courseName", $term = null)
         $data = unserialize($file);
         //$isCachedData = true;
     } else {
-        $url = getAlmaApiUrl($library);
-        $apiKey = getAlmaApiKey($library);
+        $client = getAlmaApiClient($library);
         $courseStatus = "ALL"; //['ALL','ACTIVE','INACTIVE'] 
-        $url .= "/courses?limit=99999999&offset=0&status=$courseStatus&order_by=code%2Csection&direction=ASC&exact_search=false&apikey=$apiKey";
+        $params = "courses?limit=99999999&offset=0&status=$courseStatus&order_by=code%2Csection&direction=ASC&exact_search=false";
         if ($term) {
             if ($field == 'courseName') $field = 'name';
             else if ($field == 'courseNumber') $field = 'code';
             else if ($field == 'courseProf') $field = 'instructor';
 
             $q = "$field~$term";
-            $url .= "&q=$q";
+            $params .= "&q=$q";
         }
-
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "GET",
-            CURLOPT_HTTPHEADER => array(
-                'Accept: application/json'
-            ),
-        ));
-        $response = curl_exec($curl);
-        curl_close($curl);
-        $data = json_decode($response, true);
+        $response = $client->request('GET', $params);
+        $data = json_decode($response->getBody(), true);
+        echo $response->getBody();
         if (!$term && $data) {
             try {
                 $file = fopen($fileName, 'wb');
@@ -197,14 +111,16 @@ function getAlmaCourses($library, $field = "courseName", $term = null)
     return $data['course'];
 }
 
-function getAlmaCourseIdFromCourseNumber($library, $courseNumber) {
+function getAlmaCourseIdFromCourseNumber($library, $courseNumber): string
+{
     $courses = getAlmaCourses($library);
     foreach ($courses as $course) {
         if ($course['code'] == $courseNumber) return $course['id'];
     }
 }
 
-function getAlmaCourseInstructors($library, $courseId) {
+function getAlmaCourseInstructors($library, $courseId): array
+{
     $courses = getAlmaCourses($library);
     foreach ($courses as $course) {
         if ($course['id'] == $courseId) return $course['instructor'];
@@ -212,42 +128,22 @@ function getAlmaCourseInstructors($library, $courseId) {
 }
 
 //return readingList
-function getAlmaCourseReservesInfo($library, $courseNumber, $courseId = null): array {
-    $url = getAlmaApiUrl($library);
-    $apiKey = getAlmaApiKey($library);
+function getAlmaCourseReservesInfo($library, $courseNumber, $courseId = null): array
+{
+    $client = getAlmaApiClient($library);
     if (!$courseId) $courseId = getAlmaCourseIdFromCourseNumber($library, $courseNumber);
-
-    $url .= "/courses/$courseId/reading-lists?apikey=$apiKey";
-    $curl = curl_init();
-    curl_setopt_array($curl, array(
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => "",
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => "GET",
-        CURLOPT_HTTPHEADER => array(
-            'Accept: application/json'
-        ),
-    ));
-    $response = curl_exec($curl);
-    $statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    curl_close($curl);
-    if ($statusCode != 200) {
-        respondWithError($statusCode, "this guest sandox is garbage");
-    }
-    $data = json_decode($response, true);
+    $params = "courses/$courseId/reading-lists";
+    $response = $client->request('GET', $params);
+    $data = json_decode($response->getBody(), true);
     $readingLists = $data['reading_list'];
     $cdlReadingList = [];
-    foreach($readingLists as $list) {
+    foreach ($readingLists as $list) {
         $cdlReadingList[] = ['id' => $courseId . "!!" . $list['id']];
     }
     if ($readingLists) {
-        $instructors = getAlmaCourseInstructors($library,$courseId);
+        $instructors = getAlmaCourseInstructors($library, $courseId);
         $profs = [];
-        foreach($instructors as $instructor) {
+        foreach ($instructors as $instructor) {
             $profs[] = $instructor['last_name'] . ', ' . $instructor['first_name'];
         }
 
@@ -260,32 +156,16 @@ function getAlmaCourseReservesInfo($library, $courseNumber, $courseId = null): a
             'sections' => $cdlReadingList
         ];
     }
-
 }
 
-function getAlmaCitations($library, $courseId, $listId): object {
-    $url = getAlmaApiUrl($library);
-    $apiKey = getAlmaApiKey($library);
-    $url .= "/courses/$courseId/reading-lists/$listId/citations?apikey=$apiKey";
-    $curl = curl_init();
-    curl_setopt_array($curl, array(
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => "",
-        CURLOPT_MAXREDIRS => 1,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => "GET",
-        CURLOPT_HTTPHEADER => array(
-            'Accept: application/json'
-        ),
-    ));
+function getAlmaCitations($library, $courseId, $listId): object
+{
+    $client = getAlmaApiClient($library);
+    $params = "courses/$courseId/reading-lists/$listId/citations";
+    $response = $client->request('GET', $params);
 
-    $response = curl_exec($curl);
-    curl_close($curl);
 
-    $data = json_decode($response, true);
+    $data = json_decode($response->getBody(), true);
     $citations = $data['citation'];
 
     $items = [];
@@ -297,6 +177,3 @@ function getAlmaCitations($library, $courseId, $listId): object {
     }
     return (object) $items;
 }
-
-
-
