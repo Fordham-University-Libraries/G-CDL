@@ -220,7 +220,7 @@ function getIlsCourseReservesInfo($libKey, $courseNumber)
         ];
         respondWithData($cdlCourse);
     } elseif (strtolower($config->libraries[$libKey]->ils['kind']) == 'alma') {
-        getAlmaCourseReservesInfo($libKey, $courseNumber);
+        respondWithData(getAlmaCourseReservesInfo($libKey, $courseNumber));
     } else {
         respondWithError(501, 'Not Implemented');
     }
@@ -285,23 +285,26 @@ function getIlsFullCourseReserves(string $libKey, string $key)
         }
         respondWithData($cdlCourse);
     } elseif (strtolower($config->libraries[$libKey]->ils['kind']) == 'alma') {
-        //TODO
-        $citations = getAlmaCitations($libKey, $key, '123');
+        $keys = explode('!!', $key);
+        $citations = getAlmaCitations($libKey, $keys[0], $keys[1]);
+        $course = getAlmaCourseReservesInfo($libKey, null, $keys[0]);
+        // respondWithData($course);
+        // die();
+        // respondWithData((array) $citations);
+        // die();
         $cdlCourse = [];
-        $cdlCourse['id'] = $key;
-        $cdlCourse['courseName'] = $citations->courseName;
-        $cdlCourse['courseNumber'] = $citations->courseID;
-        $cdlCourse['professors'][0] = $citations->userDisplayName;
-        $cdlCourse['desk'] = $citations->reserveDesk;
-        $cdlCourse['items'] = [];
+        $cdlCourse['id'] = $keys[0];
+        $cdlCourse['courseName'] = $course['courseName'];
+        $cdlCourse['courseNumber'] = $course['courseCode'];
+        $cdlCourse['professors'] = $course['courseProfs'];
         $i = 0;
-        foreach ($citations->reserveInfo as $item) {
-            $cdlCourse['items'][$i]['bibId'] = $item->catalogKey;
-            $cdlCourse['items'][$i]['itemId'] = $item->itemID;
-            $cdlCourse['items'][$i]['title'] = $item->title;
-            $cdlCourse['items'][$i]['author'] = $item->author;
-            $cdlCourse['items'][$i]['location'] = $item->reserveDeskID;
-            $cdlCourse['items'][$i]['callNumber'] = $item->displayableCallNumber;
+        foreach ($citations as $item) {
+            $cdlCourse['items'][$i]['bibId'] = $item['metadata']['mms_id'];
+            //$cdlCourse['items'][$i]['itemId'] = $item->itemID;
+            $cdlCourse['items'][$i]['title'] = $item['metadata']['title'];
+            $cdlCourse['items'][$i]['author'] = $item['metadata']['author'];
+            // $cdlCourse['items'][$i]['location'] = $item->reserveDeskID;
+            $cdlCourse['items'][$i]['callNumber'] = $item['metadata']['call_number'];
             $i++;
         }
         respondWithData($cdlCourse);

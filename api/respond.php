@@ -1,5 +1,5 @@
 <?php
-function respondWithData(array $data = null, bool $allowCreds = false)
+function respondWithData(array|object $data = null, bool $allowCreds = false)
 {
     global $config;
     if (!Config::$isProd) {

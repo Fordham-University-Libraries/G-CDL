@@ -127,19 +127,6 @@ function getAlmaItemByBarcode($barcode, $library)
         ));
         
         $response = curl_exec($curl);
-        $statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        $i = 0;
-        //the guest sandbox api is garbage -- it just randomly 401 sometimes
-        while ($statusCode == 401) {
-            $response = curl_exec($curl);
-            $statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-            if ($i++ > 100) {
-                sleep($i);
-                curl_close($ch);
-                respondWithFatalError($statusCode,'cannot get item info');
-            }
-        }
-
         curl_close($curl);
         $data = json_decode($response);
         if (!$data) {
@@ -196,9 +183,9 @@ function getAlmaCourses($library, $field = "courseName", $term = null)
         $response = curl_exec($curl);
         curl_close($curl);
         $data = json_decode($response, true);
-        $file = fopen($fileName, 'wb');
         if (!$term && $data) {
             try {
+                $file = fopen($fileName, 'wb');
                 fwrite($file, serialize($data));
                 fclose($file);
             } catch (Exception $e) {
@@ -217,11 +204,19 @@ function getAlmaCourseIdFromCourseNumber($library, $courseNumber) {
     }
 }
 
+function getAlmaCourseInstructors($library, $courseId) {
+    $courses = getAlmaCourses($library);
+    foreach ($courses as $course) {
+        if ($course['id'] == $courseId) return $course['instructor'];
+    }
+}
+
 //return readingList
-function getAlmaCourseReservesInfo($library, $courseNumber) {
+function getAlmaCourseReservesInfo($library, $courseNumber, $courseId = null): array {
     $url = getAlmaApiUrl($library);
     $apiKey = getAlmaApiKey($library);
-    $courseId = getAlmaCourseIdFromCourseNumber($library, $courseNumber);
+    if (!$courseId) $courseId = getAlmaCourseIdFromCourseNumber($library, $courseNumber);
+
     $url .= "/courses/$courseId/reading-lists?apikey=$apiKey";
     $curl = curl_init();
     curl_setopt_array($curl, array(
@@ -245,12 +240,26 @@ function getAlmaCourseReservesInfo($library, $courseNumber) {
     }
     $data = json_decode($response, true);
     $readingLists = $data['reading_list'];
-    if (isset($readingLists) && count($readingLists) == 1) {
-        getAlmaCitations($library, $courseId, $readingLists[0]['id']);
-    } else {
-
+    $cdlReadingList = [];
+    foreach($readingLists as $list) {
+        $cdlReadingList[] = ['id' => $courseId . "!!" . $list['id']];
     }
-    //respondWithData($readingLists);
+    if ($readingLists) {
+        $instructors = getAlmaCourseInstructors($library,$courseId);
+        $profs = [];
+        foreach($instructors as $instructor) {
+            $profs[] = $instructor['last_name'] . ', ' . $instructor['first_name'];
+        }
+
+
+        return [
+            'courseName' => $readingLists[0]['name'],
+            'courseNumber' => $readingLists[0]['id'], //sigh...
+            'courseCode' => $readingLists[0]['code'],
+            'courseProfs' => $profs,
+            'sections' => $cdlReadingList
+        ];
+    }
 
 }
 
@@ -274,20 +283,15 @@ function getAlmaCitations($library, $courseId, $listId): object {
     ));
 
     $response = curl_exec($curl);
-    $statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
-
-    if ($statusCode != 200) {
-        respondWithError($statusCode, "this guest sandox is garbage");
-    }
 
     $data = json_decode($response, true);
     $citations = $data['citation'];
 
-
     $items = [];
     foreach ($citations as $citation) {
-        if ($citation['metadata']['mms_id']) {
+        //only return stuff from ILS (e.g. books) -- has MMS_ID
+        if ($citation['metadata']['mms_id'] && $citation['metadata']['title']) {
             $items[] = $citation;
         }
     }
