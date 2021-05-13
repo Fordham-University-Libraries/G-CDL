@@ -109,7 +109,7 @@
                             <th>Call#</th>
                         </tr>
                         <tr *ngFor="let item of courseDetailedResultCdl">
-                            <td><a [routerLink]="'/item/' + item.catalogKey">{{ item.title }}</a></td>
+                            <td><a [routerLink]="'/item/' + item.bibId">{{ item.title }}</a></td>
                             <td>{{ item.author }}</td>
                             <td>{{ item.callNumber }}</td>
                         </tr>

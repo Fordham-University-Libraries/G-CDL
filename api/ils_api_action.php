@@ -293,10 +293,6 @@ function getIlsFullCourseReserves(string $libKey, string $key)
         $keys = explode('!!', $key);
         $citations = getAlmaCitations($libKey, $keys[0], $keys[1]);
         $course = getAlmaCourseReservesInfo($libKey, null, $keys[0]);
-        // respondWithData($course);
-        // die();
-        // respondWithData((array) $citations);
-        // die();
         $cdlCourse = [];
         $cdlCourse['id'] = $keys[0];
         $cdlCourse['courseName'] = $course['courseName'];
@@ -304,12 +300,7 @@ function getIlsFullCourseReserves(string $libKey, string $key)
         $cdlCourse['professors'] = $course['courseProfs'];
         $i = 0;
         foreach ($citations as $item) {
-            $cdlCourse['items'][$i]['bibId'] = $item['metadata']['mms_id'];
-            //$cdlCourse['items'][$i]['itemId'] = $item->itemID;
-            $cdlCourse['items'][$i]['title'] = $item['metadata']['title'];
-            $cdlCourse['items'][$i]['author'] = $item['metadata']['author'];
-            // $cdlCourse['items'][$i]['location'] = $item->reserveDeskID;
-            $cdlCourse['items'][$i]['callNumber'] = $item['metadata']['call_number'];
+            $cdlCourse['items'][$i] = $item;
             $i++;
         }
         respondWithData($cdlCourse);

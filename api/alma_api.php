@@ -1,5 +1,8 @@
 <?php
 
+use GuzzleHttp\Psr7;
+use GuzzleHttp\Exception\RequestException;
+
 function getAlmaApiClient($library): GuzzleHttp\Client
 {
     global $config;
@@ -19,12 +22,20 @@ function getAlmaApiClient($library): GuzzleHttp\Client
     return $client;
 }
 
-function getAlmaBibByBibId($bibId, $library): object
+function getAlmaBibByBibId($bibId, $library, $includesHoldings = false): object
 {
     if (!$bibId) respondWithError(400, 'No Bib/Item ID');
     $client = getAlmaApiClient($library);
     $params = 'bibs/' . $bibId . '/holdings';
-    $response = $client->request('GET', $params);
+    try {
+        $response = $client->request('GET', $params);
+    } catch (GuzzleHttp\Exception\ClientException $e) {
+        if ($e->hasResponse()) {
+            $eRes = $e->getResponse();
+            $eBody = json_decode($eRes->getBody(), true);
+            respondWithError($eRes->getStatusCode(), $eBody['errorList']['error'][0]['errorMessage']);
+        }
+    }
 
     $obj = json_decode($response->getBody());
     $bib = [
@@ -36,6 +47,18 @@ function getAlmaBibByBibId($bibId, $library): object
         'publisher' => $obj->bib_data->publisher,
         'isbn' => $obj->bib_data->isbn
     ];
+    if ($includesHoldings) {
+        $holdings = [];
+        foreach ($obj->holding as $holding) {
+            $holdings[] = [
+                'id' => $holding->holding_id,
+                'callNumber' => $holding->call_number,
+                'library' => $holding->library->desc,
+                'location' => $holding->location->desc
+            ];
+        }
+        $bib['holdings'] = $holdings;
+    }
 
     return (object) $bib;
 }
@@ -45,7 +68,16 @@ function getAlmaBibByBarcode($barcode, $library): object
 {
     $client = getAlmaApiClient($library);
     $params = 'items/?item_barcode=' . $barcode;
-    $response = $client->request('GET', $params);
+    try {
+        $response = $client->request('GET', $params);
+    } catch (GuzzleHttp\Exception\ClientException $e) {
+        if ($e->hasResponse()) {
+            $eRes = $e->getResponse();
+            $eBody = json_decode($eRes->getBody(), true);
+            respondWithError($eRes->getStatusCode(), $eBody['errorList']['error'][0]['errorMessage']);
+        }
+    }
+
     if ($response->getStatusCode() == 302) {
         $redirectedUrl = $response->getHeader('Location')[0];
         preg_match('/\/bibs\/(\d+)\//', $redirectedUrl, $matches);
@@ -62,11 +94,86 @@ function getAlmaBibByBarcode($barcode, $library): object
     }
 }
 
-function getAlmaItemByBarcode($barcode, $library)
+function getAlmaHoldingsByBibId(array $bibIds, $library): array
+{
+    if (!count($bibIds)) respondWithError(400, 'No Bib/Item ID');
+    $client = getAlmaApiClient($library);
+    $params = 'bibs?mms_id=' . implode(',', $bibIds) . '&expand=p_avail';
+    try {
+        $response = $client->request('GET', $params);
+    } catch (GuzzleHttp\Exception\ClientException $e) {
+        if ($e->hasResponse()) {
+            $eRes = $e->getResponse();
+            $eBody = json_decode($eRes->getBody(), true);
+            respondWithError($eRes->getStatusCode(), $eBody['errorList']['error'][0]['errorMessage']);
+        }
+    }
+
+    $obj = json_decode($response->getBody());
+    //respondWithData($obj);
+
+    $codes = [
+        '0' => 'pid',
+        '8' => 'barcode',
+        'a' => 'institution',
+        'b' => 'library',
+        'c' => 'locationName',
+        'd' => 'callNumber',
+        'e' => 'status',
+        'j' => 'location',
+        'q' => 'libraryName'
+    ];
+    $response = [];
+    $i = 0;
+    foreach ($obj->bib as $bib) {
+        $response[$i] = [
+            'title' => $bib->title,
+            'author' => $bib->author,
+            'bibId' => $bib->mms_id,
+            'published' => $bib->date_of_publication,
+            'publisher' => $bib->publisher_const,
+            'isbn' => $bib->isbn
+        ];
+
+        $xml_string = $bib->anies[0];
+        $encoding = mb_detect_encoding($xml_string, 'UTF-16,UTF-8');
+        if ($encoding != 'UTF-16') $xml_string = str_replace('UTF-16', $encoding, $xml_string);
+        $xml = simplexml_load_string($xml_string);
+        if ($xml) {
+            $availabilities = $xml->xpath('datafield[@tag="AVA"]/subfield');
+            $holdings = [];
+
+            foreach ($availabilities as $subfield) {
+                $code = (string) $subfield['code'];
+                if (isset($codes[$code])) {
+                    $holdings[$codes[$code]] = (string) $subfield;
+                }
+            }
+            $response[$i]['callNumber'] = $holdings['callNumber'];
+            $response[$i]['library'] = $holdings['libraryName'];
+            $response[$i]['location'] = $holdings['locationName'];
+        }
+
+        $i++;
+    }
+
+    return $response;
+}
+
+function getAlmaByBarcode($barcode, $library)
 {
     $client = getAlmaApiClient($library);
     $params = 'items/?item_barcode=' . $barcode;
-    $response = $client->request('GET', $params);
+    try {
+        $response = $client->request('GET', $params);
+    } catch (GuzzleHttp\Exception\ClientException $e) {
+        if ($e->hasResponse()) {
+            $eRes = $e->getResponse();
+            $eBody = json_decode($eRes->getBody(), true);
+            respondWithError($eRes->getStatusCode(), $eBody['errorList']['error'][0]['errorMessage']);
+        }
+    }
+
     $data = json_decode($response->getBody());
     return $data;
 }
@@ -80,26 +187,55 @@ function getAlmaCourses($library, $field = "courseName", $term = null): array
     if (!$term && file_exists($fileName) && time() - filemtime($fileName) < $cacheSec) {
         //browse all -- use cache
         $file = file_get_contents($fileName);
-        $data = unserialize($file);
+        $courses = unserialize($file);
         //$isCachedData = true;
     } else {
         $client = getAlmaApiClient($library);
-        $courseStatus = "ALL"; //['ALL','ACTIVE','INACTIVE'] 
-        $params = "courses?limit=99999999&offset=0&status=$courseStatus&order_by=code%2Csection&direction=ASC&exact_search=false";
+        $courseStatus = "ACTIVE"; //['ALL','ACTIVE','INACTIVE']
+        $offSet = 0;
+        $totalRecords = 0;
         if ($term) {
             if ($field == 'courseName') $field = 'name';
             else if ($field == 'courseNumber') $field = 'code';
             else if ($field == 'courseProf') $field = 'instructors';
-
-            $q = "$field~$term";
-            $params .= "&q=$q";
         }
-        $response = $client->request('GET', $params);
-        $data = json_decode($response->getBody(), true);
-        if (!$term && $data) {
+
+        $i = 0;
+        $courses = [];
+        while (true) {
+            $params = "courses?limit=99999999&offset=$offSet&status=$courseStatus&order_by=code%2Csection&direction=ASC&exact_search=false";
+            if ($term) {
+                $q = "$field~$term";
+                $params .= "&q=$q";
+            }
+            try {
+                $response = $client->request('GET', $params);
+            } catch (GuzzleHttp\Exception\ClientException $e) {
+                if ($e->hasResponse()) {
+                    $eRes = $e->getResponse();
+                    $eBody = json_decode($eRes->getBody(), true);
+                    respondWithError($eRes->getStatusCode(), $eBody['errorList']['error'][0]['errorMessage']);
+                }
+            }
+
+            $data = json_decode($response->getBody(), true);
+            $totalRecords = $data['total_record_count'];
+            $courses = array_merge($courses, $data['course']);
+            if (!$totalRecords || $totalRecords <= 100) {
+                break;
+            } else if ($totalRecords - $offSet > 100) {
+                $offSet += 100;
+            } else {
+                break;
+            }
+
+            if ($i++ > 100) break;
+        }
+
+        if (!$term && $courses) {
             try {
                 $file = fopen($fileName, 'wb');
-                fwrite($file, serialize($data));
+                fwrite($file, serialize($courses));
                 fclose($file);
             } catch (Exception $e) {
                 logError($e);
@@ -107,15 +243,16 @@ function getAlmaCourses($library, $field = "courseName", $term = null): array
         }
     }
 
-    return $data['course'] ?? [];
+    return $courses ?? [];
 }
 
-function getAlmaCourseIdFromCourseNumber($library, $courseNumber): string
+function getAlmaCourseIdFromCourseNumber($library, $courseNumber): string|null
 {
     $courses = getAlmaCourses($library);
     foreach ($courses as $course) {
         if ($course['code'] == $courseNumber) return $course['id'];
     }
+    return null;
 }
 
 function getAlmaCourseInstructors($library, $courseId): array
@@ -124,6 +261,7 @@ function getAlmaCourseInstructors($library, $courseId): array
     foreach ($courses as $course) {
         if ($course['id'] == $courseId) return $course['instructor'];
     }
+    return [];
 }
 
 //return readingList
@@ -131,8 +269,19 @@ function getAlmaCourseReservesInfo($library, $courseNumber, $courseId = null): a
 {
     $client = getAlmaApiClient($library);
     if (!$courseId) $courseId = getAlmaCourseIdFromCourseNumber($library, $courseNumber);
+    if (!$courseId) respondWithError(404, 'Course Not Found');
+
     $params = "courses/$courseId/reading-lists";
-    $response = $client->request('GET', $params);
+    try {
+        $response = $client->request('GET', $params);
+    } catch (GuzzleHttp\Exception\ClientException $e) {
+        if ($e->hasResponse()) {
+            $eRes = $e->getResponse();
+            $eBody = json_decode($eRes->getBody(), true);
+            respondWithError($eRes->getStatusCode(), $eBody['errorList']['error'][0]['errorMessage']);
+        }
+    }
+
     $data = json_decode($response->getBody(), true);
     $readingLists = $data['reading_list'];
     if ($readingLists) {
@@ -160,25 +309,41 @@ function getAlmaCourseReservesInfo($library, $courseNumber, $courseId = null): a
     } else {
         return [];
     }
-
 }
 
 function getAlmaCitations($library, $courseId, $listId): object
 {
     $client = getAlmaApiClient($library);
     $params = "courses/$courseId/reading-lists/$listId/citations";
-    $response = $client->request('GET', $params);
+    try {
+        $response = $client->request('GET', $params);
+    } catch (GuzzleHttp\Exception\ClientException $e) {
+        if ($e->hasResponse()) {
+            $eRes = $e->getResponse();
+            $eBody = json_decode($eRes->getBody(), true);
+            respondWithError($eRes->getStatusCode(), $eBody['errorList']['error'][0]['errorMessage']);
+        }
+    }
 
 
     $data = json_decode($response->getBody(), true);
     $citations = $data['citation'];
 
     $items = [];
+    $mmsIdsToLookUp = [];
     foreach ($citations as $citation) {
         //only return stuff from ILS (e.g. books) -- has MMS_ID
-        if ($citation['metadata']['mms_id'] && $citation['metadata']['title']) {
-            $items[] = $citation;
+        if ($citation['metadata']['mms_id'] && $citation['status']['value'] == 'Complete') {
+            $mmsIdsToLookUp[] = $citation['metadata']['mms_id'];
         }
     }
+    if (count($mmsIdsToLookUp)) {
+        while ($itemsLeft = count($mmsIdsToLookUp)) {            
+            $spliceSize = ($itemsLeft < 100) ? $itemsLeft : 100;
+            $mmsIds = array_splice($mmsIdsToLookUp, 0, $spliceSize);
+            $items = array_merge($items, getAlmaHoldingsByBibId($mmsIds, $library));
+        }
+    }
+
     return (object) $items;
 }

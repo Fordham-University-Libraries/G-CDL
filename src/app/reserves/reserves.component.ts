@@ -161,16 +161,10 @@ export class ReservesComponent implements OnInit {
         //console.log('catalogService.getReserveCourseInfo');
         //console.log(res);
         if (!res.error) {
+          this.error = null;
           if (res.sections?.length == 1) {
             let course = res.sections[0];
-            this.catalogService.getDetailedCourseReserve(this.library, course).subscribe(res => {
-              this.courseDetailedResult = res;
-              this.courseDetailedView = true;
-              this.isLoading = false;
-              this.getDetailedCourseReserve(course);
-              //console.log('theres only 1 course, showing details');
-              //console.log(this.courseDetailedResult);
-            });
+            this.getDetailedCourseReserve(course);
           } else {
             //console.log('theres multiple courses: ' + res.reserveInfo.length);
             this.courseIdwithMultipleCourses[course.courseNumber] = res.sections;
@@ -236,6 +230,7 @@ export class ReservesComponent implements OnInit {
         this.driveService.checkItemInSystemByBibIds(bibIds).subscribe(res => {
           //console.log(res);
           if (!res.error) {
+            this.error = null;
             this.courseDetailedResult.items.forEach(item => {
               //console.log(item);
               if (res.results.includes('' + item.bibId)) {
@@ -247,6 +242,7 @@ export class ReservesComponent implements OnInit {
               i++;
             });
             this.isLoading = false;
+            //console.log(this.courseDetailedResultCdl);
             //console.log(this.courseDetailedResultPhysical);
           } else {
             this.error = res.error;
@@ -259,6 +255,7 @@ export class ReservesComponent implements OnInit {
         });
       } else {
         this.isCheckingCdlItems = false;
+        this.isLoading = false;
       }
     });
     
