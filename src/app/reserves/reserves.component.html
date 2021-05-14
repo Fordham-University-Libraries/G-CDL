@@ -93,7 +93,7 @@
         <div *ngIf="courseDetailedView && courseDetailedResult" class="content course-details mat-elevation-z2">      
             <h3><span class="fas fa-graduation-cap"></span> Course: {{ courseDetailedResult.courseName }}
                 {{ courseDetailedResult.courseNumber ? '(' + courseDetailedResult.courseNumber + ')' : '' }} </h3>
-            <p *ngIf="courseDetailedResult.professors"><span class="fas fa-user-tie"></span> Professor:
+            <p *ngIf="courseDetailedResult.professors?.length"><span class="fas fa-user-tie"></span> Professor:
                 {{ courseDetailedResult.professors.join(',').replace(' .,', ',') }}</p>
             <h4><strong>{{ lang.libraries[library].reserves.items }}</strong></h4>
             <!-- has items -->

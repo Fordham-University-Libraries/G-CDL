@@ -1,9 +1,6 @@
 <?php
 
-use GuzzleHttp\Psr7;
-use GuzzleHttp\Exception\RequestException;
-
-function getAlmaApiClient($library): GuzzleHttp\Client
+function getAlmaApiClient(string $library): GuzzleHttp\Client
 {
     global $config;
     if ($config->libraries[$library]->ils['api']['base']) {
@@ -22,7 +19,7 @@ function getAlmaApiClient($library): GuzzleHttp\Client
     return $client;
 }
 
-function getAlmaBibByBibId($bibId, $library, $includesHoldings = false): object
+function getAlmaBibByBibId(string $bibId, string $library, bool $includesHoldings = false): object
 {
     if (!$bibId) respondWithError(400, 'No Bib/Item ID');
     $client = getAlmaApiClient($library);
@@ -64,7 +61,7 @@ function getAlmaBibByBibId($bibId, $library, $includesHoldings = false): object
 }
 
 //by get item by bercode (NOT pid) -- https://developers.exlibrisgroup.com/alma/apis/docs/bibs/R0VUIC9hbG1hd3MvdjEvYmlicy97bW1zX2lkfS9ob2xkaW5ncy97aG9sZGluZ19pZH0vaXRlbXMve2l0ZW1fcGlkfQ==/
-function getAlmaBibByBarcode($barcode, $library): object
+function getAlmaBibByBarcode(string $barcode, string $library): object
 {
     $client = getAlmaApiClient($library);
     $params = 'items/?item_barcode=' . $barcode;
@@ -94,9 +91,11 @@ function getAlmaBibByBarcode($barcode, $library): object
     }
 }
 
-function getAlmaHoldingsByBibId(array $bibIds, $library): array
+function getAlmaHoldingsByBibIds(array $bibIds, string $library): array
 {
-    if (!count($bibIds)) respondWithError(400, 'No Bib/Item ID');
+    if (!count($bibIds)) respondWithFatalError(400, 'No Bib IDs');
+    if (count($bibIds) > 100) respondWithFatalError(400, 'Max at 100 IDs please!');
+
     $client = getAlmaApiClient($library);
     $params = 'bibs?mms_id=' . implode(',', $bibIds) . '&expand=p_avail';
     try {
@@ -110,8 +109,6 @@ function getAlmaHoldingsByBibId(array $bibIds, $library): array
     }
 
     $obj = json_decode($response->getBody());
-    //respondWithData($obj);
-
     $codes = [
         '0' => 'pid',
         '8' => 'barcode',
@@ -160,7 +157,7 @@ function getAlmaHoldingsByBibId(array $bibIds, $library): array
     return $response;
 }
 
-function getAlmaByBarcode($barcode, $library)
+function getAlmaItemByBarcode(string $barcode, string $library)
 {
     $client = getAlmaApiClient($library);
     $params = 'items/?item_barcode=' . $barcode;
@@ -178,8 +175,8 @@ function getAlmaByBarcode($barcode, $library)
     return $data;
 }
 
-//get all course
-function getAlmaCourses($library, $field = "courseName", $term = null): array
+//get all course or search, will cache if gets all
+function getAlmaCourses(string $library, string $field = "courseName", string $term = null): array
 {
     global $config;
     $cacheSec = 86400; //1 day
@@ -220,11 +217,15 @@ function getAlmaCourses($library, $field = "courseName", $term = null): array
 
             $data = json_decode($response->getBody(), true);
             $totalRecords = $data['total_record_count'];
-            $courses = array_merge($courses, $data['course']);
-            if (!$totalRecords || $totalRecords <= 100) {
-                break;
-            } else if ($totalRecords - $offSet > 100) {
-                $offSet += 100;
+            if ($totalRecords) {
+                $courses = array_merge($courses, $data['course']);
+                if (!$totalRecords || $totalRecords <= 100) {
+                    break;
+                } else if ($totalRecords - $offSet > 100) {
+                    $offSet += 100;
+                } else {
+                    break;
+                }
             } else {
                 break;
             }
@@ -246,7 +247,7 @@ function getAlmaCourses($library, $field = "courseName", $term = null): array
     return $courses ?? [];
 }
 
-function getAlmaCourseIdFromCourseNumber($library, $courseNumber): string|null
+function getAlmaCourseIdFromCourseNumber(string $library, string $courseNumber): string|null
 {
     $courses = getAlmaCourses($library);
     foreach ($courses as $course) {
@@ -255,7 +256,7 @@ function getAlmaCourseIdFromCourseNumber($library, $courseNumber): string|null
     return null;
 }
 
-function getAlmaCourseInstructors($library, $courseId): array
+function getAlmaCourseInstructors(string $library, string $courseId): array
 {
     $courses = getAlmaCourses($library);
     foreach ($courses as $course) {
@@ -264,11 +265,12 @@ function getAlmaCourseInstructors($library, $courseId): array
     return [];
 }
 
-//return readingList
-function getAlmaCourseReservesInfo($library, $courseNumber, $courseId = null): array
+//get course's readingLists
+function getAlmaCourseReservesInfo(string $library, ?string $courseNumber, string $courseId = null): array
 {
     $client = getAlmaApiClient($library);
-    if (!$courseId) $courseId = getAlmaCourseIdFromCourseNumber($library, $courseNumber);
+    if (!$courseId && !$courseNumber) respondWithFatalError(400);
+    if (!$courseId && $courseNumber) $courseId = getAlmaCourseIdFromCourseNumber($library, $courseNumber);
     if (!$courseId) respondWithError(404, 'Course Not Found');
 
     $params = "courses/$courseId/reading-lists";
@@ -289,7 +291,7 @@ function getAlmaCourseReservesInfo($library, $courseNumber, $courseId = null): a
         foreach ($readingLists as $list) {
             $cdlReadingList[] = [
                 'id' => $courseId . "!!" . $list['id'],
-                'prof' => $list['name'] //sigh...
+                'prof' => $list['name'] //sigh... TODO: normalize all the things...
             ];
         }
 
@@ -301,7 +303,7 @@ function getAlmaCourseReservesInfo($library, $courseNumber, $courseId = null): a
 
         return [
             'courseName' => $readingLists[0]['name'],
-            'courseNumber' => $readingLists[0]['id'], //sigh...
+            'courseNumber' => $readingLists[0]['id'], //sigh... TODO: normalize all the things...
             'courseCode' => $readingLists[0]['code'],
             'courseProfs' => $profs,
             'sections' => $cdlReadingList
@@ -311,7 +313,7 @@ function getAlmaCourseReservesInfo($library, $courseNumber, $courseId = null): a
     }
 }
 
-function getAlmaCitations($library, $courseId, $listId): object
+function getAlmaCitations(string $library, string $courseId, string $listId): object
 {
     $client = getAlmaApiClient($library);
     $params = "courses/$courseId/reading-lists/$listId/citations";
@@ -332,16 +334,18 @@ function getAlmaCitations($library, $courseId, $listId): object
     $items = [];
     $mmsIdsToLookUp = [];
     foreach ($citations as $citation) {
-        //only return stuff from ILS (e.g. books) -- has MMS_ID
+        //only return completed stuff from ILS (e.g. books) -- has MMS_ID
         if ($citation['metadata']['mms_id'] && $citation['status']['value'] == 'Complete') {
             $mmsIdsToLookUp[] = $citation['metadata']['mms_id'];
         }
     }
     if (count($mmsIdsToLookUp)) {
-        while ($itemsLeft = count($mmsIdsToLookUp)) {            
+        //TODO: umm... shouldn't this be handled by the function itself?
+        while ($itemsLeft = count($mmsIdsToLookUp)) {        
             $spliceSize = ($itemsLeft < 100) ? $itemsLeft : 100;
             $mmsIds = array_splice($mmsIdsToLookUp, 0, $spliceSize);
-            $items = array_merge($items, getAlmaHoldingsByBibId($mmsIds, $library));
+            $holdings = getAlmaHoldingsByBibIds($mmsIds, $library);
+            if ($holdings) $items = array_merge($items, $holdings);
         }
     }
 

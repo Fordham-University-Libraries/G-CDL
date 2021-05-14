@@ -3,7 +3,6 @@ function getItems($key, $keyType, $libKey)
 {
     global $service;
     global $config;
-    global $user;
     
     $folderId = $config->libraries[$libKey]->noOcrFolderId;
     if ($keyType == 'bibId') {

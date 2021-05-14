@@ -1,7 +1,6 @@
 <?php
 function respondWithData(array|object $data = null, bool $allowCreds = false)
 {
-    global $config;
     if (!Config::$isProd) {
         header("Access-Control-Allow-Origin: http://localhost:4200");
         header("Access-Control-Allow-Credentials: true");
@@ -16,7 +15,6 @@ function respondWithData(array|object $data = null, bool $allowCreds = false)
 
 function respondWithHtml(string $html, bool $allowCreds = false)
 {
-    global $config;
     if (!Config::$isProd) {
         header("Access-Control-Allow-Origin: http://localhost:4200");
         header("Access-Control-Allow-Credentials: true");
@@ -28,16 +26,15 @@ function respondWithHtml(string $html, bool $allowCreds = false)
     echo $html;
 }
 
-function respondWithFatalError(int $code, string $errMsg)
+function respondWithFatalError(int $code, string $errMsg = null)
 {
-    global $config;
     if (!Config::$isProd) {
         header("Access-Control-Allow-Origin: http://localhost:4200");
         header("Access-Control-Allow-Credentials: true");
     } else {
         if (Config::$frontEndHost) header("Access-Control-Allow-Origin: " . Config::$frontEndHost);
     }
-    $httpStatues = [
+    $httpStatuses = [
         400 => 'Bad Request',
         401 => 'Unauthorized',
         403 => 'Forbidden',
@@ -45,10 +42,10 @@ function respondWithFatalError(int $code, string $errMsg)
         404 => 'Not Found',
         500 => 'Internal Server Error'
     ];
-    header("HTTP/1.0 $code $httpStatues[$code]");
+    header("HTTP/1.0 $code $httpStatuses[$code]");
     header('Content-type: application/json');
     $data = [];
-    if ($errMsg) $data['error'] = $errMsg;
+    $data['error'] = $errMsg ?? $httpStatuses[$code];
     $respond = ['status' => $code, "data" => $data];
     echo json_encode($respond);
     die();
