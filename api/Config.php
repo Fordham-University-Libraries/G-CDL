@@ -73,7 +73,7 @@ class Config
         'appName' => ['name of the application (visible to end users)', 1],
         'timeZone' => ['timezone. see https://www.php.net/manual/en/timezones.php', 1],
         'maxFileSizeInMb' => ['Google PDF Viewer has max fix file size litmit of 100MB (as of early 2021), if you upload something bigger than that, it will not display', 2],
-        'useEmbedReader' => ['if enabled, embed Google Drive vieewer inside app\'s page. Else, will open Google Drive viewer directly in a new tab. NOTE: you might want to enable it since, as of early 2021, if end users open a reader and don\'t close it, they\'ll be able to keep reading even AFTER the share has expired. Using the embed reader, the app will embed the Google reader on its own page, and will automatically refresh the page when the item expires', 1],
+        'useEmbedReader' => ['if enabled, embed Google Drive viewer inside app\'s page. Else, will open Google Drive viewer directly in a new tab. NOTE: you might want to enable it since, as of early 2021, if end users open a reader and don\'t close it, they\'ll be able to keep reading even AFTER the share has expired. Using the embed reader, the app will embed the Google reader on its own page, and will automatically refresh the page when the item expires', 1],
         'appSuperAdmins' => ['user(s) that can edit EVERYTHING incuding app\'s config, and EVERY library. Separate multiple users with a comma', 2],
         'gSuitesDomain' => ['FYI, your GSuites Domain (without @ sign), this value is set automatically when admin initialized the app', -1],
         'auth' => [

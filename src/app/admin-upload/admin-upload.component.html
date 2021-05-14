@@ -121,15 +121,15 @@
             <input id="file-input" class="wells" type="file" accept="application/pdf"
                 (change)="handleFileInput($event.target.files)" />
             <br>
-            <mat-slide-toggle [(ngModel)]="pdfItem.shouldCreateNoOcr">Create a No-OCR version? <mat-icon>help</mat-icon></mat-slide-toggle>
-            <div *ngIf="!pdfItem.shouldCreateNoOcr" class="alert alert-warning">
+            <mat-slide-toggle [(ngModel)]="pdfItem.shouldCreateNoOcr">Create a No-OCR version <mat-icon class="help-icon" matTooltip="Should the app try to remove OCR data from pdf and use it for regular (non-accessible) users? DEFAULT = TRUE. Only disable this if your PDF is a real text and not a scanned images of a text" matTooltipPosition="right">help</mat-icon></mat-slide-toggle>
+            <div *ngIf="!pdfItem.shouldCreateNoOcr" class="alert alert-warning margin-top-default">
                 <p>HEADS UP! You've chosen to NOT create a
-                NO-OCR version, hence a regular users (not accessible users) will be given the original PDF you uploaded when they borrow item.</p>
-                <p> If the original PDF you uploaded contains texts or OCR data, the users will be able to save them to
-                to text a file and keep it forever, therefore breaking the CDL principle</p></div>
+                NO-OCR version, hence regular users (not accessible users) will be given the original PDF you uploaded when they borrow an item.</p>
+                <p>If the original PDF you uploaded contains texts or OCR data, the users will be able to save them
+                to a text file (use crtl-s to save the page to .html file) and keep it forever, therefore breaking the CDL principle</p></div>
         </div>
         <!-- err -->
-        <div *ngIf="error" class="err-msg">ERROR: {{ error }}</div>
+        <div *ngIf="error" class="err-msg margin-top-default">ERROR: {{ error }}</div>
         <div *ngIf="warning && !pdfItem.part.value" class="alert alert-warning">{{ warning }}</div>
         <br>
         <!-- submit -->
