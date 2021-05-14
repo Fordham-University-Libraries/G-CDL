@@ -135,7 +135,7 @@ export class ReservesComponent implements OnInit {
     this.catalogService.searchReservesCourses(this.library, this.browseMode, this.searchTerm).subscribe(res => {
       //console.log(res);
       if (!res.error) {
-        this.results = res;
+        this.results = res;        
       } else {
         this.error = res.error;
       }
@@ -161,16 +161,10 @@ export class ReservesComponent implements OnInit {
         //console.log('catalogService.getReserveCourseInfo');
         //console.log(res);
         if (!res.error) {
+          this.error = null;
           if (res.sections?.length == 1) {
             let course = res.sections[0];
-            this.catalogService.getDetailedCourseReserve(this.library, course).subscribe(res => {
-              this.courseDetailedResult = res;
-              this.courseDetailedView = true;
-              this.isLoading = false;
-              this.getDetailedCourseReserve(course);
-              //console.log('theres only 1 course, showing details');
-              //console.log(this.courseDetailedResult);
-            });
+            this.getDetailedCourseReserve(course);
           } else {
             //console.log('theres multiple courses: ' + res.reserveInfo.length);
             this.courseIdwithMultipleCourses[course.courseNumber] = res.sections;
@@ -210,9 +204,10 @@ export class ReservesComponent implements OnInit {
   }
 
   getDetailedCourseReserve(course: any) {
+    this.isLoading = true;
     //console.log('reservesCompo.getDetailedCourseReserve()');
     //console.log(course);
-
+    this.courseDetailedResult = null;
     let bibIds = [];
     this.catalogService.getDetailedCourseReserve(this.library, course).subscribe(res => {
       if (this.isDefaultLibraryRoute) {
@@ -226,41 +221,48 @@ export class ReservesComponent implements OnInit {
       this.courseDetailedView = true;
       var i = 1;
       //check if items on reserve for course is avaialbe as CDL
-      this.courseDetailedResultPhysical.length = 0;
-      this.courseDetailedResult.items.forEach(item => {
-        bibIds.push(item.bibId);
-      });
-      //console.log(bibIds);
-      this.driveService.checkItemInSystemByBibIds(bibIds).subscribe(res => {
-        //console.log(res);
-        if (!res.error) {
-          this.courseDetailedResult.items.forEach(item => {
-            //console.log(item);
-            if (res.results.includes('' + item.bibId)) {
-              this.courseDetailedResultCdl.push(item);
-            } else {
-              this.courseDetailedResultPhysical.push(item);
-            }
-            if (i == this.courseDetailedResult.items.length) this.isCheckingCdlItems = false;
-            i++;
-          });
-          //console.log(this.courseDetailedResultPhysical);
-        } else {
-          this.error = res.error;
-        }
-      }, error => {
-        console.error(error);
-        this.error = this.lang.libraries[this.library].error.genericError;
+      if (this.courseDetailedResult.items) {
+        this.courseDetailedResultPhysical.length = 0;
+        this.courseDetailedResult.items.forEach(item => {
+          bibIds.push(item.bibId);
+        });
+        //console.log(bibIds);
+        this.driveService.checkItemInSystemByBibIds(bibIds).subscribe(res => {
+          //console.log(res);
+          if (!res.error) {
+            this.error = null;
+            this.courseDetailedResult.items.forEach(item => {
+              //console.log(item);
+              if (res.results.includes('' + item.bibId)) {
+                this.courseDetailedResultCdl.push(item);
+              } else {
+                this.courseDetailedResultPhysical.push(item);
+              }
+              if (i == this.courseDetailedResult.items.length) this.isCheckingCdlItems = false;
+              i++;
+            });
+            this.isLoading = false;
+            //console.log(this.courseDetailedResultCdl);
+            //console.log(this.courseDetailedResultPhysical);
+          } else {
+            this.error = res.error;
+            this.isLoading = false;
+          }
+        }, error => {
+          console.error(error);
+          this.error = this.lang.libraries[this.library].error.genericError;
+          this.isLoading = false;
+        });
+      } else {
+        this.isCheckingCdlItems = false;
         this.isLoading = false;
-      });
+      }
     });
     
   }
 
   backToResult() {
-    this.courseDetailedResult = null;
-    this.courseDetailedView = false;
-    this.isLoading = false;
+    window.history.back();
   }
 
   openInCatalog(library: string, bibId?: string, itemId?: string) {

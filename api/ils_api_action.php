@@ -1,6 +1,8 @@
 <?php
 require_once('./sirsi_api.php');
 require_once('./sierra_api.php');
+require_once('./alma_api.php');
+
 
 function getIlsBibByBibId($libKey, $bibId)
 {
@@ -11,6 +13,8 @@ function getIlsBibByBibId($libKey, $bibId)
             return getSierraBibByBibId($bibId, $libKey);
         } elseif (strtolower($config->libraries[$libKey]->ils['kind']) == 'sirsi') {
             return getSirsiBib($bibId, $libKey, 'ckey');
+        } elseif (strtolower($config->libraries[$libKey]->ils['kind']) == 'alma') {
+            return getAlmaBibByBibId($bibId, $libKey);
         }
     }
 }
@@ -24,6 +28,8 @@ function getIlsBibByItemId($libKey, $itemId)
             return getSierraBibByItemId($itemId, $libKey);
         } elseif (strtolower($config->libraries[$libKey]->ils['kind']) == 'sirsi') {
             return getSirsiBib($itemId, $libKey, 'barcode');
+        } elseif (strtolower($config->libraries[$libKey]->ils['kind']) == 'alma') {
+            return getAlmaBibByBarcode($itemId, $libKey);
         }
     }
 }
@@ -38,7 +44,7 @@ function getIlsLocationsDefinition($libKey)
     respondWithData($locations);
 }
 
-function searchIlsCourseReserves(string $libKey, ?string $field, string $term)
+function searchIlsCourseReserves(string $libKey, string $field = null, string $term = null)
 {
     checkIlsApiSettings($libKey);
     global $config;
@@ -170,6 +176,25 @@ function searchIlsCourseReserves(string $libKey, ?string $field, string $term)
         } else {
             respondWithData(['courses' => $matchedCourses]);
         }
+    }  elseif (strtolower($config->libraries[$libKey]->ils['kind']) == 'alma') {
+        // ALMA course API can actually search now
+        $courses = getAlmaCourses($libKey, $field, $term);
+        $cdlCourses = [];
+        foreach($courses as $course) {
+            $profs = [];
+            foreach ($course['instructor'] as $instructor) {
+                $profs[] = $instructor['last_name'] . ', ' . $instructor['first_name'];
+            }
+            $cdlCourse = [
+                'id' => $course['id'],
+                'courseName' => $course['name'],
+                'courseNumber' => $course['code'],
+                'professors' => $profs,
+                'itemsCount' => 1
+            ];
+            array_push($cdlCourses, $cdlCourse);
+        }
+        respondWithData(['courses' => $cdlCourses]);
     }
 }
 
@@ -199,6 +224,8 @@ function getIlsCourseReservesInfo($libKey, $courseNumber)
             'sections' => $sections
         ];
         respondWithData($cdlCourse);
+    } elseif (strtolower($config->libraries[$libKey]->ils['kind']) == 'alma') {
+        respondWithData(getAlmaCourseReservesInfo($libKey, $courseNumber));
     } else {
         respondWithError(501, 'Not Implemented');
     }
@@ -262,6 +289,21 @@ function getIlsFullCourseReserves(string $libKey, string $key)
             $i++;
         }
         respondWithData($cdlCourse);
+    } elseif (strtolower($config->libraries[$libKey]->ils['kind']) == 'alma') {
+        $keys = explode('!!', $key);
+        $citations = getAlmaCitations($libKey, $keys[0], $keys[1]);
+        $course = getAlmaCourseReservesInfo($libKey, null, $keys[0]);
+        $cdlCourse = [];
+        $cdlCourse['id'] = $keys[0];
+        $cdlCourse['courseName'] = $course['courseName'];
+        $cdlCourse['courseNumber'] = $course['courseCode'];
+        $cdlCourse['professors'] = $course['courseProfs'];
+        $i = 0;
+        foreach ($citations as $item) {
+            $cdlCourse['items'][$i] = $item;
+            $i++;
+        }
+        respondWithData($cdlCourse);
     }
 }
 
@@ -313,23 +355,29 @@ function checkIlsApiSettings(string $libKey)
         respondWithError(501, 'ILS API is not enabled for this library');
         die();
     }
-    if (!$config->libraries[$libKey]->ils['api']['base']) {
+    if (!$config->libraries[$libKey]->ils['api']['base'] && strtolower($config->libraries[$libKey]->ils['kind']) != 'alma') {
         respondWithError(501, 'ILS API is not properly configured (no API base URL)');
         die();
     }
+
     if (!$config->libraries[$libKey]->ils['kind']) {
         respondWithError(501, 'ILS API is not properly configured (no type of ILS)');
         die();
     }
-    if ($config->libraries[$libKey]->ils['kind'] == 'sirsi') {
+
+    if (strtolower($config->libraries[$libKey]->ils['kind']) == 'sirsi') {
         if (!$config->libraries[$libKey]->ils['api']['clientId'] || !$config->libraries[$libKey]->ils['api']['appId']) {
             respondWithError(501, 'ILS API is not properly configured (no credentials)');
             die();
         }
-    }
-    if ($config->libraries[$libKey]->ils['kind'] == 'sierra') {
+    } else if (strtolower($config->libraries[$libKey]->ils['kind']) == 'sierra') {
         if (!$config->libraries[$libKey]->ils['api']['key'] || !$config->libraries[$libKey]->ils['api']['secret']) {
             respondWithError(501, 'ILS API is not properly configured (no credentials)');
+            die();
+        }
+    } else if (strtolower($config->libraries[$libKey]->ils['kind']) == 'alma') {
+        if (!$config->libraries[$libKey]->ils['api']['key']) {
+            respondWithError(501, 'ILS API is not properly configured (no api key)');
             die();
         }
     }
