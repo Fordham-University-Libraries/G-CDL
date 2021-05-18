@@ -47,6 +47,7 @@ export class ReservesComponent implements OnInit {
   lang: Language;
   config: Config;
   customizations: Customization;
+  showRequestButton: boolean;
   //ils location
   locations: any;
 
@@ -100,7 +101,7 @@ export class ReservesComponent implements OnInit {
               } else {
                 this.library = this.config.defaultLibrary;
               }
-
+              this._checkShowRequestButton();
               this.getIlsLocationsDefinition(this.library);              
               if (!this.customizations.libraries[this.library].reserves.enable) {
                 this.router.navigate(['/error-disabled'], { skipLocationChange: true });
@@ -290,6 +291,21 @@ export class ReservesComponent implements OnInit {
 
   getIlsLocationsDefinition(library: string) {
     this.catalogService.getIlsLocationsDefinition(library).subscribe(res => {this.locations = res});
+  }
+
+  private _checkShowRequestButton() {
+    if (this.customizations.libraries[this.library].reserves.showRequestButton) {
+      if (this.customizations.libraries[this.library].reserves.showRequestButtonOnlyTo?.length) {        
+        for (let userType of this.customizations.libraries[this.library].reserves.showRequestButtonOnlyTo) {          
+          if (this.user[userType]) {
+            this.showRequestButton = true;
+            break;
+          }
+        }
+      } else {
+        this.showRequestButton = true;
+      }
+    }
   }
 
 }

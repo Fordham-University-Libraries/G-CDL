@@ -115,5 +115,7 @@
     </li>
     </ol>
 </nav>
-<!-- <div *ngIf="user?.isDriveOwner" class="alert alert-warning">HEADS UP: You're login as the Drive owner, if you try to borrow something, it'll NOT work, since you're already the owner of the file.</div> -->
+<button *ngIf="customization?.global?.floatingButton?.enable" id="floatingButton" [class.right]="customization?.global?.floatingButton?.position == 'right'" mat-stroked-button (click)="onFloatingButtonClicked()">
+    <mat-icon *ngIf="customization?.global?.floatingButton?.matIcon">{{ customization?.global?.floatingButton?.matIcon }}</mat-icon><span *ngIf="customization?.global?.floatingButton?.text">{{ customization?.global?.floatingButton?.text }}</span>
+</button>
 <router-outlet></router-outlet>

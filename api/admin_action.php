@@ -253,8 +253,10 @@ function updateCustomizationAdmin($properties, $libKey)
     require_once('Customization.php');
     global $user;
 
-    if (!in_array($libKey, $user->isAdminOfLibraries)) {
-        respondWithError(401, 'Not Authorized - Edit Customization');
+    if ($libKey == 'appGlobal') {
+        if (!$user->isSuperAdmin) respondWithError(401, 'Not Authorized - Edit Global Customization');
+    } else if (!in_array($libKey, $user->isAdminOfLibraries)) {
+        respondWithError(401, 'Not Authorized - Edit Library Customization');
     }
 
     $data = json_decode($properties, true);

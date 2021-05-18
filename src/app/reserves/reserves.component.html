@@ -135,7 +135,7 @@
                             <th>Call#</th>
                             <th>Location</th>
                             <th
-                                *ngIf="customizations.libraries[library].reserves.showSearchForEbooks || customizations.libraries[library].reserves.showRequestButton">
+                                *ngIf="customizations.libraries[library].reserves.showSearchForEbooks || showRequestButton">
                                 Options</th>
                         </tr>
                         <tr *ngFor="let item of courseDetailedResultPhysical">
@@ -151,14 +151,14 @@
                             <td>{{ locations && locations[item.location] ? locations[item.location] : item.location }}
                             </td>
 
-                            <td *ngIf="customizations.libraries[library].reserves.showSearchForEbooks || customizations.libraries[library].reserves.showRequestButton"
+                            <td *ngIf="customizations.libraries[library].reserves.showSearchForEbooks || showRequestButton"
                                 fxLayout="column" fxLayoutGap=".5em">
                                 <button *ngIf="customizations.libraries[library].reserves.showSearchForEbooks"
                                     mat-stroked-button (click)="searchEbook(library, item.title, item.author)">{{
                                     (item.title.includes('[video') || item.title.includes('[audio')) ? 'Search for
                                     streaming' : 'Search for eBooks' }}</button>
                                 <button
-                                    *ngIf="customizations.libraries[library].reserves.showRequestButton && courseDetailedResultPhysical.length"
+                                    *ngIf="showRequestButton && courseDetailedResultPhysical.length"
                                     mat-stroked-button color="primary"
                                     [matTooltip]="'Request that this item becomes available as Digital Reserves'"
                                     (click)="digiReservesRequest(courseDetailedResult.courseName, courseDetailedResult.courseNumber, courseDetailedResult.professors.join(','), item)">
