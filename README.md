@@ -79,7 +79,7 @@ Example of App/GDrive Interactions
   - https://sites.google.com/view/cdl-implementers/  
 - CDL implementation
    - [Internet Archive](https://archive.org/details/inlibrary) / [Open Library](https://github.com/internetarchive/openlibrary/)
-   - [IIIF based](https://iiif.io/api/auth/1.0/#authentication-for-description-resources) -- being implemented in the wild by that one university on the West Coast
+   - [IIIF based](https://iiif.io/api/auth/1.0/#authentication-for-description-resources) -- being implemented in the wild by that two techy, comp sciency universities on the West Coast
    - [project ReShare](https://projectreshare.org/products/reshare-controlled-digital-lending/)
    - [CIRC project](https://www.cdlproject.org/)
    - Commercial System
