@@ -1,5 +1,5 @@
 <?php
-function respondWithData(array|object $data = null, bool $allowCreds = false)
+function respondWithData(array $data = null, bool $allowCreds = false)
 {
     if (!Config::$isProd) {
         header("Access-Control-Allow-Origin: http://localhost:4200");

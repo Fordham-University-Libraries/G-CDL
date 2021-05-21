@@ -247,7 +247,7 @@ function getAlmaCourses(string $library, string $field = "courseName", string $t
     return $courses ?? [];
 }
 
-function getAlmaCourseIdFromCourseNumber(string $library, string $courseNumber): string|null
+function getAlmaCourseIdFromCourseNumber(string $library, string $courseNumber): ?string
 {
     $courses = getAlmaCourses($library);
     foreach ($courses as $course) {
