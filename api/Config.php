@@ -181,6 +181,7 @@ class Config
                             'enable' => ['should the app check if user is a graduate student', 1],
                             'attrToCheck' => ['name of the attribute returned by CAS to check', 1],
                             'validAttrs' => ['if attribute to check contains this value(s) -- separate by a commna, the user is considered a graduate student', 1],
+                            'contains' => ['if FALSE, users\' attribute and validAttr must match exactly, if TRUE, users\' attribute only needs to contain the validAttr (e.g. "mainCapus_gradStudent_lawSchool"/"gradStudent" is a match)']
                         ],
                     ],
                 ]

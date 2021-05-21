@@ -223,8 +223,19 @@ class User
         
             //check if user is grad student
             if ($authzConfig['auth']['CAS']['checkUserIsGradStudent']['enable']) {
-                if (count(array_intersect($this->attributes[$authzConfig['auth']['CAS']['checkUserIsGradStudent']['attrToCheck']], $authzConfig['auth']['CAS']['checkUserIsGradStudent']['validAttrs']))) {
-                    $this->isGradStudent = true;
+                if (!$authzConfig['auth']['CAS']['checkUserIsGradStudent']['contains']) {
+                    if (count(array_intersect($this->attributes[$authzConfig['auth']['CAS']['checkUserIsGradStudent']['attrToCheck']], $authzConfig['auth']['CAS']['checkUserIsGradStudent']['validAttrs']))) {
+                        $this->isGradStudent = true;
+                    }
+                } else {
+                    foreach($this->attributes[$authzConfig['auth']['CAS']['checkUserIsGradStudent']['attrToCheck']] as $userAttr) {
+                        foreach($authzConfig['auth']['CAS']['checkUserIsGradStudent']['validAttrs'] as $validAttr) {
+                            if (strpos($userAttr, $validAttr) !== false) {
+                                $this->isGradStudent = true;
+                                break 2;
+                            }
+                        }
+                    }
                 }
             }
         }
