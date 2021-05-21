@@ -110,7 +110,7 @@ export class AppConfigComponent implements OnInit {
     this.appConfigDirtyCount.count = 0;
     this.isBusy = false;
 
-    //console.log(this.appConfig);
+    //console.log(this.appConfigCopy);
   }
 
   private _processAdminLibrariesConfigData(data: any, keysOrder: any) {
@@ -146,15 +146,21 @@ export class AppConfigComponent implements OnInit {
       //console.log(value);
       if (keysOrder[i] == 'editable') {
         let icon = 'edit'
-        if (value == 2 && !this.user?.isDriveOwner) {
+        let iconTooltip = 'editable';
+        if (value == 2) {
           icon = 'edit_notifications'
-        } else if (value == -1 && !this.user?.isDriveOwner) {
+          iconTooltip = 'editable with caution';
+        } else if (value == -1) {
           icon = 'warning'
-        } else if (value == -2 && !this.user?.isDriveOwner) {
-          icon = 'hide'
+          iconTooltip = 'read only';
+        } else if (value == -2) {
+          icon = 'visibility_off'
+          iconTooltip = 'hidden field';
         }
 
-        field[keysOrder[i]] = icon;
+        field[keysOrder[i]] = value;
+        field['icon'] = icon;
+        field['iconTooltip'] = iconTooltip;
       } else {
         field[keysOrder[i]] = value;
       }
