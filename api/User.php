@@ -200,7 +200,7 @@ class User
             }
 
             //check user's home library
-            if ($authzConfig['auth']['CAS']['userHomeLibraryCheck']['enable']) {
+            if ($authzConfig['auth']['CAS']['checkHomeLibrary']['enable']) {
                 if (count(array_intersect($this->attributes[$authzConfig['auth']['CAS']['checkHomeLibrary']['attrToCheck']], $authzConfig['auth']['CAS']['checkHomeLibrary']['validAttrs']))) {
                     $this->homeLibrary = $libKey;
                 }
