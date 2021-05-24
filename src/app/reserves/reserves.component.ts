@@ -94,7 +94,7 @@ export class ReservesComponent implements OnInit {
               this.gaService.logPageView(this.pageTitle, location.pathname);
               this.mode = this.route.snapshot.data.mode;
               if (paramMap.get('library')) {
-                this.library = paramMap.get('library');
+                this.library = decodeURIComponent(paramMap.get('library'));
               } else if (this.user.homeLibrary != this.config.defaultLibrary) {
                 this.router.navigate(['/library', this.user.homeLibrary]);
                 return;
@@ -110,7 +110,7 @@ export class ReservesComponent implements OnInit {
 
               if (this.mode == "browse") {
                 this.browseMode = paramMap.get('browseMode') ?? 'courseName';
-                this.searchTerm = paramMap.get('searchTerm');
+                this.searchTerm = paramMap.get('searchTerm') ? decodeURIComponent(paramMap.get('searchTerm')) : '';
                 if (this.browseMode && this.searchTerm) {
                   //console.log('search');
                   this.search();
@@ -119,7 +119,7 @@ export class ReservesComponent implements OnInit {
                   //this.error = "Bad Request!";
                 }
               } else if (this.mode == "details") {
-                this.courseId = paramMap.get('courseId');
+                this.courseId = paramMap.get('courseId') ? decodeURIComponent(paramMap.get('courseId')) : '';
                 this.getDetailedCourseReserve({ id: this.courseId });
               }
             })
@@ -211,10 +211,11 @@ export class ReservesComponent implements OnInit {
     this.courseDetailedResult = null;
     let bibIds = [];
     this.catalogService.getDetailedCourseReserve(this.library, course).subscribe(res => {
+      let encodedCourseId = encodeURIComponent(course.id);
       if (this.isDefaultLibraryRoute) {
-        this.location.go(`/search/reserves/course/${course.id}`);
+        this.location.go(`/search/reserves/course/${encodedCourseId}`);
       } else {
-        this.location.go(`/library/${this.library}/search/reserves/course/${course.id}`);
+        this.location.go(`/library/${this.library}/search/reserves/course/${encodedCourseId}`);
       }
       this.courseDetailedResult = res;
       //console.log(this.courseDetailedResult);
@@ -290,7 +291,7 @@ export class ReservesComponent implements OnInit {
   }
 
   getIlsLocationsDefinition(library: string) {
-    this.catalogService.getIlsLocationsDefinition(library).subscribe(res => {this.locations = res});
+    this.catalogService.getIlsLocationsDefinition(library).subscribe(res => {this.locations = res});    
   }
 
   private _checkShowRequestButton() {

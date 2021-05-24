@@ -148,7 +148,7 @@
                             </td>
                             <td class="author">{{ item.author }}</td>
                             <td>{{ item.callNumber }}</td>
-                            <td>{{ locations && locations[item.location] ? locations[item.location] : item.location }}
+                            <td>{{ locations && locations[item.location] ? locations[item.location]['name'] : item.location }}
                             </td>
 
                             <td *ngIf="customizations.libraries[library].reserves.showSearchForEbooks || showRequestButton"

@@ -1,5 +1,6 @@
 <?php
-function getSirsiBib($key, $library, $keyType = 'barcode') {
+function getSirsiBib($key, $library, $keyType = 'barcode')
+{
     global $config;
     if ($keyType == 'barcode') {
         $url = $config->libraries[$library]->ils['api']['base'] . "/rest/standard/lookupTitleInfo?json=true&includeOPACInfo=true&includeItemInfo=true&includeItemCategory=true&itemID=$key";
@@ -8,23 +9,23 @@ function getSirsiBib($key, $library, $keyType = 'barcode') {
     } else {
         respondWithError(400, 'only support barcode or ckey (Sirsi\' lingo for BibId)');
     }
-    
+
     $curl = curl_init();
     curl_setopt_array($curl, array(
-    CURLOPT_URL => $url,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_ENCODING => "",
-    CURLOPT_MAXREDIRS => 10,
-    CURLOPT_TIMEOUT => 0,
-    CURLOPT_FOLLOWLOCATION => true,
-    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-    CURLOPT_CUSTOMREQUEST => "GET",
-    CURLOPT_HTTPHEADER => array(
-        "Content-Type: application/json",
-        "Accept: application/json",
-        "SD-Originating-App-Id: " . $config->libraries[$library]->ils['api']['appId'],
-        "x-sirs-clientID: " . $config->libraries[$library]->ils['api']['clientId']
-    ),
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 60,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "GET",
+        CURLOPT_HTTPHEADER => array(
+            "Content-Type: application/json",
+            "Accept: application/json",
+            "SD-Originating-App-Id: " . $config->libraries[$library]->ils['api']['appId'],
+            "x-sirs-clientID: " . $config->libraries[$library]->ils['api']['clientId']
+        ),
     ));
     $response = curl_exec($curl);
     curl_close($curl);
@@ -35,11 +36,11 @@ function getSirsiBib($key, $library, $keyType = 'barcode') {
         foreach ($obj->CallInfo as $library) {
             foreach ($library->ItemInfo as $item) {
                 array_push($items, [
-                'library' => $library->libraryID,
-                'itemId' => $item->itemID,
-                'callNumber' => $library->callNumber,
-                'location' => $item->currentLocationID,
-                'type' => $item->itemTypeID
+                    'library' => $library->libraryID,
+                    'itemId' => $item->itemID,
+                    'callNumber' => $library->callNumber,
+                    'location' => $item->currentLocationID,
+                    'type' => $item->itemTypeID
                 ]);
             }
         }
@@ -47,7 +48,7 @@ function getSirsiBib($key, $library, $keyType = 'barcode') {
             'bibId' => $obj->titleID,
             'title' => $obj->title,
             'author' => $obj->author,
-            'callNumber' =>$obj->baseCallNumber,
+            'callNumber' => $obj->baseCallNumber,
             'publisher' => $obj->publisherName,
             'published' => $obj->yearOfPublication,
             'physDec' => $obj->extent,
@@ -79,7 +80,7 @@ function getSirsiCourses($library)
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => "",
             CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
+            CURLOPT_TIMEOUT => 60,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => "GET",
@@ -89,7 +90,7 @@ function getSirsiCourses($library)
                 "SD-Originating-App-Id: " . $config->libraries[$library]->ils['api']['appId'],
                 "x-sirs-clientID: " . $config->libraries[$library]->ils['api']['clientId']
             ),
-    ));
+        ));
         $response = curl_exec($curl);
         curl_close($curl);
         $data = json_decode($response, true);
@@ -112,7 +113,7 @@ function getSirsiCourses($library)
     }
     $courses = [];
     foreach ($data['reserveInfo'] as $course) {
-        
+
         array_push($courses, [
             'id' => $course['uniqueID'],
             'courseNumber' => $course['courseID'],
@@ -144,7 +145,7 @@ function getSirsiCoursesProf($library)
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => "",
             CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
+            CURLOPT_TIMEOUT => 60,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => "GET",
@@ -154,7 +155,7 @@ function getSirsiCoursesProf($library)
                 "SD-Originating-App-Id: " . $config->libraries[$library]->ils['api']['appId'],
                 "x-sirs-clientID: " . $config->libraries[$library]->ils['api']['clientId']
             ),
-    ));
+        ));
         $response = curl_exec($curl);
         curl_close($curl);
         $data = json_decode($response, true);
@@ -189,7 +190,7 @@ function getAllCoursesByProfessor($library, $profPk)
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => "",
         CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
+        CURLOPT_TIMEOUT => 60,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => "GET",
@@ -239,7 +240,7 @@ function getSirsiCourseReservesInfo($library, $courseNumber)
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => "",
         CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
+        CURLOPT_TIMEOUT => 60,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => "GET",
@@ -273,7 +274,7 @@ function getSirsiCourseReservesFull($library, $courseNameBangBangUserPk)
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => "",
         CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
+        CURLOPT_TIMEOUT => 60,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => "GET",
@@ -309,7 +310,7 @@ function searchSirsiForEbook($libKey, $title, $author)
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => "",
         CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
+        CURLOPT_TIMEOUT => 60,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => "GET",
@@ -332,4 +333,41 @@ function searchSirsiForEbook($libKey, $title, $author)
     } else {
         return;
     }
+}
+
+function getSirsiLoations($libKey)
+{
+    global $config;
+    $curl = curl_init();
+    $url =  $config->libraries[$libKey]->ils['api']['base'] . "/rest/admin/lookupLocationPolicyList";
+
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 60,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'GET',
+        CURLOPT_HTTPHEADER => array(
+            'Content-Type: application/json',
+            'Accept: application/json',
+            "SD-Originating-App-Id: " . $config->libraries[$libKey]->ils['api']['appId'],
+            "x-sirs-clientID: " . $config->libraries[$libKey]->ils['api']['clientId']
+        ),
+    ));
+
+    $response = curl_exec($curl);
+    curl_close($curl);
+    $rawLocations = json_decode($response, true);
+    $locations = [];
+    foreach($rawLocations['policyInfo'] as $location) {
+        $locations[$location['policyID']] = [
+            'id' => $location['policyNumber'],
+            'key' => $location['policyID'],
+            'name' => $location['policyDescription']   
+        ];
+    }
+    return $locations;
 }

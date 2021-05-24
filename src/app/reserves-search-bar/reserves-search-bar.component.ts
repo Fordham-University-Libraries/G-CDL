@@ -30,10 +30,11 @@ export class ReservesSearchBarComponent implements OnInit {
     
     this.currentReservesSearchTerm = this.reservesSearchTerm;
     this.currentReserveMode = this.reserveMode;
+    let encodedTerm = encodeURIComponent(this.reservesSearchTerm);
     if (this.isDefaultLibraryRoute) {
-      this.router.navigate([`/search/reserves/${this.reserveMode}/${this.reservesSearchTerm}`]);
+      this.router.navigate([`/search/reserves/${this.reserveMode}/${encodedTerm}`]);
     } else {
-      this.router.navigate([`/library/${this.library}/search/reserves/${this.reserveMode}/${this.reservesSearchTerm}`]);
+      this.router.navigate([`/library/${this.library}/search/reserves/${this.reserveMode}/${encodedTerm}`]);
     }
   }
 
