@@ -1,25 +1,41 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Upload your files</title>
     <style>
-        body { padding: 1em; }
-        label span {color: darkred;}
-        .icon {font-size: 1em;}
-        .success {color: green;}
-        .collapse {margin-bottom: 1em;}
+        body {
+            padding: 1em;
+        }
+
+        label span {
+            color: darkred;
+        }
+
+        .icon {
+            font-size: 1em;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .collapse {
+            margin-bottom: 1em;
+        }
     </style>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
 </head>
+
 <body>
-    <h1>Hello <?=$user?></h1>
-    <h2>Adding item to <?=$libraryName?> (<?=$libraryKey?>) collection</h2>
+    <h1>Hello <?= $user ?></h1>
+    <h2>Adding item to <?= $libraryName ?> (<?= $libraryKey ?>) collection</h2>
     <p>
         <!-- help -->
         <button class="btn btn-outline-primary" type="button" data-toggle="collapse" data-target="#collapseHelp" aria-expanded="false" aria-controls="collapseHelp">Help</button>
-        <?php if($ilsApi['enable'] && $regex) : ?>
+        <?php if ($ilsApi['enable'] && $regex) : ?>
             <button class="btn btn-outline-info" type="button" data-toggle="collapse" data-target="#collapseIlsApi" aria-expanded="false" aria-controls="collapseIlsApi"><span class="icon success">&check;</span> ILS API</button>
-        <?php endif ?>  
+        <?php endif ?>
     </p>
     <div class="collapse" id="collapseHelp">
         <div class="card card-body">
@@ -30,11 +46,11 @@
     </div>
     <!-- ils api help -->
     <div class="collapse" id="collapseIlsApi">
-        <?php if($ilsApi['enable'] && $regex) : ?>
-        <div class="alert alert-info" role="alert">
-            <p>This Library has ILS' API setup, you can just upload the file named with an itemId in a correct format <span class="badge badge-secondary regex"><?= $regex ?></span> and it'll auto populate the form! see Help for more info!</p>
-            <a class="btn btn-secondary" target="_blank" href="https://regex101.com/?regex=<?= urlencode($trimmedRegex) ?>&testString=qwertyuiopasdfghjklzxcvbnm09876543211234567890.pdf">What does this <span class="badge badge-secondary regex"><?= $regex ?></span> mean?</a>
-        </div>
+        <?php if ($ilsApi['enable'] && $regex) : ?>
+            <div class="alert alert-info" role="alert">
+                <p>This Library has ILS' API setup, you can just upload the file named with an itemId in a correct format <span class="badge badge-secondary regex"><?= $regex ?></span> and it'll auto populate the form! see Help for more info!</p>
+                <a class="btn btn-secondary" target="_blank" href="https://regex101.com/?regex=<?= urlencode($trimmedRegex) ?>&testString=qwertyuiopasdfghjklzxcvbnm09876543211234567890.pdf">What does this <span class="badge badge-secondary regex"><?= $regex ?></span> mean?</a>
+            </div>
         <?php endif ?>
     </div>
 
@@ -85,23 +101,35 @@
                 </div>
                 <div class="mb-3">
                     <label for="partDesc" class="form-label">Part Description</label>
-                    <input type="text" class="form-control" id="partDesc" name ="partDesc">
+                    <input type="text" class="form-control" id="partDesc" name="partDesc">
                     <small class="form-text text-muted">a description so end users have more info e.g. "Chaper 1-13" or "Letter A-F"</small>
                 </div>
             </div>
 
             <div id="itemId-exists-warning" style="display:none;" class="alert alert-danger" role="alert">
             </div>
-        <div>
-        <hr>
-        <input type="hidden" name="action" value="upload"></input>
-        <input type="hidden" name="libKey" value="<?=$libraryKey?>"></input>
-        <table id="file-info">
-            <tr><td>File name:</td><td id="fileName"></td></tr>
-            <tr><td>Fize size:</td><td id="fileSize"></td></tr>
-        </table>
-        <input id="file" type="file" name="uploaded_file" accept="application/pdf" required></input><br /><br />
-        <input id="submit-button" class="btn btn-primary" type="submit" value="Upload"></input>
+            <div>
+                <hr>
+                <input type="hidden" name="action" value="upload"></input>
+                <input type="hidden" name="libKey" value="<?= $libraryKey ?>"></input>
+                <table id="file-info">
+                    <tr>
+                        <td>File name:</td>
+                        <td id="fileName"></td>
+                    </tr>
+                    <tr>
+                        <td>Fize size:</td>
+                        <td id="fileSize"></td>
+                    </tr>
+                </table>
+
+                <input id="file" type="file" name="uploaded_file" accept="application/pdf" required></input><br /><br />
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" name="should_create_no_ocr" id="shouldCreateNoOcr" checked value="1">
+                    <label class="custom-control-label" for="shouldCreateNoOcr">Create a No-OCR version?</label>
+                </div>
+                <br>
+                <input id="submit-button" class="btn btn-primary" type="submit" value="Upload"></input>
     </form>
     <div id="submitting" style="display:none; padding: 1em; background: aliceblue; margin-top: 1em;">
         <div class="spinner-border text-primary" role="status">
@@ -114,100 +142,101 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js" integrity="sha384-LtrjvnR4Twt/qOuYxE721u19sVFLVSA4hf/rRt6PrZTmiPltdZcI7q7PXQBYTKyf" crossorigin="anonymous"></script>
 
     <script>
-    var uploadForm = document.getElementById("upload-form");
-    uploadForm.onsubmit = function() {
-        document.getElementById("submit-button").disabled = true;
-        document.getElementById("submitting").style.display = 'block';
-        //return false;
-    }
-
-    //on file change
-    var uploadField = document.getElementById("file");
-    uploadField.onchange = function() {
-        let fileError = false;
-        if(this.files[0].type != 'application/pdf'){
-            alert("Please upload a .pdf file");
-            fileError = true;
+        var uploadForm = document.getElementById("upload-form");
+        uploadForm.onsubmit = function() {
+            document.getElementById("submit-button").disabled = true;
+            document.getElementById("submitting").style.display = 'block';
+            //return false;
         }
-        //console.log(this.files[0].size);
-        //102.5MB since GDrive seems to be able to reduce the pdf down a tiny bit once uploaded
-        //e.g. a 102.1MB file is down to 97MB on GDrive
-        //the Drive viewer limit of 100MB is of the uploaded file un GDrive
-        if(this.files[0].size > 1.025e+8){
-            alert("File is too big! Max file size is 102.5MB, try reducing it using Acrobat. If can't, let Witt knows, we'll have to manually break it down to mulitple files");
-            fileError = true;
-        } 
-        
-        if (!fileError) {
-            //console.log(this.files[0]);
-            let fileName = this.files[0].name;
-            document.getElementById("fileName").textContent = fileName;
-            document.getElementById("fileSize").textContent = (this.files[0].size / 1e+6).toFixed(2) + ' MB';
-            
-            <?php if ($regex) : ?>
-            const regex = <?=$regex?>;
-            const itemId = fileName.match(regex);
-            if (!itemId?.length > 1) {
-                alert("can't find itemId from file name");
-            } else {
-                document.getElementById("itemId").textContent = itemId[1];
-                document.getElementById("file-info").style.display = 'block';
-                <?php if ($ilsApi['enable']) : ?>
-                getBibByItemId(itemId[1]);
-                <?php endif ?>
-                checkCdlItemAlreadyInSystem(itemId[1]);
-            }
-            <?php endif ?>
 
-            //check part
-            const partRegex = /\[(\d)+.?of.?(\d)+\]/;
-            const parts = fileName.match(partRegex);
-            if (parts && parts.length) {
-                document.getElementById("part").value = parts[1];
-                document.getElementById("partTotal").value = parts[2];
+        //on file change
+        var uploadField = document.getElementById("file");
+        uploadField.onchange = function() {
+            let fileError = false;
+            if (this.files[0].type != 'application/pdf') {
+                alert("Please upload a .pdf file");
+                fileError = true;
+            }
+            //console.log(this.files[0].size);
+            //102.5MB since GDrive seems to be able to reduce the pdf down a tiny bit once uploaded
+            //e.g. a 102.1MB file is down to 97MB on GDrive
+            //the Drive viewer limit of 100MB is of the uploaded file un GDrive
+            if (this.files[0].size > 1.025e+8) {
+                alert("File is too big! Max file size is 102.5MB, try reducing it using Acrobat. If can't, let Witt knows, we'll have to manually break it down to mulitple files");
+                fileError = true;
             }
 
-        } else {
-            uploadField.value = '';
-            document.getElementById("fileName").textContent = '';
-            document.getElementById("itemId").textContent = '';
-            document.getElementById("fileSize").textContent = '';
-        }
-    };
+            if (!fileError) {
+                //console.log(this.files[0]);
+                let fileName = this.files[0].name;
+                document.getElementById("fileName").textContent = fileName;
+                document.getElementById("fileSize").textContent = (this.files[0].size / 1e+6).toFixed(2) + ' MB';
 
-    function getBibByItemId(itemId) {
-        fetch(`index.php?action=get_ils_bib&keyType=itemId&key=${itemId}&libKey=main`)
-        .then(response => {
-            return response.text();
-        }).then(function(json) {
-            bib = JSON.parse(json).data;
-            //console.log(bib);
-            document.getElementById("bibId").value = bib.bibId;
-            document.getElementById("itemId").value = itemId;
-            document.getElementById("title").value = bib.title;
-            document.getElementById("author").value = bib.author;
-            //document.getElementById("numItems").innerHTML = bib.items.length;
-        });
-    }
-
-    function checkCdlItemAlreadyInSystem(itemId) {
-        fetch(`index.php?action=get_items&keyType=itemId&key=${itemId}&libKey=main`)
-        .then(response => {
-            return response.text();
-        }).then(function(json) {
-            cdlItem = JSON.parse(json).data;
-            if (!cdlItem.error) {
-                cdlItem.forEach(item => {
-                    if(itemId == itemId) {
-                        //console.log('dupe');
-                        document.getElementById("itemId-exists-warning").innerHTML = `An item with item ID: ${itemId} already exists in the CDL app, unless this a multi-part item where you need to break one book into multiple PDFs, then this is a <a href="https://controlleddigitallending.org/faq#:~:text=Does%20CDL%20support%20a%20library%20lending%20more%20copies%20than%20it%20owns" target="_blank">bad idea!</a> Are you sure you want to do this?`;
-                        document.getElementById("itemId-exists-warning").style.display = 'block';
-                        return;
+                <?php if ($regex) : ?>
+                    const regex = <?= $regex ?>;
+                    const itemId = fileName.match(regex);
+                    if (!itemId?.length > 1) {
+                        alert("can't find itemId from file name");
+                    } else {
+                        document.getElementById("itemId").textContent = itemId[1];
+                        document.getElementById("file-info").style.display = 'block';
+                        <?php if ($ilsApi['enable']) : ?>
+                            getBibByItemId(itemId[1]);
+                        <?php endif ?>
+                        checkCdlItemAlreadyInSystem(itemId[1]);
                     }
-                })
+                <?php endif ?>
+
+                //check part
+                const partRegex = /\[(\d)+.?of.?(\d)+\]/;
+                const parts = fileName.match(partRegex);
+                if (parts && parts.length) {
+                    document.getElementById("part").value = parts[1];
+                    document.getElementById("partTotal").value = parts[2];
+                }
+
+            } else {
+                uploadField.value = '';
+                document.getElementById("fileName").textContent = '';
+                document.getElementById("itemId").textContent = '';
+                document.getElementById("fileSize").textContent = '';
             }
-        });
-    }
+        };
+
+        function getBibByItemId(itemId) {
+            fetch(`index.php?action=get_ils_bib&keyType=itemId&key=${itemId}&libKey=main`)
+                .then(response => {
+                    return response.text();
+                }).then(function(json) {
+                    bib = JSON.parse(json).data;
+                    //console.log(bib);
+                    document.getElementById("bibId").value = bib.bibId;
+                    document.getElementById("itemId").value = itemId;
+                    document.getElementById("title").value = bib.title;
+                    document.getElementById("author").value = bib.author;
+                    //document.getElementById("numItems").innerHTML = bib.items.length;
+                });
+        }
+
+        function checkCdlItemAlreadyInSystem(itemId) {
+            fetch(`index.php?action=get_items&keyType=itemId&key=${itemId}&libKey=main`)
+                .then(response => {
+                    return response.text();
+                }).then(function(json) {
+                    cdlItem = JSON.parse(json).data;
+                    if (!cdlItem.error) {
+                        cdlItem.forEach(item => {
+                            if (itemId == itemId) {
+                                //console.log('dupe');
+                                document.getElementById("itemId-exists-warning").innerHTML = `An item with item ID: ${itemId} already exists in the CDL app, unless this a multi-part item where you need to break one book into multiple PDFs, then this is a <a href="https://controlleddigitallending.org/faq#:~:text=Does%20CDL%20support%20a%20library%20lending%20more%20copies%20than%20it%20owns" target="_blank">bad idea!</a> Are you sure you want to do this?`;
+                                document.getElementById("itemId-exists-warning").style.display = 'block';
+                                return;
+                            }
+                        })
+                    }
+                });
+        }
     </script>
 </body>
+
 </html>
