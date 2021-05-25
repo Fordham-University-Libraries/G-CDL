@@ -204,22 +204,23 @@
         };
 
         function getBibByItemId(itemId) {
-            fetch(`index.php?action=get_ils_bib&keyType=itemId&key=${itemId}&libKey=main`)
+            fetch(`index.php?action=get_ils_bib&keyType=itemId&key=${itemId}&libKey=<?= $libraryKey ?>`)
                 .then(response => {
                     return response.text();
                 }).then(function(json) {
                     bib = JSON.parse(json).data;
                     //console.log(bib);
                     document.getElementById("bibId").value = bib.bibId;
-                    document.getElementById("itemId").value = itemId;
+                    document.getElementById("itemId").value = bib.itemId ? bib.itemId : itemId;
                     document.getElementById("title").value = bib.title;
                     document.getElementById("author").value = bib.author;
+                    
                     //document.getElementById("numItems").innerHTML = bib.items.length;
                 });
         }
 
         function checkCdlItemAlreadyInSystem(itemId) {
-            fetch(`index.php?action=get_items&keyType=itemId&key=${itemId}&libKey=main`)
+            fetch(`index.php?action=get_items&keyType=itemId&key=${itemId}&libKey=<?= $libraryKey ?>`)
                 .then(response => {
                     return response.text();
                 }).then(function(json) {

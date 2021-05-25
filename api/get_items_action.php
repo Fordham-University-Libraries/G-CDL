@@ -3,6 +3,10 @@ function getItems($key, $keyType, $libKey)
 {
     global $service;
     global $config;
+
+    if ($config->libraries[$libKey]->ils['kind'] == 'Sierra') {
+        $key = cleanSierraRecordNuber($key);
+    }
     
     $folderId = $config->libraries[$libKey]->noOcrFolderId;
     if ($keyType == 'bibId') {

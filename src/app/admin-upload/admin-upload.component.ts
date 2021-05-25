@@ -230,6 +230,7 @@ export class AdminUploadComponent implements OnInit {
         this.pdfItem.bibId.value = res.bibId;
         this.pdfItem.title.value = res.title;
         this.pdfItem.author.value = res.author ?? null;
+        if(res.itemId) this.pdfItem.itemId.value = res.itemId;
         this.isBusy = false;
         this.snackBar.open(`Item: ${itemId} found! Metadata retrieved from the ILS (${res.title} [${res.bibId}])`, 'ok!', {
           duration: 5000,

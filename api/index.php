@@ -212,7 +212,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $courses = getAllCoursesByProfessor($libKey, $userPk);
         respondWithData($courses);
     } else if ($action == 'get_course_full') {
-        $key = $_GET['key'] ?? null;
         $courses = getIlsFullCourseReserves($libKey, $key);
     } else if ($action == 'search_ils_ebook') {
         $title = $_GET['title'] ?? null;

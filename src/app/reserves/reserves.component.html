@@ -22,7 +22,7 @@
             <ul>
                 <ng-container *ngFor="let course of results.courses">
                     <!-- course name/number -->
-                    <ng-container *ngIf="(course.itemsCount || course.items?.length) && !isLoading">
+                    <ng-container *ngIf="(course.itemsCount || course.items?.length) && course.courseName && !isLoading">
                         <li>
                             <span class="cdk-visually-hidden">course name </span>
                             <strong><a href="#" (click)="getReserveCourseInfo(course); false">{{ course.courseName

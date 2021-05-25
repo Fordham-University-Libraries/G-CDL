@@ -399,7 +399,7 @@ function checkIlsApiSettings(string $libKey)
             die();
         }
     } else if (strtolower($config->libraries[$libKey]->ils['kind']) == 'sierra') {
-        if (!$config->libraries[$libKey]->ils['api']['key'] || !$config->libraries[$libKey]->ils['api']['secret']) {
+        if (!$config->libraries[$libKey]->ils['api']['key']) {
             respondWithError(501, 'ILS API is not properly configured (no credentials)');
             die();
         }
