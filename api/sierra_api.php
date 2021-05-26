@@ -283,7 +283,7 @@ function cleanSierraRecordNuber(string $recordNumber): int
     }
 }
 
-function getSierraCheckDigit(string $recordNumber): mixed
+function getSierraCheckDigit(string $recordNumber)
 {
     $m = 2;
     $x = 0;
