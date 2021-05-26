@@ -111,7 +111,10 @@ export class AdminComponent implements OnInit {
   suspend(fileId: string) {
     this.isLoading = true;
     this.driveService.suspendItem(fileId).subscribe(res => {
-      if (res) this._getItems();
+      if (res) { 
+        this._getItems();
+        this.driveService.getAllItems(true, this.library);
+      }
     }, error => {
       this.snackBar.open('That didn\'t work  ', 'Dismiss', {
         duration: 3000,
@@ -122,7 +125,10 @@ export class AdminComponent implements OnInit {
   unsuspend(fileId: string) {
     this.isLoading = true;
     this.driveService.unsuspendItem(fileId).subscribe(res => {
-      this._getItems();
+      if (res) { 
+        this._getItems();
+        this.driveService.getAllItems(true, this.library);
+      }
     })
 
   }
@@ -147,6 +153,7 @@ export class AdminComponent implements OnInit {
         //console.log(data);
         this.driveService.editItemAdmin(fileId, data.partDesc, data.part, data.partTotal).subscribe(res => {
           if (res) {
+            this.driveService.getAllItems(true, this.library);
             this.snackBar.open('Item Updated!', 'Dismiss', {
               duration: 5000,
             });

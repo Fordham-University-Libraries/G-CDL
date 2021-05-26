@@ -272,7 +272,8 @@ export class AdminUploadComponent implements OnInit {
     this.driveService.uploadAdmin(this.pdfItem, this.library).subscribe(res => {
         //console.log(res);
         if (res?.success) {
-          if(res.uploadedNoOcrFileId) this.uploadedFileInfo = res;          
+          if(res.uploadedNoOcrFileId) this.uploadedFileInfo = res;
+          this.driveService.getAllItems(true, this.library);   
         } else if (res?.error) {
           this.error = res.error;
         } else {
