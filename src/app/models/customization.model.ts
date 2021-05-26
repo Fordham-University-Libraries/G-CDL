@@ -86,12 +86,27 @@ export interface LibraryCustomizationValues {
         showSearchForEbooks: boolean,
         ilsEbookLocationName: string,
         showRequestButton: boolean,
+        showRequestButtonOnlyTo: string[],
         requestFormUrl: string,
         css: LibraryCustomizationCSSValues
     } 
 }
 
 export class Customization implements Deserializable {
+    public global: {
+        externalCss?: boolean,
+        floatingButton: {
+            enable: boolean,
+            matIcon: string,
+            text: string,
+            url: string,
+            position: string,
+            css: {
+                'background-color': string,
+                color: string
+            }
+        }
+    };
     public libraries: {
         [libKey: string]: LibraryCustomizationValues
     };

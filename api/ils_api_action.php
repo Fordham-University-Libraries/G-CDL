@@ -36,12 +36,19 @@ function getIlsBibByItemId($libKey, $itemId)
 
 function getIlsLocationsDefinition($libKey)
 {
+    global $config;
+    if (!$config->libraries[$libKey]->ils['api']['enable'] || strtolower($config->libraries[$libKey]->ils['kind']) != 'sirsi') {
+        respondWithData([]);
+    } else {
     $fileName = Config::getLocalFilePath($libKey . "_ils_locations.json"); //key: loc name
     if (file_exists($fileName)) {
         $file = file_get_contents($fileName);
         $locations = json_decode($file, true);
+    } else {
+        $locations = getSirsiLoations($libKey);
     }
-    respondWithData($locations);
+        respondWithData($locations);
+    }
 }
 
 function searchIlsCourseReserves(string $libKey, string $field = null, string $term = null)
@@ -105,6 +112,8 @@ function searchIlsCourseReserves(string $libKey, string $field = null, string $t
             $profs = getSirsiCoursesProf($libKey);
             foreach ($profs as $prof) {
                 $score = 0.0;
+                $profName = $prof['userDisplayName'];
+                $prof['userDisplayName'] = str_replace(',', '', $prof['userDisplayName']);
                 if ($prof['numReservesForCourse'] > 0 && $prof['userDisplayName'] != "$<name_not_yet_supplied>") {
                     if (strtolower($prof['userDisplayName']) == strtolower($term)) $score += 1; //exact
                     if (stripos($prof['userDisplayName'], $term) === 0) $score += 0.50; //starts
@@ -120,7 +129,7 @@ function searchIlsCourseReserves(string $libKey, string $field = null, string $t
                 if ($score || !$term) {
                     $cdlCourse = [
                         'id' => $prof['uniqueID'],
-                        'profName' => $prof['userDisplayName'],
+                        'profName' => $profName,
                         'score' => $score,
                         'profPk' => $prof['userPrimaryKey'],
                         'itemsCount' => $prof['numReservesForCourse']
@@ -129,29 +138,47 @@ function searchIlsCourseReserves(string $libKey, string $field = null, string $t
                 }
             }
         } else { //courseName || courseId
+            if ($field == 'courseNumber') {
+                //remove white space
+                $term = str_replace(' ', '', $term);
+            }
             $termStems = explode(' ', $term);
             $courses = getSirsiCourses($libKey);
+            $conjuctions = ['for', 'and', 'nor', 'but', 'or', 'yet', 'so', 'a', 'an', 'the'];
+
             if ($courses) {
                 foreach ($courses as $course) {
+                    // if search by course ID, remove white space
+                    $courseNameId = ($field == 'courseNumber') ? str_replace(' ', '', $course[$field]) : $course[$field];
+                    
                     $score = 0.0;
-                    if (stripos($course[$field], $term) !== false) {
+                    if (stripos($courseNameId, $term) !== false) {
                         //term full match
-                        $score += 1;
+                        $score += (!in_array($term, $conjuctions)) ? 2 : .25;
                     }
-                    if (stripos($course[$field], $term) === 0) {
+                    if (stripos($courseNameId, $term) === 0) {
                         //starts with
-                        $score += .5;
+                        $score += 1.5;
                     }
                     foreach ($termStems as $stem) {
-                        if (stripos($course[$field], $stem) !== false) {
+                        if (stripos($courseNameId, $stem) !== false) {
                             //any match
-                            $score += .25;
+                            if (!in_array(strtolower($stem), $conjuctions)) {
+                                $score += strlen($stem) * .1;
+                            }
                         }
                     }
-                    $courseStems = explode(' ', $course[$field]);
+                    $courseStems = explode(' ', str_replace([':',',','?'], '', $courseNameId));
+                    $intersect = [];
                     $intersect = array_intersect(array_map('strtolower', $courseStems), array_map('strtolower', $termStems));
                     //full word match
-                    if ($intersect) $score += count($intersect) * .5;
+                    if ($intersect) { 
+                        $count = 0;
+                        foreach ($intersect as $word) {
+                            if (!in_array($word, $conjuctions)) $count++;
+                        }
+                        $score += ($count);
+                    }
                     
                     if ($score || !$term) {
                         $cdlCourse = [
@@ -159,6 +186,7 @@ function searchIlsCourseReserves(string $libKey, string $field = null, string $t
                             'courseName' => $course['courseName'],
                             'courseNumber' => $course['courseNumber'],
                             'score' => $score,
+                            'count' => $count,
                             'itemsCount' => $course['numReservesForCourse']
                         ];
                         array_push($matchedCourses, $cdlCourse);
@@ -371,7 +399,7 @@ function checkIlsApiSettings(string $libKey)
             die();
         }
     } else if (strtolower($config->libraries[$libKey]->ils['kind']) == 'sierra') {
-        if (!$config->libraries[$libKey]->ils['api']['key'] || !$config->libraries[$libKey]->ils['api']['secret']) {
+        if (!$config->libraries[$libKey]->ils['api']['key']) {
             respondWithError(501, 'ILS API is not properly configured (no credentials)');
             die();
         }

@@ -97,16 +97,16 @@
             <ul *ngIf="!appConfigDirtyCount.isLoading" class="root">
                 <ng-template #recursiveList let-appConfigCopy>
                     <li *ngFor="let item of appConfigCopy">
-                        <ng-container *ngIf="!item.children && item.editable != 'hide'">
+                        <ng-container *ngIf="!item.children && (item.editable != -2 || user.isDriveOwner)">
                             <!-- input -->
                             <mat-form-field
                                 *ngIf="(item.type == 'string' || item.type == 'integer' || item.type == 'array') && !item.options"
-                                appearance="fill" [style.width.px]="(item.value?.length * 5) + 225">
+                                appearance="fill" [style.width.px]="(item.value?.length * 6) + 225">
                                 <mat-label>{{item.key}}</mat-label>
-                                <input matInput [disabled]="item.editable == 'warning'"
+                                <input matInput [disabled]="item.editable < 0 && !user.isDriveOwner"
                                     [type]="item.type == 'integer' ? 'number' : 'text'" [(ngModel)]="item.value"
                                     (ngModelChange)="appConfigSubject.next(['appConfig'])">
-                                <mat-icon matSuffix [class.edited]="item.isDirty">{{ item.editable }}</mat-icon>
+                                <mat-icon matSuffix [matTooltip]="item.iconTooltip" [class.edited]="item.isDirty">{{ item.icon }}</mat-icon>
                             </mat-form-field>
                             <!-- bool -->
                             <div *ngIf="item.type == 'boolean'" class="field">
@@ -119,10 +119,10 @@
                                 <mat-label>{{ item.key }}</mat-label>
                                 <mat-select [(ngModel)]="item.value"
                                     (ngModelChange)="appConfigSubject.next(['appConfig'])"
-                                    [disabled]="item.editable == 'warning'">
+                                    [disabled]="item.editable < 0 && !user.isDriveOwner">
                                     <mat-option *ngFor="let opt of item.options" [value]="opt">{{opt}}</mat-option>
                                 </mat-select>
-                                <mat-icon matSuffix [class.edited]="item.isDirty">{{ item.editable }}</mat-icon>
+                                <mat-icon matSuffix [matTooltip]="item.iconTooltip" [class.edited]="item.isDirty">{{ item.icon }}</mat-icon>
                             </mat-form-field>
                             <mat-hint>{{ item.desc }}</mat-hint>
                         </ng-container>
@@ -202,21 +202,21 @@
                             <ul *ngIf="!appConfigLibrariesDirtyCount[i].isLoading" class="root">
                                 <ng-template #recursiveListLibrary let-library>
                                     <li *ngFor="let item of library">
-                                        <ng-container *ngIf="!item.children && item.editable != 'hide'">
+                                        <ng-container *ngIf="!item.children && (item.editable != -2 || user.isDriveOwner) && (i == 0 || !item.onlyShowOnDefaultLibrary)">
                                             <!-- str/int -->
                                             <mat-form-field
                                                 *ngIf="(item.type == 'string' || item.type == 'integer' || item.type == 'array') && !item.options"
-                                                appearance="fill" [style.width.px]="(item.value?.length * 5) + 225">
+                                                appearance="fill" [style.width.px]="(item.value?.length * 6) + 225">
                                                 <mat-label>{{item.key}}</mat-label>
                                                 <input matInput [type]="item.type == 'integer' ? 'number' : 'text'"
-                                                    [disabled]="item.editable == 'warning'" [(ngModel)]="item.value"
+                                                    [disabled]="item.editable < 0 && !user.isDriveOwner" [(ngModel)]="item.value"
                                                     (ngModelChange)="appConfigSubject.next(['appConfigLibraries', i])">
-                                                <mat-icon matSuffix>{{ item.editable }}</mat-icon>
+                                                <mat-icon matSuffix [matTooltip]="item.iconTooltip">{{ item.icon }}</mat-icon>
                                             </mat-form-field>
                                             <!-- bool -->
                                             <div *ngIf="item.type == 'boolean'" class="field">
                                                 <mat-slide-toggle [(ngModel)]="item.value"
-                                                    [disabled]="item.editable == 'warning'"
+                                                    [disabled]="item.editable < 0 && !user.isDriveOwner"
                                                     (ngModelChange)="appConfigSubject.next(['appConfigLibraries', i])">
                                                     {{item.key}}</mat-slide-toggle>
                                             </div>
@@ -225,7 +225,7 @@
                                             <mat-form-field *ngIf="item.options" appearance="fill">
                                                 <mat-label>{{ item.key }}</mat-label>
                                                 <mat-select [(ngModel)]="item.value"
-                                                    [disabled]="item.editable == 'warning'"
+                                                    [disabled]="item.editable < 0 && !user.isDriveOwner"
                                                     (ngModelChange)="appConfigSubject.next(['appConfigLibraries', i])">
                                                     <mat-option *ngFor="let opt of item.options" [value]="opt">{{opt}}
                                                     </mat-option>
@@ -233,8 +233,10 @@
                                             </mat-form-field>
                                             <mat-hint>{{ item.desc }}</mat-hint>
                                         </ng-container>
+                                        <!-- group header -->
                                         <ul *ngIf="item.children">
                                             <div class="sub-head">{{ item.key | uppercase }}</div>
+                                            <div *ngIf="item.key == 'CAS' && i" class="alert alert-warning">(Almost) All CAS settings are set on the default library. You can set the 'CHECKHOMELIBRARY' to assign this library as a home library for users</div>
                                             <div *ngIf="sectionDefinitions[item.key]" class="sec-def">
                                                 <mat-icon>info</mat-icon> {{ sectionDefinitions[item.key] }}
                                             </div>

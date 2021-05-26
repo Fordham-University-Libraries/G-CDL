@@ -110,9 +110,9 @@ class CdlItem
                 if ($user->email == $this->currentlyCheckedOutToUser &&  $permission->getRole() == 'reader') {
                     $this->isCheckedOutToMe = true;
                     $this->url = $this->driveFile->getWebViewLink();
+                    if ($config->useEmbedReader) $this->url =  str_replace('/view','/preview',$this->url);    
                     if ($user->isAccessibleUser) {
-                        //accessible user will get PDF with OCR data and can also download
-                        $this->url = "https://drive.google.com/a/" . $config->gSuitesDomain . "/uc?id=" . $this->fileWithOcrId;
+                        $this->url = str_replace($this->id, $this->fileWithOcrId, $this->url);
                         $this->downloadLink = "https://drive.google.com/a/" . $config->gSuitesDomain . "/uc?id=" . $this->fileWithOcrId . "&export=download";
                     }
                 } else {
@@ -542,6 +542,7 @@ class CdlItem
     public function serialize($for = null)
     {
         global $config;
+        global $user;
 
         $item = [
             'id' => $this->id,

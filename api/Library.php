@@ -66,6 +66,7 @@ class Library {
                     'enable' => true,
                     'attrToCheck' => 'eduPersonAffiliation',
                     'validAttrs' => ['student_current_g'],
+                    'contains' => true
                 ],
             ],
         ]

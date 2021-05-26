@@ -22,6 +22,7 @@ const routes: Routes = [
   { path: '', component: HomeComponent, canActivate: [AuthGuard], data: { isDefaultLibraryRoute: true, appPath: 'home' } }, //default library of user
   { path: 'item/:bibId', component: ItemComponent, canActivate: [AuthGuard], data: { isDefaultLibraryRoute: true, mode: 'bibId', appPath: 'item' } },
   { path: 'item/itemId/:itemId', component: ItemComponent, canActivate: [AuthGuard], data: { isDefaultLibraryRoute: true, mode: 'itemId', appPath: 'item' } },
+  { path: 'item/:library/:bibId', redirectTo: 'library/:library/item/:bibId'}, //backward compat
   { path: 'search/reserves', component: ReservesComponent, canActivate: [AuthGuard], data: { isDefaultLibraryRoute: true, mode: 'browse', appPath: 'reserves' }},
   { path: 'search/reserves/course/:courseId', component: ReservesComponent, canActivate: [AuthGuard], data: { isDefaultLibraryRoute: true, mode: 'details', appPath: 'reserves' }},
   { path: 'search/reserves/:browseMode/:searchTerm', component: ReservesComponent, canActivate: [AuthGuard], data: { isDefaultLibraryRoute: true, mode: 'browse', appPath: 'reserves' }},

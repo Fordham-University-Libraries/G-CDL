@@ -44,6 +44,9 @@
     //color: mediumslateblue;
     color: #f2edd6;
     cursor: default;
+    &#admin-menu-trigger {
+        cursor: pointer;
+    }
 }
 .badge {
     margin-left: .25em;
@@ -116,6 +119,52 @@
     &:hover {
         transform: scale(1.05);
     }
+}
+
+#floatingButton {
+    position: fixed;
+    background-color: #3f51b5;
+    color: white;
+    bottom: 0;
+    right: 5%;
+    z-index: 101;
+    mat-icon {
+        margin-right: .25em;
+    }
+    &:hover {
+        color: gold;
+        padding-bottom: .5em;
+        font-weight: bolder;
+    }
+    &.right {
+        bottom: unset;
+        right: unset;
+        top: 50%;
+        left: 100%;
+        transform-origin: 0% 0%;
+        transform: rotate(90deg) translateX(-50%);
+        &:hover {
+            padding-top: .5em;
+            padding-bottom: unset;
+        }
+    }
+}
+
+button[mat-menu-item] {
+    &:focus {
+        border: none;
+        //background: rgb(238, 238, 238);
+        color: cornflowerblue;
+        text-decoration: underline;
+    }
+    //active
+    &[disabled] {
+        color: brown;
+        font-weight: bold;
+    }
+}
+hr.mat-divider {
+    margin: 0;
 }
 
 // XS

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { User } from '../models/user.model';
 import { Config } from '../models/config.model';
 //import { Customization } from '../models/customization.model';
@@ -23,13 +24,17 @@ export class AppCustomizationComponent implements OnInit {
   appCustLibraries = [];
   appCustLibrariesCopy = [];
   appCustLibrariesDirtyCount: { libKey: string, name?: string, count: number, isLoading: boolean, isDefault?: boolean }[] = [];
-  sectionDefinitions: any;
-  appCustGlobal: any;
   appCustomizationSubject: Subject<string[]> = new Subject();
-  obj = {};
+  sectionDefinitions: any;
+  appCustGlobal = [];
+  appCustGlobalCopy = [];
+  appCustGlobalDirtyCount = { count: 0, isLoading: false };
+  appCustGlobalSubject: Subject<string[]> = new Subject();
+  private _obj = {};
 
   constructor(
     private router: Router,
+    private snackBar: MatSnackBar,
     private configService: ConfigService,
     private authService: AuthenticationService,
     private titleService: Title,
@@ -37,16 +42,23 @@ export class AppCustomizationComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this._processAdminCustData();
-    this.configService.getConfig().subscribe(cRes => {
-      this.config = cRes;
-      this.titleService.setTitle(`Admin/Config/Customizations : ${this.config.appName}`);
-      this.authService.getUser().subscribe(res => {
-        this.user = res;
+    this.authService.getUser().subscribe(res => {
+      this.user = res;
+      this._processAdminCustData();
+      this.configService.getConfig().subscribe(cRes => {
+        this.config = cRes;
+        this.titleService.setTitle(`Admin/Config/Customizations : ${this.config.appName}`);
       });
     });
 
-    //debouce model change
+    //debouce appGlobal model change
+    this.appCustGlobalSubject.pipe(
+      debounceTime(300)
+    ).subscribe(e => {
+      this.onAppGlobalFieldChange();
+    });
+
+    //debouce library cust model change
     this.appCustomizationSubject.pipe(
       debounceTime(300)
     ).subscribe(libIndex => {
@@ -56,6 +68,7 @@ export class AppCustomizationComponent implements OnInit {
 
   ngOnDestroy() {
     this.appCustomizationSubject.unsubscribe();
+    this.appCustGlobalSubject.unsubscribe();
   }
 
   private _processAdminCustData(kind: string = null) {
@@ -63,8 +76,14 @@ export class AppCustomizationComponent implements OnInit {
       if (!res.error) {
         const keysOrder = res.keys;
         this.sectionDefinitions = res.sectionDefinitions;
-        this.appCustGlobal = res.appGlobal;
-        //console.log(this.appCustGlobal);
+
+        this.appCustGlobal = [];
+        this.appCustGlobalCopy = [];
+        this.appCustGlobalDirtyCount.count = 0;
+        for (const [key, cust] of Object.entries(res.appGlobal)) {
+          this.appCustGlobal.push(this._processConfigField(cust, keysOrder));
+        }
+
         this.appCustLibraries = [];
         this.appCustLibrariesCopy = [];
         this.appCustLibrariesDirtyCount = [];
@@ -77,6 +96,7 @@ export class AppCustomizationComponent implements OnInit {
           this.appCustLibraries.push(lib);
         };
         //clone
+        this.appCustGlobalCopy = JSON.parse(JSON.stringify(this.appCustGlobal));
         this.appCustLibrariesCopy = JSON.parse(JSON.stringify(this.appCustLibraries));
         // //console.log(this.appCustLibraries);
         //console.log(this.appCustLibrariesCopy);
@@ -106,7 +126,7 @@ export class AppCustomizationComponent implements OnInit {
         }
 
         field[keysOrder[i]] = icon;
-      }  else {
+      } else {
         field[keysOrder[i]] = value;
       }
       i++;
@@ -124,6 +144,10 @@ export class AppCustomizationComponent implements OnInit {
 
   onFieldChange(libIndex: number = 0) {
     this.compareArrays(this.appCustLibrariesCopy[libIndex], this.appCustLibraries[libIndex], this.appCustLibrariesDirtyCount[libIndex]);
+  }
+
+  onAppGlobalFieldChange() {
+    this.compareArrays(this.appCustGlobalCopy, this.appCustGlobal, this.appCustGlobalDirtyCount);
   }
 
   //mark field as dirty
@@ -147,29 +171,29 @@ export class AppCustomizationComponent implements OnInit {
         this.compareArrays(arr1[x].children, arr2[x].children, diffCount, true);
       }
     }
-
     //if (!isRecrusive) console.log(diffCount);
   }
 
   updateCust(config: any, libIndex: number = 0, isRecursive: boolean = false) {
     //convert back to assoc array
     // //console.log('update');
-    let libKey: string = this.appCustLibrariesDirtyCount[libIndex].libKey;
+    let libKey = (libIndex == -1) ? 'appGlobal' : this.appCustLibrariesDirtyCount[libIndex].libKey;
+    let dirtyCount = (libIndex == -1) ? this.appCustGlobalDirtyCount : this.appCustLibrariesDirtyCount[libIndex];
     if (!isRecursive) {
       this.isBusy = true;
-      this.appCustLibrariesDirtyCount[libIndex].isLoading = true;
-      this.obj = {};
+      dirtyCount.isLoading = true;
+      this._obj = {};
       config.forEach(f => {
         if (f.children) {
           let retVal = this.updateCust(f.children, libIndex, true);
-          if (retVal) this.obj[f.key] = retVal;
+          if (retVal) this._obj[f.key] = retVal;
         } else {
           if (f.isDirty) {
             if (f.type == 'array') {
               let trimedArr = f.value.split(',').map(str => str.trim());
-              this.obj[f.key] = trimedArr;
+              this._obj[f.key] = trimedArr;
             } else {
-              this.obj[f.key] = f.value;
+              this._obj[f.key] = f.value;
             }
           }
         }
@@ -203,11 +227,22 @@ export class AppCustomizationComponent implements OnInit {
 
     if (!isRecursive) {
       // //console.log(libKey);
-      // //console.log(this.obj);
-      this.adminService.updateCustomizationAdmin(this.obj, libKey).subscribe(res => {
-        // //console.log(res);
-        this.configService.onForceRefresh.emit(true);
-        this._processAdminCustData();
+      // //console.log(this._obj);
+      this.adminService.updateCustomizationAdmin(this._obj, libKey).subscribe(res => {
+        if (!res.error) {
+          this.configService.onForceRefresh.emit(true);
+          this._processAdminCustData();
+        } else {
+          this.snackBar.open(`Error: ${res.error}`, 'Ok!', {
+            duration: 5000,
+          });
+          this.isBusy = false;
+        }
+      }, error => {
+        this.snackBar.open(`Error: ${error}`, 'Ok!', {
+          duration: 5000,
+        });
+        this.isBusy = false;
       });
     }
 
@@ -226,13 +261,15 @@ export class AppCustomizationComponent implements OnInit {
 
   updateAppCustGlobal() {
     this.isBusy = true;
-    this.adminService.updateCustomizationAdmin(this.appCustGlobal, 'appGlobal').subscribe(res => {
-      this.isBusy = false;
-    });
+    console.log(this.appCustGlobalCopy);
+
+    // this.adminService.updateCustomizationAdmin(this.appCustGlobal, 'appGlobal').subscribe(res => {
+    //   this.isBusy = false;
+    // });
   }
 
-  isArray(obj : any ) {
+  isArray(obj: any) {
     return Array.isArray(obj)
   }
- 
+
 }

@@ -24,17 +24,67 @@
                 </mat-panel-title>
             </mat-expansion-panel-header>
             <div *ngIf="appCustGlobal">
-                <mat-form-field appearance="fill" class="wider-field">
-                    <mat-label>External CSS file</mat-label>
-                    <input matInput [(ngModel)]="appCustGlobal.externalCss"
-                        placeholder="e.g. https://library.univ.edu/css/style.css">
-                    <mat-hint>A URL to a CSS file to load into the app</mat-hint>
-                </mat-form-field>
-                <br><br>
-                <button mat-raised-button color="primary" class="button-primary"
-                    (click)="updateAppCustGlobal()">Save App Global Customization</button>
+                <ul class="root">
+                    <!-- unsaved banner -->
+                    <div *ngIf="appCustGlobalDirtyCount.count && !appCustGlobalDirtyCount.isLoading"
+                        class="alert alert-warning margin-top-default">
+                        <p><strong>{{ appCustGlobalDirtyCount.count }} Unsaved Change(s)</strong></p>
+                        <button mat-raised-button color="primary" class="button-primary"
+                            (click)="updateCust(appCustGlobalCopy, -1)">Save
+                            App Global Customization</button>
+                    </div>
+                    <ng-template #recursiveList let-appCustGlobalCopy>
+                        <li *ngFor="let item of appCustGlobalCopy">
+                            <ng-container *ngIf="!item.children && item.editable != 'hide'">
+                                <!-- input -->
+                                <mat-form-field
+                                    *ngIf="(item.type == 'string' || item.type == 'integer' || item.type == 'array') && !item.options"
+                                    appearance="fill" [style.width.px]="(item.value?.length * 5) + 225">
+                                    <mat-label>{{item.key}}</mat-label>
+                                    <input matInput [disabled]="item.editable == 'warning'"
+                                        [type]="item.type == 'integer' ? 'number' : 'text'" [(ngModel)]="item.value"
+                                        (ngModelChange)="appCustGlobalSubject.next()">
+                                    <mat-icon matSuffix [class.edited]="item.isDirty">{{ item.editable }}</mat-icon>
+                                    <mat-hint>{{ item.desc }}</mat-hint>
+                                </mat-form-field>
+                                <!-- bool -->
+                                <div *ngIf="item.type == 'boolean'" class="field">
+                                    <mat-slide-toggle [(ngModel)]="item.value"
+                                        (ngModelChange)="appCustGlobalSubject.next()">{{item.key}}
+                                    </mat-slide-toggle>
+                                    <br>
+                                    <mat-hint>{{ item.desc }}</mat-hint>
+                                </div>
+                                <!-- select -->
+                                <mat-form-field *ngIf="item.options" appearance="fill">
+                                    <mat-label>{{ item.key }}</mat-label>
+                                    <mat-select [(ngModel)]="item.value" (ngModelChange)="appCustGlobalSubject.next()"
+                                        [disabled]="item.editable == 'warning'">
+                                        <mat-option *ngFor="let opt of item.options" [value]="opt">{{opt}}</mat-option>
+                                    </mat-select>
+                                    <mat-icon matSuffix [class.edited]="item.isDirty">{{ item.editable }}</mat-icon>
+                                    <mat-hint>{{ item.desc }}</mat-hint>
+                                </mat-form-field>
+                            </ng-container>
+                            <ul *ngIf="item.children">
+                                <div class="sub-head" [class.edited]="item.isDirty">{{ item.key | titlecase }}</div>
+                                <div *ngIf="sectionDefinitions[item.key]" class="sec-def">
+                                    <mat-icon>info</mat-icon> {{ sectionDefinitions[item.key] }}
+                                </div>
+                                <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: item.children }">
+                                </ng-container>
+                            </ul>
+                        </li>
+                    </ng-template>
+                    <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: appCustGlobalCopy }">
+                    </ng-container>
+                </ul>
+
+                <button mat-raised-button [disabled]="!appCustGlobalDirtyCount.count" color="primary" class="button-primary" (click)="updateCust(appCustGlobalCopy, -1)">Save
+                    App Global Customization</button>
             </div>
         </mat-expansion-panel>
+
         <!-- libraries -->
         <mat-expansion-panel [expanded]="true">
             <mat-expansion-panel-header>
@@ -53,7 +103,8 @@
                             class="alert alert-warning margin-top-default">
                             <p><strong>{{ appCustLibrariesDirtyCount[i].count }} Unsaved Change(s)</strong></p>
                             <button mat-raised-button color="primary" class="button-primary"
-                                (click)="updateCust(appCustLibrariesCopy[i], i)">Save Customization for Library {{appCustLibrariesDirtyCount[i].name}}</button>
+                                (click)="updateCust(appCustLibrariesCopy[i], i)">Save Customization for Library
+                                {{appCustLibrariesDirtyCount[i].name}}</button>
                         </div>
                         <ul *ngIf="!appCustLibrariesDirtyCount[i].isLoading" class="root">
                             <ng-template #recursiveListLibrary let-library>
@@ -113,7 +164,8 @@
                         </ul>
                         <button mat-raised-button color="primary" class="button-primary"
                             [disabled]="!appCustLibrariesDirtyCount[i].count"
-                            (click)="updateCust(appCustLibrariesCopy[i], i)">Save Customization for Library {{appCustLibrariesDirtyCount[i].name}}</button>
+                            (click)="updateCust(appCustLibrariesCopy[i], i)">Save Customization for Library
+                            {{appCustLibrariesDirtyCount[i].name}}</button>
                         &nbsp;
                     </mat-tab>
                 </ng-container>

@@ -79,7 +79,7 @@ export class CheckedOutItemComponent implements OnInit {
   private _getUserCheckedOutItem(forceRefresh: boolean = false) {
     this.isCheckedOutItemLoading = true;
     this.driveService.getUserCheckedOutItem(forceRefresh).subscribe(res => {      
-      if (res) {
+      if (res) {        
         this.isAccessibleUser = res['isAccessibleUser'];
         this.usersLibrary = res['usersLibrary'];
         this.checkedOutItem = res['item'];
@@ -89,18 +89,18 @@ export class CheckedOutItemComponent implements OnInit {
       this.userHasItemCheckedOut.emit(!!this.checkedOutItem);
       //check customiztion settings to see if should display
       if (this.parent == 'home' || this.parent == 'item') {
-        if (this.customization.libraries[this.library][this.parent].showCurrentCheckoutSnippet == 1) {
-          if (!this.checkedOutItem) this.shouldHide = true;
+        if (this.customization.libraries[this.library][this.parent].showCurrentCheckoutSnippet == 1) {          
+          this.shouldHide = !this.checkedOutItem ? true : false;
         }
       }
       this.isCheckedOutItemLoading = false;
       this.isBusy = false;
-
       
       //auto focus after borrow
       if (forceRefresh && this.checkedOutItem) { 
         setTimeout(() => {          
-          document.getElementById('main-read-button').focus();
+          let readButton = document.getElementById('main-read-button');
+          if (readButton) readButton.focus();
         }, 500);
       }
     }, error => {

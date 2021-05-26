@@ -35,15 +35,27 @@
             <span class="cdk-visually-hidden">About</span>
         </button>
         <button *ngIf="isStaff" mat-icon-button [class.is-active]="appPath == 'stats'"
-            aria-label="Statistics" [routerLink]="isDefaultLibraryRoute ? '/stats' : '/library/' + library + '/stats'" [matTooltip]="'statistics'">
+            aria-label="Statistics" [routerLink]="isDefaultLibraryRoute ? '/stats' : '/library/' + library + '/stats'" matTooltip='Statistics'>
             <mat-icon role="presentation">assessment</mat-icon>
             <span class="cdk-visually-hidden">Statistics</span>
         </button>
-        <button *ngIf="isStaff" mat-icon-button [class.is-active]="appPath == 'admin'"
-            aria-label="Admin" [routerLink]="isDefaultLibraryRoute ? '/admin' : '/library/' + library + '/admin'" [matTooltip]="'admin'">
+        <button *ngIf="isStaff && !isAdmin" mat-icon-button [class.is-active]="appPath == 'admin'"
+            aria-label="Admin" [routerLink]="isDefaultLibraryRoute ? '/admin' : '/library/' + library + '/admin'" matTooltip='Admin'>
             <mat-icon role="presentation">settings</mat-icon>
             <span class="cdk-visually-hidden">Admin</span>
         </button>
+        <!-- if admin, show admin button with menu dropdown -->
+        <button *ngIf="isAdmin" mat-icon-button id="admin-menu-trigger" [class.is-active]="appPath == 'admin'" aria-label="Admin" [matMenuTriggerFor]="adminMenu" matTooltip='Admin'>
+            <mat-icon role="presentation">settings</mat-icon>
+            <span class="cdk-visually-hidden">Admin</span>
+        </button>
+        <mat-menu #adminMenu="matMenu" id="admin-menu">
+            <button mat-menu-item [routerLink]="isDefaultLibraryRoute ? '/admin' : '/library/' + library + '/admin'" [disabled]="appPath == 'admin' && !mode" matTooltip='upload/edit items & manage accessible users'>Items Admin</button>
+            <hr class="mat-divider">
+            <button mat-menu-item [routerLink]="isDefaultLibraryRoute ? '/admin/config' : '/library/' + library + '/admin/config'" [disabled]="mode == 'config'" matTooltip='edit configuration of this library e.g. loan period and etc.'>App/Lib Configs</button>
+            <button mat-menu-item [routerLink]="isDefaultLibraryRoute ? '/admin/config/customization' : '/library/' + library + '/admin/config/customization'" [disabled]="mode == 'cust'" matTooltip='edit customizations of this library e.g. color and etc.'>Customizations</button>
+            <button mat-menu-item [routerLink]="isDefaultLibraryRoute ? '/admin/config/lang' : '/library/' + library + '/admin/config/lang'" [disabled]="mode == 'lang'" matTooltip='edit languages for this library e.g. about page, error message and etc.'>Languages</button>
+        </mat-menu>
 
         <div *ngIf="user" class="user" [class.is-active]="appPath == 'my'">
             <button class="user-button" mat-stroked-button [matMenuTriggerFor]="userMenu">
@@ -115,5 +127,7 @@
     </li>
     </ol>
 </nav>
-<!-- <div *ngIf="user?.isDriveOwner" class="alert alert-warning">HEADS UP: You're login as the Drive owner, if you try to borrow something, it'll NOT work, since you're already the owner of the file.</div> -->
+<button *ngIf="customization?.global?.floatingButton?.enable" id="floatingButton" [class.right]="customization?.global?.floatingButton?.position == 'right'" mat-stroked-button (click)="onFloatingButtonClicked()">
+    <mat-icon *ngIf="customization?.global?.floatingButton?.matIcon">{{ customization?.global?.floatingButton?.matIcon }}</mat-icon><span *ngIf="customization?.global?.floatingButton?.text">{{ customization?.global?.floatingButton?.text }}</span>
+</button>
 <router-outlet></router-outlet>

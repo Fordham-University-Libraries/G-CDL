@@ -1,4 +1,5 @@
 <?php
+
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
@@ -25,7 +26,7 @@ class User
     {
         global $config;
 
-        // can only authenticate with GoogleOAuth, if need to get users attrs, use authorization()
+        // can only authenticate with GoogleOAuth, if need to get users attrs, use authorize()
         if ($config->auth['kind'] == 'GoogleOAuth') {
             if (session_status() == PHP_SESSION_NONE) {
                 session_name($config->auth['sessionName']);
@@ -44,11 +45,11 @@ class User
                 }
                 $this->fullName = $_SESSION['gFullName'];
                 $_SESSION['gExpire'] = time() + ($config->auth['sessionTtl'] * 60);
-                if (!$config->libraries[array_key_first($config->libraries)]->authorization['enable']) setcookie('cdlLogin','1',$_SESSION['gExpire'],'/');
+                if (!$config->libraries[array_key_first($config->libraries)]->authorization['enable']) setcookie('cdlLogin', '1', $_SESSION['gExpire'], '/');
             } else {
                 $_SESSION = [];
                 session_destroy();
-                setcookie('cdlLogin','0',time(),'/');
+                setcookie('cdlLogin', '0', time(), '/');
                 if (!$internal) {
                     respondWithFatalError(401, 'Unauthorized User');
                 } else {
@@ -58,7 +59,7 @@ class User
                 //front end will send user to login at ?action=login when get 401
             }
         }
-        
+
         if (!isset($this->userName)) {
             respondWithFatalError(401, 'Unauthorized User');
         }
@@ -74,7 +75,7 @@ class User
         } else if (in_array($this->userName, $config->appSuperAdmins)) {
             $this->isSuperAdmin = true;
         }
-        
+
         //set home library for user - if no match, default to first library
         //also check if user is a staff of a library
         foreach ($config->libraries as $libKey => $_library) {
@@ -88,7 +89,7 @@ class User
             }
             //if authz is enabled (check users attrs)
             if ($_library->authorization['enable']) {
-                $this->authorization($_library->authorization, $libKey);
+                $this->authorize($_library->authorization, $libKey);
             }
             //customUserHomeLibrary overrides the attrs check 
             if ($_library->customUserHomeLibrary && in_array($this->userName, $_library->customUserHomeLibrary)) {
@@ -133,18 +134,18 @@ class User
                 logError('cannot get accessible users data from sheet: ' + $config->accessibleUsersSheetId);
                 logError($errMsg);
                 $this->isAccessibleUser = false;
-            } 
+            }
         }
-
     }
 
     //get users arrtibutes from auth system
-    public function authorization($authzConfig, $libKey)
+    public function authorize($authzConfig, $libKey)
     {
         // CAS
         if ($authzConfig['auth']['kind'] == 'CAS') {
+            //if it's default library
             if (!phpCAS::isInitialized()) {
-                
+
                 if (!$authzConfig['auth']['CAS']['version'] || !$authzConfig['auth']['CAS']['host'] || !$authzConfig['auth']['CAS']['port'] || !$authzConfig['auth']['CAS']['context']) {
                     return;
                 }
@@ -155,76 +156,93 @@ class User
                     intval($authzConfig['auth']['CAS']['port']),
                     $authzConfig['auth']['CAS']['context']
                 );
-            } else {
-                //if CAS client already init but config not the same
-            }
-            
-            if (Config::$isProd) {
-                phpCAS::setCasServerCACert($authzConfig['auth']['CAS']['caCertPath']);
-            } else {
-                $logger = new Logger('cas');
-                $logger->pushHandler(new StreamHandler(Config::getLocalFilePath('CAS-debug.log'), Logger::DEBUG));
-                phpCAS::setLogger($logger);
-                phpCAS::setVerbose(true);
-                phpCAS::setNoCasServerValidation();
-                if ($authzConfig['auth']['CAS']['protocol'] == 'http://') {
-                    $httpUrl = 'http://' . $authzConfig['auth']['CAS']['host'] . ':' . $authzConfig['auth']['CAS']['port'] . $authzConfig['auth']['CAS']['context'];
-                    phpCAS::setServerLoginURL($httpUrl . '/login?service=http%3A%2F%2Flocalhost%3A8080%2Fapi%2F%3Faction%3Dauth');
-                    phpCAS::setServerLogoutURL($httpUrl . '/logout');
-                    if (substr($authzConfig['auth']['CAS']['version'], 0, 1 ) ===  '3') {
-                        $validateUrl = $httpUrl . '/p3/serviceValidate';
+
+                if (Config::$isProd) {
+                    phpCAS::setCasServerCACert($authzConfig['auth']['CAS']['caCertPath']);
+                } else {
+                    $logger = new Logger('cas');
+                    $logger->pushHandler(new StreamHandler(Config::getLocalFilePath('CAS-debug.log'), Logger::DEBUG));
+                    phpCAS::setLogger($logger);
+                    phpCAS::setVerbose(true);
+                    phpCAS::setNoCasServerValidation();
+                    if ($authzConfig['auth']['CAS']['protocol'] == 'http://') {
+                        $httpUrl = 'http://' . $authzConfig['auth']['CAS']['host'] . ':' . $authzConfig['auth']['CAS']['port'] . $authzConfig['auth']['CAS']['context'];
+                        phpCAS::setServerLoginURL($httpUrl . '/login?service=http%3A%2F%2Flocalhost%3A8080%2Fapi%2F%3Faction%3Dauth');
+                        phpCAS::setServerLogoutURL($httpUrl . '/logout');
+                        if (substr($authzConfig['auth']['CAS']['version'], 0, 1) ===  '3') {
+                            $validateUrl = $httpUrl . '/p3/serviceValidate';
+                        } else {
+                            $validateUrl = $httpUrl . '/serviceValidate';
+                        }
+                        phpCAS::setServerServiceValidateURL($validateUrl);
+                    }
+                }
+
+                //phpCAS::forceAuthentication();
+                //phpCAS::checkAuthentication();
+                if (!phpCAS::isAuthenticated()) {
+                    //soft error, tell front-end to redirect
+                    respondWithError(302, 'needs local login', phpCAS::getServerLoginURL());
+                }
+                //for frontend
+                setcookie('cdlLogin', '1', $_SESSION['gExpire'], '/');
+                $this->attributes = phpCAS::getAttributes();
+
+                //check user's home library
+                if ($authzConfig['auth']['CAS']['checkHomeLibrary']['enable']) {
+                    if (count(array_intersect($this->attributes[$authzConfig['auth']['CAS']['checkHomeLibrary']['attrToCheck']], $authzConfig['auth']['CAS']['checkHomeLibrary']['validAttrs']))) {
+                        $this->homeLibrary = $libKey;
+                    }
+                }
+
+                //map attrs return fomr CAS to user
+                if (isset($authzConfig['auth']['CAS']['attributesMapping'])) {
+                    foreach ($authzConfig['auth']['CAS']['attributesMapping'] as $userKey => $casAttrKey) {
+                        if (property_exists($this, $userKey)) {
+                            if ($this->attributes[$casAttrKey]) $this->$userKey = $this->attributes[$casAttrKey];
+                        }
+                    }
+                }
+
+
+                //check if user is active
+                if ($authzConfig['auth']['CAS']['checkUserIsActive']['enable']) {
+                    if (count(array_intersect($this->attributes[$authzConfig['auth']['CAS']['checkUserIsActive']['attrToCheck']], $authzConfig['auth']['CAS']['checkUserIsActive']['validAttrs']))) {
+                        $this->isActiveUser = true;
+                    }
+                }
+
+                //check if user is faculty or staff
+                if ($authzConfig['auth']['CAS']['checkUserIsFaculyOrStaff']['enable']) {
+                    if (count(array_intersect($this->attributes[$authzConfig['auth']['CAS']['checkUserIsFaculyOrStaff']['attrToCheck']], $authzConfig['auth']['CAS']['checkUserIsFaculyOrStaff']['validAttrs']))) {
+                        $this->isFacStaff = true;
+                    }
+                }
+
+                //check if user is grad student
+                if ($authzConfig['auth']['CAS']['checkUserIsGradStudent']['enable']) {
+                    if (!$authzConfig['auth']['CAS']['checkUserIsGradStudent']['contains']) {
+                        if (count(array_intersect($this->attributes[$authzConfig['auth']['CAS']['checkUserIsGradStudent']['attrToCheck']], $authzConfig['auth']['CAS']['checkUserIsGradStudent']['validAttrs']))) {
+                            $this->isGradStudent = true;
+                        }
                     } else {
-                        $validateUrl = $httpUrl . '/serviceValidate';
-                    }
-                    phpCAS::setServerServiceValidateURL($validateUrl);
-                }
-            }
-        
-            //phpCAS::forceAuthentication();
-            //phpCAS::checkAuthentication();
-            if (!phpCAS::isAuthenticated()) {
-                //soft error, tell front-end to redirect
-                respondWithError(302, 'needs local login', phpCAS::getServerLoginURL());
-            }
-            //for frontend
-            setcookie('cdlLogin','1',$_SESSION['gExpire'],'/');
-            $this->attributes = phpCAS::getAttributes();
-        
-            //map attrs return fomr CAS to user
-            if (isset($authzConfig['auth']['CAS']['attributesMapping'])) {
-                foreach ($authzConfig['auth']['CAS']['attributesMapping'] as $userKey => $casAttrKey) {
-                    if (property_exists($this, $userKey)) {
-                        if ($this->attributes[$casAttrKey]) $this->$userKey = $this->attributes[$casAttrKey];
+                        foreach ($this->attributes[$authzConfig['auth']['CAS']['checkUserIsGradStudent']['attrToCheck']] as $userAttr) {
+                            foreach ($authzConfig['auth']['CAS']['checkUserIsGradStudent']['validAttrs'] as $validAttr) {
+                                if (strpos($userAttr, $validAttr) !== false) {
+                                    $this->isGradStudent = true;
+                                    break 2;
+                                }
+                            }
+                        }
                     }
                 }
-            }
-
-            //check user's home library
-            if ($authzConfig['auth']['CAS']['userHomeLibraryCheck']['enable']) {
-                if (count(array_intersect($this->attributes[$authzConfig['auth']['CAS']['checkHomeLibrary']['attrToCheck']], $authzConfig['auth']['CAS']['checkHomeLibrary']['validAttrs']))) {
-                    $this->homeLibrary = $libKey;
-                }
-            }
-        
-
-            //check if user is actiev
-            if ($authzConfig['auth']['CAS']['checkUserIsActive']['enable']) {
-                if (count(array_intersect($this->attributes[$authzConfig['auth']['CAS']['checkUserIsActive']['attrToCheck']], $authzConfig['auth']['CAS']['checkUserIsActive']['validAttrs']))) {
-                    $this->isActiveUser = true;
-                }
-            }
-        
-            //check if user is faculty or staff
-            if ($authzConfig['auth']['CAS']['checkUserIsFaculyOrStaff']['enable']) {
-                if (count(array_intersect($this->attributes[$authzConfig['auth']['CAS']['checkUserIsFaculyOrStaff']['attrToCheck']], $authzConfig['auth']['CAS']['checkUserIsFaculyOrStaff']['validAttrs']))) {
-                    $this->isFacStaff = true;
-                }
-            }
-        
-            //check if user is grad student
-            if ($authzConfig['auth']['CAS']['checkUserIsGradStudent']['enable']) {
-                if (count(array_intersect($this->attributes[$authzConfig['auth']['CAS']['checkUserIsGradStudent']['attrToCheck']], $authzConfig['auth']['CAS']['checkUserIsGradStudent']['validAttrs']))) {
-                    $this->isGradStudent = true;
+            } else {
+                //PHPCAS has been init'ed (not the default library)
+                //check user's home library
+                if ($authzConfig['auth']['CAS']['checkHomeLibrary']['enable']) {
+                    if (count(array_intersect($this->attributes[$authzConfig['auth']['CAS']['checkHomeLibrary']['attrToCheck']], $authzConfig['auth']['CAS']['checkHomeLibrary']['validAttrs']))) {
+                        $this->homeLibrary = $libKey;
+                    }
                 }
             }
         }

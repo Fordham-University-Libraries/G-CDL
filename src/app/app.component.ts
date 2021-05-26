@@ -22,6 +22,7 @@ export class AppComponent implements OnInit {
   library: string;
   isDefaultLibraryRoute: boolean;
   isStaff: boolean;
+  isAdmin: boolean;
   appPath: string;
   mode: string;
   timeOut: any;
@@ -66,6 +67,7 @@ export class AppComponent implements OnInit {
       this.authService.getUser().subscribe(res => {
         this.user = res;
         this.isStaff = this.user.isStaffOfLibraries?.includes(this.library);
+        this.isAdmin = this.user.isAdminOfLibraries?.includes(this.library);
       }, error => {
         //NOT logged in, for a page like Logged out
         console.log('app compo: not auth');
@@ -99,7 +101,8 @@ export class AppComponent implements OnInit {
     this.loadCSS(`${environment.apiBase}/?action=get_custom_css`, forceRefresh);
     if (!this.customization || forceRefresh) {
       this.configService.getCustomization(forceRefresh).subscribe(res => {
-        this.customization = res;
+        this.customization = res;        
+        
         if (this.customization.libraries) {
           for (const [key, value] of Object.entries(this.customization.libraries)) {
             if (this.customization.libraries[key].header.first?.logo && !this.customization.libraries[key].header.first.logo.startsWith('http') && !this.customization.libraries[key].header.first.logo.startsWith('//')) {
@@ -215,6 +218,10 @@ export class AppComponent implements OnInit {
     } else {
       window.open(url, '_blank');
     }
+  }
+
+  onFloatingButtonClicked() {
+    if (this.customization?.global?.floatingButton?.enable && this.customization?.global?.floatingButton?.url) window.open(this.customization.global.floatingButton.url, '_blank');
   }
 
 }

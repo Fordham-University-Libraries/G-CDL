@@ -230,6 +230,7 @@ export class AdminUploadComponent implements OnInit {
         this.pdfItem.bibId.value = res.bibId;
         this.pdfItem.title.value = res.title;
         this.pdfItem.author.value = res.author ?? null;
+        if(res.itemId) this.pdfItem.itemId.value = res.itemId;
         this.isBusy = false;
         this.snackBar.open(`Item: ${itemId} found! Metadata retrieved from the ILS (${res.title} [${res.bibId}])`, 'ok!', {
           duration: 5000,
@@ -271,7 +272,8 @@ export class AdminUploadComponent implements OnInit {
     this.driveService.uploadAdmin(this.pdfItem, this.library).subscribe(res => {
         //console.log(res);
         if (res?.success) {
-          if(res.uploadedNoOcrFileId) this.uploadedFileInfo = res;          
+          if(res.uploadedNoOcrFileId) this.uploadedFileInfo = res;
+          this.driveService.getAllItems(true, this.library);   
         } else if (res?.error) {
           this.error = res.error;
         } else {

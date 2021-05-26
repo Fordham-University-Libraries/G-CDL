@@ -68,7 +68,7 @@ class Config
     public $orderBy = 'createdTime desc'; //created descending
 
     private $_propertiesInfo = [
-        //[help text, editable status, select options]
+        //[help text, editable status, select options, onlyShowOnDefaultLibrary]
         //-2 = hide, -1 = read only, 1 = editable, 2 = use caution
         'appName' => ['name of the application (visible to end users)', 1],
         'timeZone' => ['timezone. see https://www.php.net/manual/en/timezones.php', 1],
@@ -152,15 +152,15 @@ class Config
                 'auth' => [
                     'kind' => ['type of auth system to authenticate and get users attributes from', 1],
                     'CAS' => [
-                        'protocol' => ['https:// or http:// (only non-production mode)', 1],
-                        'host' => ['hostname e.g. cas.myuniv.edu', 1],
-                        'context' => ['path in the url e.g. /cas', 1],
-                        'port' => ['port: usually 80 or 443', 1],
-                        'version' => ['CAS version', 1],
-                        'caCertPath' => ['path to local root certificate file on the server that hosts this app (REQUIRED for production)', 1],
+                        'protocol' => ['https:// or http:// (only non-production mode)', 1, null, true],
+                        'host' => ['hostname e.g. cas.myuniv.edu', 1, null, true],
+                        'context' => ['path in the url e.g. /cas', 1, null, true],
+                        'port' => ['port: usually 80 or 443', 1, null, true],
+                        'version' => ['CAS version', 1, null, true],
+                        'caCertPath' => ['path to local root certificate file on the server that hosts this app (REQUIRED for production)', 1, null, true],
                         'attributesMapping' => [
-                            'fullName' => ['attribute name that containts users\'s full name (will replace fullname from G Suite)', 1],
-                            'univId' => ['attribute name that containts users\'s university id (e.g. the numberic one)', 1]
+                            'fullName' => ['attribute name that containts users\'s full name (will replace fullname from G Suite)', 1, null, true],
+                            'univId' => ['attribute name that containts users\'s university id (e.g. the numberic one)', 1, null, true]
                         ],
                         'checkHomeLibrary' => [
                             'enable' => ['should the app try to assign user\'s home library?', 1],
@@ -168,19 +168,20 @@ class Config
                             'validAttrs' => ['if attribute to check contains this value(s), this library will be set as user\'s home library ', 1],
                         ],
                         'checkUserIsActive' => [
-                            'enable' => ['should the app check if user is active -- e.g. some univeristies allow alumni to keep email address (if enabled, INACTIVE users will not be able to access the app)', 1],
-                            'attrToCheck' => ['name of the attribute returned by CAS to check', 1],
-                            'validAttrs' => ['if attribute to check contains this value(s) -- separate by a commna, the user is considered an active user', 1],
+                            'enable' => ['should the app check if user is active -- e.g. some univeristies allow alumni to keep email address (if enabled, INACTIVE users will not be able to access the app)', 1, null, true],
+                            'attrToCheck' => ['name of the attribute returned by CAS to check', 1, null, true],
+                            'validAttrs' => ['if attribute to check contains this value(s) -- separate by a commna, the user is considered an active user', 1, null, true],
                         ],
                         'checkUserIsFaculyOrStaff' => [
-                            'enable' => ['should the app check if user is faculty or staff', 1],
-                            'attrToCheck' => ['name of the attribute returned by CAS to check', 1],
-                            'validAttrs' => ['if attribute to check contains this value(s) -- separate by a commna, the user is considered a faculty or staff', 1],
+                            'enable' => ['should the app check if user is faculty or staff', 1, null, true],
+                            'attrToCheck' => ['name of the attribute returned by CAS to check', 1, null, true],
+                            'validAttrs' => ['if attribute to check contains this value(s) -- separate by a commna, the user is considered a faculty or staff', 1, null, true],
                         ],
                         'checkUserIsGradStudent' => [
-                            'enable' => ['should the app check if user is a graduate student', 1],
-                            'attrToCheck' => ['name of the attribute returned by CAS to check', 1],
-                            'validAttrs' => ['if attribute to check contains this value(s) -- separate by a commna, the user is considered a graduate student', 1],
+                            'enable' => ['should the app check if user is a graduate student', 1, null, true],
+                            'attrToCheck' => ['name of the attribute returned by CAS to check', 1, null, true],
+                            'validAttrs' => ['if attribute to check contains this value(s) -- separate by a commna, the user is considered a graduate student', 1, null, true],
+                            'contains' => ['if FALSE, users\' attribute and validAttr must match exactly, if TRUE, users\' attribute only needs to contain the validAttr (e.g. "mainCapus_gradStudent_lawSchool"/"gradStudent" is a match)',1, null, true]
                         ],
                     ],
                 ]
@@ -507,7 +508,7 @@ class Config
         }
 
         $config = [];
-        $config['keys'] = ['key', 'value', 'type', 'desc', 'editable', 'options'];
+        $config['keys'] = ['key', 'value', 'type', 'desc', 'editable', 'options', 'onlyShowOnDefaultLibrary'];
         if ($user->isSuperAdmin) {
             $config['global'] = [
                 //$this->_createField('isProd'),

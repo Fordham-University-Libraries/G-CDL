@@ -63,7 +63,7 @@ export class ItemComponent implements OnInit {
   ngOnInit(): void {
     this.configService.getLang().subscribe(res => {this.lang = res;});
     this.configService.getConfig().subscribe(res => {
-      this.config = res; 
+      this.config = res;
       this.route.paramMap.subscribe(paramMap => {
       this.pageTitle = `Item View : ${this.config.appName}`;
       this.titleService.setTitle(this.pageTitle);

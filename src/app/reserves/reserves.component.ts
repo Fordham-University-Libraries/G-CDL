@@ -47,6 +47,7 @@ export class ReservesComponent implements OnInit {
   lang: Language;
   config: Config;
   customizations: Customization;
+  showRequestButton: boolean;
   //ils location
   locations: any;
 
@@ -72,9 +73,11 @@ export class ReservesComponent implements OnInit {
       //make back button works when back from courseDetailedView page
       if (e.pop) {
         //console.log('its a pop');
-        this.courseDetailedView = false;
-        delete (this.courseDetailedView);
-        this.isLoading = false;
+        if (this.results) {
+          this.courseDetailedView = false;
+          delete (this.courseDetailedView);
+          this.isLoading = false;
+        }
       }
     })
 
@@ -93,15 +96,15 @@ export class ReservesComponent implements OnInit {
               this.gaService.logPageView(this.pageTitle, location.pathname);
               this.mode = this.route.snapshot.data.mode;
               if (paramMap.get('library')) {
-                this.library = paramMap.get('library');
+                this.library = decodeURIComponent(paramMap.get('library'));
               } else if (this.user.homeLibrary != this.config.defaultLibrary) {
                 this.router.navigate(['/library', this.user.homeLibrary]);
                 return;
               } else {
                 this.library = this.config.defaultLibrary;
               }
-
-              this.getIlsLocationsDefinition(this.library);              
+              this._checkShowRequestButton();
+              this.getIlsLocationsDefinition(this.library);
               if (!this.customizations.libraries[this.library].reserves.enable) {
                 this.router.navigate(['/error-disabled'], { skipLocationChange: true });
                 return;
@@ -109,7 +112,7 @@ export class ReservesComponent implements OnInit {
 
               if (this.mode == "browse") {
                 this.browseMode = paramMap.get('browseMode') ?? 'courseName';
-                this.searchTerm = paramMap.get('searchTerm');
+                this.searchTerm = paramMap.get('searchTerm') ? decodeURIComponent(paramMap.get('searchTerm')) : '';
                 if (this.browseMode && this.searchTerm) {
                   //console.log('search');
                   this.search();
@@ -118,8 +121,8 @@ export class ReservesComponent implements OnInit {
                   //this.error = "Bad Request!";
                 }
               } else if (this.mode == "details") {
-                this.courseId = paramMap.get('courseId');
-                this.getDetailedCourseReserve({ id: this.courseId });
+                this.courseId = paramMap.get('courseId') ? decodeURIComponent(paramMap.get('courseId')) : '';
+                this.getDetailedCourseReserve({ id: this.courseId }, false);
               }
             })
           })
@@ -135,7 +138,7 @@ export class ReservesComponent implements OnInit {
     this.catalogService.searchReservesCourses(this.library, this.browseMode, this.searchTerm).subscribe(res => {
       //console.log(res);
       if (!res.error) {
-        this.results = res;        
+        this.results = res;
       } else {
         this.error = res.error;
       }
@@ -203,17 +206,20 @@ export class ReservesComponent implements OnInit {
     });
   }
 
-  getDetailedCourseReserve(course: any) {
+  getDetailedCourseReserve(course: any, shouldUpdateHistory = true) {
     this.isLoading = true;
     //console.log('reservesCompo.getDetailedCourseReserve()');
     //console.log(course);
     this.courseDetailedResult = null;
     let bibIds = [];
     this.catalogService.getDetailedCourseReserve(this.library, course).subscribe(res => {
-      if (this.isDefaultLibraryRoute) {
-        this.location.go(`/search/reserves/course/${course.id}`);
-      } else {
-        this.location.go(`/library/${this.library}/search/reserves/course/${course.id}`);
+      if (shouldUpdateHistory) {
+        let encodedCourseId = encodeURIComponent(course.id);
+        if (this.isDefaultLibraryRoute) {
+          this.location.go(`/search/reserves/course/${encodedCourseId}`);
+        } else {
+          this.location.go(`/library/${this.library}/search/reserves/course/${encodedCourseId}`);
+        }
       }
       this.courseDetailedResult = res;
       //console.log(this.courseDetailedResult);
@@ -258,7 +264,7 @@ export class ReservesComponent implements OnInit {
         this.isLoading = false;
       }
     });
-    
+
   }
 
   backToResult() {
@@ -289,7 +295,22 @@ export class ReservesComponent implements OnInit {
   }
 
   getIlsLocationsDefinition(library: string) {
-    this.catalogService.getIlsLocationsDefinition(library).subscribe(res => {this.locations = res});
+    this.catalogService.getIlsLocationsDefinition(library).subscribe(res => { this.locations = res });
+  }
+
+  private _checkShowRequestButton() {
+    if (this.customizations.libraries[this.library].reserves.showRequestButton) {
+      if (this.customizations.libraries[this.library].reserves.showRequestButtonOnlyTo?.length) {
+        for (let userType of this.customizations.libraries[this.library].reserves.showRequestButtonOnlyTo) {
+          if (this.user[userType]) {
+            this.showRequestButton = true;
+            break;
+          }
+        }
+      } else {
+        this.showRequestButton = true;
+      }
+    }
   }
 
 }

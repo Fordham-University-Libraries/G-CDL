@@ -1,4 +1,8 @@
-<main id="main" [class.full-screen]="isFullScreen">
+<div *ngIf="isBusy" class="busy-dialog" role="alert">
+    <span class="cdk-visually-hidden">returning... please wait</span>
+    <mat-spinner></mat-spinner>
+</div>
+<main id="main" [attr.aria-busy]="isBusy" [class.full-screen]="isFullScreen">
     <mat-spinner *ngIf="isLoadingUser"></mat-spinner>
     <ng-container *ngIf="!isLoadingUser && lang">
         <div fxLayout="row" *ngIf="checkedOutItem">
@@ -58,10 +62,7 @@
                 <mat-icon *ngIf="isFullScreen">fullscreen_exit</mat-icon>
             </div>
             <ng-container *ngIf="!mode">
-                <iframe *ngIf="user.isAccessibleUser === false"
-                    [src]="'https://drive.google.com/a/' + config.gSuitesDomain +'/file/d/' + checkedOutItem.id + '/preview' | safe: 'resourceUrl'"></iframe>
-                <iframe *ngIf="user.isAccessibleUser"
-                    [src]="'https://drive.google.com/a/' + config.gSuitesDomain +'/file/d/' + checkedOutItem.accessibleFileId + '/preview' | safe: 'resourceUrl'"></iframe>
+                <iframe [src]="checkedOutItem.url | safe: 'resourceUrl'"></iframe>
             </ng-container>
         </div>
         <div *ngIf="!isCheckedOutItemLoading && !checkedOutItem" class="err-msg margin-top-default">You don't currently

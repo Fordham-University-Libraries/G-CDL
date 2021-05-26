@@ -1,10 +1,10 @@
 <?php
-function getSierraBibByBibId($bibId, $library)
+function getSierraBibByBibId($bibId, $library, $orgItemId = null)
 {
     if (!$bibId) respondWithError(400, 'No Bib/Item ID');
     global $config;
     $sierraToken = getSierraToken($library);
-    $bibId = str_replace('b', '', $bibId);
+    $bibId = cleanSierraRecordNuber($bibId);
     $curl = curl_init();
     $url = $config->libraries[$library]->ils['api']['base'] . "bibs/" . $bibId . '?fields=default%2CvarFields';
     curl_setopt_array($curl, array(
@@ -28,9 +28,10 @@ function getSierraBibByBibId($bibId, $library)
         'title' => $obj->title,
         'author' => $obj->author,
         'bibId' => $obj->id,
-        'callNumber' =>$obj->callNumber,
+        'callNumber' => $obj->callNumber,
         'published' => $obj->publishYear
     ];
+    if ($orgItemId) $bib['itemId'] = $orgItemId;
     foreach($obj->varFields as $field) {
         if (isset($field->marcTag) && $field->marcTag == '020') {
             foreach($field->subfields as $subField) {
@@ -66,18 +67,13 @@ function getSierraBibByBibId($bibId, $library)
 
 function getSierraBibByItemId($itemId, $library)
 {
-    $itemId = str_replace('i', '', $itemId);
+    $itemId = cleanSierraRecordNuber($itemId);
     $item = getSierraItem($itemId, $library);
     if (!$item) {
-        //try remove check digit
-        if(substr($itemId, -1) == getSierraCheckDigit(substr($itemId, 0, -1))) {
-            return getSierraBibByItemId(substr($itemId, 0, -1), $library);
-        } else {
-            respondWithError(404,'Item ID not found');
-        }
+        respondWithError(404,'Item ID not found');
     } else {
         $bibId = $item['bibIds'][0];
-        $bib = getSierraBibByBibId($bibId, $library);
+        $bib = getSierraBibByBibId($bibId, $library, $itemId);
         return $bib;
     }
 }
@@ -86,7 +82,7 @@ function getSierraItem($itemId, $library)
 {
     global $config;
     $sierraToken = getSierraToken($library);
-    $itemId = str_replace('i', '', $itemId);
+    $itemId = cleanSierraRecordNuber($itemId);
     $curl = curl_init();
     $url = $config->libraries[$library]->ils['api']['base'] . "items/" . $itemId;
     curl_setopt_array($curl, array(
@@ -106,7 +102,7 @@ function getSierraItem($itemId, $library)
     $response = curl_exec($curl);
     curl_close($curl);
     $data = json_decode($response, true);
-    if ($data['httpStatus'] == 404) {
+    if (isset($data['httpStatus']) && $data['httpStatus'] != 200) {
         return false;
     }
     return $data;
@@ -115,8 +111,12 @@ function getSierraItem($itemId, $library)
 function setSierraItemStatus($isBorrow, $itemId, $library)
 {
     global $config;
+    if (!$config->libraries[$library]->ils['api']['changeItemStatusOnBorrowReturn'] || !Config::$isProd) {
+        return;
+    }
+
     $sierraToken = getSierraToken($library);
-    $itemId = str_replace('i', '', $itemId);
+    $itemId = cleanSierraRecordNuber($itemId);
     if ($isBorrow) {
         $status = 'd';
     } else {
@@ -251,7 +251,6 @@ function getNewSierraToken($library)
 
 function getSierraRawByUrl($library, $apiUrl)
 {
-    global $config;
     $sierraToken = getSierraToken($library);
     $curl = curl_init();
     curl_setopt_array($curl, array(
@@ -274,7 +273,21 @@ function getSierraRawByUrl($library, $apiUrl)
     return $obj;
 }
 
-function getSierraCheckDigit($recordNumber)
+function cleanSierraRecordNuber(string $recordNumber): int
+{
+    $recordNumber = str_replace(['.','b','B','i','I'],'', $recordNumber);
+    $lastDigit = $recordNumber[-1]; //php7.1
+    if ($lastDigit == 'x') return intval(str_replace('x','', $recordNumber));
+
+    $allButLastDigit = substr($recordNumber, 0, strlen($recordNumber) - 1);
+    if (getSierraCheckDigit($allButLastDigit) == $lastDigit) {
+        return intval($allButLastDigit);
+    } else {
+        return intval($recordNumber);
+    }
+}
+
+function getSierraCheckDigit(string $recordNumber)
 {
     $m = 2;
     $x = 0;

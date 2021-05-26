@@ -10,7 +10,33 @@ class Customization
 
     //this will used for the whole app
     public $appGlobal = [
-        'externalCss' => null
+        'externalCss' => '',
+        'floatingButton' => [
+            'enable' => false,
+            'matIcon' => '',
+            'text' => '',
+            'url' => '',
+            'position' => 'right',
+            'css' => [
+                'background-color' => '',
+                'color' => '',
+            ],
+        ]
+    ];
+
+    private $_appGlobalDefinitions = [
+        'externalCss' => ['A URL to a CSS file to load into the app (full or relative path)', 1],
+        'floatingButton' => [
+            'enable' => ['Display a CSS position: fixed button that will always be visible throughout the app, e.g. for Ask a Librarian button',1],
+            'matIcon' => ['Materials Icon https://fonts.google.com/icons?selected=Material+Icons to display before button text e.g. live_help',1],
+            'text' => ['Text to display on the button e.g. Ask a Librarian',1],
+            'url' => ['URL of the page user will get sent to (open new tab) when button is clicked',1],
+            'position' => ['where to display the button',1,['right','bottomRight']],
+            'css' => [
+                'background-color' => ['button background color',1],
+                'color' => ['button text color',1],
+            ],
+        ]
     ];
 
     //this will be used for each library
@@ -146,6 +172,7 @@ class Customization
             'showSearchForEbooks' => false,
             'ilsEbookLocationName' => 'ONLINE',
             'showRequestButton' => false,
+            'showRequestButtonOnlyTo' => [],
             'requestFormUrl' => '',
             'css' => [
                 'background-color' => '',
@@ -292,6 +319,7 @@ class Customization
             'showSearchForEbooks' => ['on course search results, show to link to try to search for ebook in your ILS if an item is not available as CDL?', 1],
             'ilsEbookLocationName' => ['location name(key) of ebooks in your ILS', 1],
             'showRequestButton' => ['show request button (open a link to a CDL request form) if an item is not available as CDL?', 1],
+            'showRequestButtonOnlyTo' => ['if showRequestButton is enabled, only display it for these user types (separate mulitple with a comma, leave blank to show all). [isAccessibleUser, isFacStaff, isGradStudent]', -2],
             'requestFormUrl' => ['URL of the request form', 1],
             'css' => [
                 'background-color' => ['background color', 1],
@@ -340,7 +368,7 @@ class Customization
             $this->_serializeRecursive($this->default, $this->libraries[$libKey]);
         }
 
-        return ['libraries' => $this->libraries];
+        return ['global' => $this->appGlobal, 'libraries' => $this->libraries];
     }
 
     private function _serializeRecursive(&$default, &$library)
@@ -362,6 +390,7 @@ class Customization
         if (isset($this->appGlobal['externalCss']) && $this->appGlobal['externalCss']) {
             $this->cssStr .= "@import url('" . $this->appGlobal['externalCss'] . "')\n";
         }
+        $this->_extractCssRecursive($this->appGlobal, $this->csses);
         $this->_extractCssRecursive($this->libraries, $this->csses);
         $this->_genCssRecursive($this->csses, $this->cssTempArr);
         header("Content-type: text/css");
@@ -382,6 +411,7 @@ class Customization
     }
 
     private $_htmlTags = ['body','a','button',':visited', ':hover'];
+
     private function _genCssRecursive(&$data, &$tempArr, $level = 0) {
         foreach ($data as $key => $value) {
             //is group
@@ -405,7 +435,15 @@ class Customization
                     }
                     if ($hasVal) {
                         //sigh....
-                        $selectors = '.library-' . str_replace(' :', ':', implode(' ', $tempArr));
+                        // echo implode(' ', $tempArr);
+                        // die();
+                        if (count($tempArr) == 1) {
+                            $this->cssStr .= "#" . $tempArr[0];
+                        } else if (count($tempArr) == 2 && $tempArr[1] == 'body') {
+                            $this->cssStr .= "body.library-" . $tempArr[0] . " { $temp }";
+                        } else {
+                            $selectors = '.library-' . str_replace(' :', ':', implode(' ', $tempArr));
+                        }
                         $this->cssStr .=  $selectors . ' { ' . $temp . " }\n";
                     }
                 }
@@ -424,7 +462,9 @@ class Customization
 
         $cust = [];
         $cust['keys'] = $this->_keysOrder;
-        $cust['appGlobal'] = $this->appGlobal;
+        foreach ($this->appGlobal as $key=>$custs) {
+            $cust['appGlobal'][$key] = $this->_createField($key, $this->appGlobal[$key], $this->appGlobal[$key], $this->_appGlobalDefinitions[$key]);
+        }
         foreach ($config->libraries as $library) {
             if (!in_array($library->key, $user->isAdminOfLibraries)) continue; //skip it since only show library that user is admin
             $this->_currentLibray = $library->key;
@@ -477,9 +517,9 @@ class Customization
 
         if (!$isRecursive) {
             if (is_array($valuesRef) && $this->_has_string_keys($valuesRef)) {
-                return [$key, $this->_array_values_recursive($this->_definitions[$key]), 'group'];
+                return [$key, $this->_array_values_recursive($definitions), 'group'];
             } else {
-                return $this->_definitions[$key];
+                return $definitions;
             }
         }
     }
@@ -505,22 +545,25 @@ class Customization
 
     public function update($data, $libKey) {
         global $user;
-        if (!in_array($libKey, $user->isAdminOfLibraries)) {
-            respondWithError(401, 'Not Authorized - Edit Customization');
-        }
-        
         if ($libKey == 'appGlobal') {
+            if (!$user->isSuperAdmin) {
+                respondWithError(401, 'Not Authorized - Edit App Global Customization');
+            }
+            $result = $this->_update($data, $this->appGlobal);
             $fileName = Config::getLocalFilePath('customization_app.json');
             $file = fopen($fileName, 'wb');
             try {
-                fwrite($file, json_encode($data));
+                fwrite($file, json_encode($this->appGlobal));
                 fclose($file);
             } catch (Exception $e) {
                 logError($e);
-                respondWithError(500, 'ERROR: cannot save customization data');
+                respondWithError(500, 'ERROR: cannot save appGlobal customization data');
             }
             return ['success' => true];
         } else {
+            if (!in_array($libKey, $user->isAdminOfLibraries)) {
+                respondWithError(401, 'Not Authorized - Edit Customization');
+            }
             if (!isset($this->libraries[$libKey])) {
                 $this->libraries[$libKey] = [];
             }
