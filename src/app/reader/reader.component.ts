@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { User } from '../models/user.model';
 import { Item } from '../models/item.model';
 import { Config } from '../models/config.model';
@@ -39,9 +39,11 @@ export class ReaderComponent implements OnInit {
   config: Config;
   lang: Language;
   readerLang: any;
+  isBusy: boolean;
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private datePipe: DatePipe,
     private titleService: Title,
     private driveService: DriveService,
@@ -145,6 +147,7 @@ export class ReaderComponent implements OnInit {
 
   return() {
     //console.log(`returning: ${id}`);
+    this.isBusy = true;
     this.isCheckedOutItemLoading = true;
     this.driveService.returnItem(this.checkedOutItem.id).subscribe(res => {
       //console.log(res);
@@ -154,8 +157,16 @@ export class ReaderComponent implements OnInit {
         this.snackBar.open('The item has been returned', 'Dismiss', {
           duration: 3000,
         });
+        this.driveService.clearAllItemsCache;
+        this.driveService.getUserCheckedOutItem(true); 
+        this.driveService.getAllItems(true, this.user.homeLibrary).subscribe(res => {
+          this.isBusy = false;
+          this.router.navigate(['/']);
+        });
+        
       } else {
         console.error(res);
+        this.isBusy = false;
         this.isCheckedOutItemLoading = false;
         this.gaService.logError('home-compo: return() error', false);
         this.snackBar.open(this.readerLang.error.return.unknownError, 'Dismiss', {
@@ -164,6 +175,7 @@ export class ReaderComponent implements OnInit {
       }
     }, (error) => {
       console.error(error);
+      this.isBusy = false;
       this.isCheckedOutItemLoading = false;
       this.gaService.logError('home-compo: return() error', true);
       this.snackBar.open(this.readerLang.error.return.unknownError, 'Dismiss', {
