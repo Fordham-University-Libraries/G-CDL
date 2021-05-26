@@ -22,6 +22,7 @@ export class AppComponent implements OnInit {
   library: string;
   isDefaultLibraryRoute: boolean;
   isStaff: boolean;
+  isAdmin: boolean;
   appPath: string;
   mode: string;
   timeOut: any;
@@ -66,6 +67,7 @@ export class AppComponent implements OnInit {
       this.authService.getUser().subscribe(res => {
         this.user = res;
         this.isStaff = this.user.isStaffOfLibraries?.includes(this.library);
+        this.isAdmin = this.user.isAdminOfLibraries?.includes(this.library);
       }, error => {
         //NOT logged in, for a page like Logged out
         console.log('app compo: not auth');

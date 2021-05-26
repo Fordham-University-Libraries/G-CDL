@@ -44,6 +44,9 @@
     //color: mediumslateblue;
     color: #f2edd6;
     cursor: default;
+    &#admin-menu-trigger {
+        cursor: pointer;
+    }
 }
 .badge {
     margin-left: .25em;
@@ -145,6 +148,23 @@
             padding-bottom: unset;
         }
     }
+}
+
+button[mat-menu-item] {
+    &:focus {
+        border: none;
+        //background: rgb(238, 238, 238);
+        color: cornflowerblue;
+        text-decoration: underline;
+    }
+    //active
+    &[disabled] {
+        color: brown;
+        font-weight: bold;
+    }
+}
+hr.mat-divider {
+    margin: 0;
 }
 
 // XS
