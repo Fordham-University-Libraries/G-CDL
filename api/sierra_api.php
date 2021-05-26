@@ -4,7 +4,7 @@ function getSierraBibByBibId($bibId, $library, $orgItemId = null)
     if (!$bibId) respondWithError(400, 'No Bib/Item ID');
     global $config;
     $sierraToken = getSierraToken($library);
-    $bibId = str_replace('b', '', $bibId);
+    $bibId = cleanSierraRecordNuber($bibId);
     $curl = curl_init();
     $url = $config->libraries[$library]->ils['api']['base'] . "bibs/" . $bibId . '?fields=default%2CvarFields';
     curl_setopt_array($curl, array(
@@ -82,7 +82,7 @@ function getSierraItem($itemId, $library)
 {
     global $config;
     $sierraToken = getSierraToken($library);
-    $itemId = str_replace('i', '', $itemId);
+    $itemId = cleanSierraRecordNuber($itemId);
     $curl = curl_init();
     $url = $config->libraries[$library]->ils['api']['base'] . "items/" . $itemId;
     curl_setopt_array($curl, array(
@@ -111,8 +111,12 @@ function getSierraItem($itemId, $library)
 function setSierraItemStatus($isBorrow, $itemId, $library)
 {
     global $config;
+    if (!$config->libraries[$library]->ils['api']['changeItemStatusOnBorrowReturn'] || !Config::$isProd) {
+        return;
+    }
+
     $sierraToken = getSierraToken($library);
-    $itemId = str_replace('i', '', $itemId);
+    $itemId = cleanSierraRecordNuber($itemId);
     if ($isBorrow) {
         $status = 'd';
     } else {
