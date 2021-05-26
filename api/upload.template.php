@@ -108,28 +108,21 @@
 
             <div id="itemId-exists-warning" style="display:none;" class="alert alert-danger" role="alert">
             </div>
-            <div>
-                <hr>
-                <input type="hidden" name="action" value="upload"></input>
-                <input type="hidden" name="libKey" value="<?= $libraryKey ?>"></input>
-                <table id="file-info">
-                    <tr>
-                        <td>File name:</td>
-                        <td id="fileName"></td>
-                    </tr>
-                    <tr>
-                        <td>Fize size:</td>
-                        <td id="fileSize"></td>
-                    </tr>
-                </table>
-
-                <input id="file" type="file" name="uploaded_file" accept="application/pdf" required></input><br /><br />
-                <div class="custom-control custom-switch">
-                    <input type="checkbox" class="custom-control-input" name="should_create_no_ocr" id="shouldCreateNoOcr" checked value="1">
-                    <label class="custom-control-label" for="shouldCreateNoOcr">Create a No-OCR version?</label>
-                </div>
-                <br>
-                <input id="submit-button" class="btn btn-primary" type="submit" value="Upload"></input>
+        <div>
+        <hr>
+        <input type="hidden" name="action" value="upload"></input>
+        <input type="hidden" name="libKey" value="<?=$libraryKey?>"></input>
+        <table id="file-info">
+            <tr><td>File name:</td><td id="fileName"></td></tr>
+            <tr><td>Fize size:</td><td id="fileSize"></td></tr>
+        </table>
+        <input id="file" type="file" name="uploaded_file" accept="application/pdf" required></input><br /><br />
+        <div class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" name="should_create_no_ocr" id="shouldCreateNoOcr" checked value="1">
+            <label class="custom-control-label" for="shouldCreateNoOcr">Create a No-OCR version?</label>
+        </div>
+        <br>
+        <input id="submit-button" class="btn btn-primary" type="submit" value="Upload"></input>
     </form>
     <div id="submitting" style="display:none; padding: 1em; background: aliceblue; margin-top: 1em;">
         <div class="spinner-border text-primary" role="status">
