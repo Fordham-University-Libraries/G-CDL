@@ -17,7 +17,7 @@
     <mat-spinner *ngIf="!appCustLibrariesCopy"></mat-spinner>
     <mat-accordion *ngIf="appCustLibrariesCopy" [multi]="false">
         <!-- app global -->
-        <mat-expansion-panel [expanded]="false">
+        <mat-expansion-panel *ngIf="user.isSuperAdmin" [expanded]="false">
             <mat-expansion-panel-header>
                 <mat-panel-title>
                     App Global

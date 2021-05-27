@@ -14,7 +14,7 @@
             <button mat-menu-item [routerLink]="'./lang'">Languages</button>
         </mat-menu>
     </div>
-    <div class="wells">
+    <div *ngIf="user?.isSuperAdmin" class="wells">
         <!-- server check -->
         <div *ngIf="serverCheck && (!serverCheck.privateDataWritable || !serverCheck.privateTempWritable || !serverCheck.shellExecEnable)"
             class="alert alert-danger">
@@ -83,7 +83,7 @@
     <mat-spinner *ngIf="!appConfig.length && !appConfigLibraries.length"></mat-spinner>
     <mat-accordion [multi]="false">
         <!-- global -->
-        <mat-expansion-panel *ngIf="appConfig.length" [expanded]="true">
+        <mat-expansion-panel *ngIf="appConfig.length && user.isSuperAdmin" [expanded]="true">
             <mat-expansion-panel-header>
                 <mat-panel-title>App Global</mat-panel-title>
             </mat-expansion-panel-header>
