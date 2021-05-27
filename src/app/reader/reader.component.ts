@@ -187,7 +187,7 @@ export class ReaderComponent implements OnInit {
   pop() {
     if(this.popRef) this.popRef.self.close();
     this.gaService.logEvent(ACTIONS.openNewWindow, CATEGORIES.reader, this.checkedOutItem.id);
-    const readerUrl = `https://drive.google.com/a/${this.config.gSuitesDomain}/file/d/` + (this.user.isAccessibleUser ? this.checkedOutItem.accessibleFileId : this.checkedOutItem.id) + '/view';
+    const readerUrl = this.checkedOutItem.url;
     //console.log(readerUrl);
     this.popRef = window.open(readerUrl,'Book Reader',`directories=no,titlebar=no,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=${screen.width},height=${screen.height}`);
     const now:any = new Date();
