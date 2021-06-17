@@ -20,6 +20,15 @@ function getClient($authCode = null, $state = null)
     ];
     $client->setApplicationName('GDRIVE CDL APP'); //will show as editor of file and etc...
     $client->setScopes($scopes);
+    
+    //service account -- desinged for use with non G Suites account
+    $creds = json_decode(file_get_contents($credsPath));
+    if ($creds->type == 'service_account') {
+        putenv("GOOGLE_APPLICATION_CREDENTIALS=$credsPath");
+        $client->useApplicationDefaultCredentials();
+        return $client;
+    }
+
     $client->setAuthConfig($credsPath);
     $client->setAccessType('offline');
     $client->setPrompt('select_account consent');
