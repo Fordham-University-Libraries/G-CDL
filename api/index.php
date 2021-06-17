@@ -25,6 +25,7 @@ if (strpos($_SERVER["REQUEST_URI"], 'api/') === FALSE) {
 //get config
 try {
     $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
+    $serviceAccountcredsPath = Config::getLocalFilePath('serviceAccCreds.json', 'creds');
     $tokenPath = Config::getLocalFilePath('token.json', 'creds');
     $config = new Config();
 } catch (Google_Service_Exception $e) {
@@ -36,7 +37,7 @@ try {
 }
 
 //init wizard (if no token and etc.)
-if (!file_exists($credsPath) || !file_exists($tokenPath) || $_GET['state'] == 'init' || $_GET['action'] == 'init' || !$config->mainFolderId) {
+if ((!file_exists($credsPath) || !file_exists($tokenPath) || $_GET['state'] == 'init' || $_GET['action'] == 'init' || !$config->mainFolderId) && !file_exists($serviceAccountcredsPath)) {
     //if front end try to access
     if ($_GET['action'] == 'auth') {
         respondWithFatalError(500, 'API not set up');

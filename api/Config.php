@@ -390,7 +390,7 @@ class Config
     }
 
     //update ALL config to local config.json
-    private function _updatePropsAll()
+    private function _updatePropsAll($init = false)
     {
         $configFilePath = self::getLocalFilePath('config.json');
         //update
@@ -402,7 +402,7 @@ class Config
             $result = ['success' => true];
             //also save to Gdrive AppFolder
             try {
-                $this->updateConfigOnGDriveAppFolder("config.json", json_encode($data));
+                $this->updateConfigOnGDriveAppFolder("config.json", json_encode($data), $init);
             } catch (Exception $e) {
                 logError('cannot back up config file: ' . $e->getMessage());
             }
@@ -570,10 +570,10 @@ class Config
         return explode(' ', $accessToken['scope']);
     }
 
-    public function createNewLibrary(string $libKey, string $libName, array $options = null)
+    public function createNewLibrary(string $libKey, string $libName, array $options = null, $init = false)
     {
         global $user;
-        if (!$user->isSuperAdmin) {
+        if (!$user->isSuperAdmin && !$init) {
             respondWithError(401, 'Not Authorized - Add new Library');
         }
 
@@ -628,7 +628,7 @@ class Config
         if (!count($this->libraries)) $libData['isDefault'] = true;
         $library = new Library($libData);
         $this->libraries[$libKey] = $library;
-        $result = $this->_updatePropsAll();
+        $result = $this->_updatePropsAll($init);
 
         return $result;
     }

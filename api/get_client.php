@@ -7,7 +7,9 @@
 function getClient($authCode = null, $state = null)
 {
     $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
-    if(!file_exists($credsPath)) throw new Exception('getClient error: no credentials');
+    $serviceAccountCredsPath = Config::getLocalFilePath('serviceAccCreds.json', 'creds');
+
+    if(!file_exists($credsPath) && !file_exists($serviceAccountCredsPath)) throw new Exception('getClient error: no credentials');
 
     $client = new Google_Client();
     $scopes = [
@@ -22,9 +24,8 @@ function getClient($authCode = null, $state = null)
     $client->setScopes($scopes);
     
     //service account -- desinged for use with non G Suites account
-    $creds = json_decode(file_get_contents($credsPath));
-    if ($creds->type == 'service_account') {
-        putenv("GOOGLE_APPLICATION_CREDENTIALS=$credsPath");
+    if (file_exists($serviceAccountCredsPath)) {
+        putenv("GOOGLE_APPLICATION_CREDENTIALS=$serviceAccountCredsPath");
         $client->useApplicationDefaultCredentials();
         return $client;
     }
@@ -157,6 +158,7 @@ function endUserGoogleLogin($authCode = null, $target = null, $apiAction = null)
 
     $client = new Google_Client();
     $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
+
     if(!file_exists($credsPath)) respondWithFatalError(500, 'no credentials');
     $client->setAuthConfig($credsPath);
     $client->setAccessType('online');
