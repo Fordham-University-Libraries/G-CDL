@@ -412,7 +412,7 @@ function initMainFolderWithServiceAccount($owner, $hd)
             $mainFolder = $driveService->files->create($driveFile);
             $newPermission = new Google_Service_Drive_Permission(array(
                 'type' => 'user',
-                'role' => 'editor',
+                'role' => 'writer',
                 'emailAddress' => $owner
             ));
             $driveService->permissions->create($mainFolder->getId(), $newPermission);
