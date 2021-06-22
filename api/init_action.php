@@ -176,7 +176,7 @@ function init($step = 1, $authCode = null)
                 $config = new Config();
                 $client = getClient();
                 $oauth2 = new \Google_Service_Oauth2($client);    
-                $userInfo = $oauth2->userinfo->get();
+                // $userInfo = $oauth2->userinfo->get();
             } catch (Google_Service_Exception $e) {
                 $errMsg = json_decode($e->getMessage());
                 logError($errMsg);
@@ -262,8 +262,8 @@ function init($step = 1, $authCode = null)
             die();
         }
     } else {
+    //service account
         $view->data['hasServiceAccountCreds'] = true;
-        //service account
         if (!$config->mainFolderId && $step != 2) {
             header("location: ./?action=init&step=2");
         } else if ($config->mainFolderId && !count($config->libraries) && $step != 3) {
@@ -273,6 +273,7 @@ function init($step = 1, $authCode = null)
         if ($step == 2) {
             $creds = json_decode(file_get_contents($serviceAccountCredsPath));
             $view->data['serviceAccountEmail'] = $creds->client_email;
+            $view->data['showNext'] = false;
             if ($_POST['owner']) {
                 $owner = $_POST['owner'];
                 $hd = explode('@', $owner)[1];
@@ -411,7 +412,7 @@ function initMainFolderWithServiceAccount($owner, $hd)
             $mainFolder = $driveService->files->create($driveFile);
             $newPermission = new Google_Service_Drive_Permission(array(
                 'type' => 'user',
-                'role' => 'fileOrganizer',
+                'role' => 'editor',
                 'emailAddress' => $owner
             ));
             $driveService->permissions->create($mainFolder->getId(), $newPermission);
