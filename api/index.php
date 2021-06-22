@@ -23,10 +23,13 @@ if (strpos($_SERVER["REQUEST_URI"], 'api/') === FALSE) {
 }
 
 //get config
+$credsPath = Config::getLocalFilePath('credentials.json', 'creds');
+$serviceAccountcredsPath = Config::getLocalFilePath('serviceAccountCreds.json', 'creds');
+$tokenPath = Config::getLocalFilePath('token.json', 'creds');
+$hasCreds = file_exists($credsPath);
+$hasToken = file_exists($tokenPath);
+$hasServiceAccountCreds = file_exists($serviceAccountcredsPath);
 try {
-    $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
-    $serviceAccountcredsPath = Config::getLocalFilePath('serviceAccCreds.json', 'creds');
-    $tokenPath = Config::getLocalFilePath('token.json', 'creds');
     $config = new Config();
 } catch (Google_Service_Exception $e) {
     $error = json_decode($e->getMessage());
@@ -37,7 +40,16 @@ try {
 }
 
 //init wizard (if no token and etc.)
-if ((!file_exists($credsPath) || !file_exists($tokenPath) || $_GET['state'] == 'init' || $_GET['action'] == 'init' || !$config->mainFolderId) && !file_exists($serviceAccountcredsPath)) {
+$needsInit = true;
+if ($_GET['state'] != 'init' && $_GET['action'] != 'init') {
+    if (($hasCreds && $hasToken) || ($hasServiceAccountCreds && $hasCreds)) {
+        if ($config->mainFolderId && count($config->libraries)) {
+            $needsInit = false;
+        }
+    }
+}
+
+if ($needsInit) {
     //if front end try to access
     if ($_GET['action'] == 'auth') {
         respondWithFatalError(500, 'API not set up');

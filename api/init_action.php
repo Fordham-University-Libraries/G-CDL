@@ -12,7 +12,7 @@ function init($step = 1, $authCode = null)
     }
     $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
     $hasCreds = file_exists($credsPath);
-    $serviceAccountCredsPath = Config::getLocalFilePath('serviceAccCreds.json', 'creds');
+    $serviceAccountCredsPath = Config::getLocalFilePath('serviceAccountCreds.json', 'creds');
     $hasServiceAccountCreds = file_exists($serviceAccountCredsPath);
 
     $tokenPath = Config::getLocalFilePath('token.json', 'creds');
@@ -272,6 +272,7 @@ function init($step = 1, $authCode = null)
 
         if ($step == 2) {
             $creds = json_decode(file_get_contents($serviceAccountCredsPath));
+            $view->data['serviceAccountEmail'] = $creds->client_email;
             if ($_POST['owner']) {
                 $owner = $_POST['owner'];
                 $hd = explode('@', $owner)[1];

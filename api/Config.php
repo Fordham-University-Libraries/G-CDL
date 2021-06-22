@@ -212,14 +212,16 @@ class Config
             //if no local config, try grab the backup config stored in appData on GDrive
             try {
                 $backupConfig = $this->_getConfigFromAppFolder();
-                $this->_map($backupConfig);
-                $file = fopen($configFilePath, 'wb');
-                try {
-                    fwrite($file, json_encode($backupConfig));
-                    fclose($file);
-                } catch (Exception $e) {
-                    logError($e);
-                    respondWithError(500, 'internal error');
+                if ($backupConfig) {
+                    $this->_map($backupConfig);
+                    $file = fopen($configFilePath, 'wb');
+                    try {
+                        fwrite($file, json_encode($backupConfig));
+                        fclose($file);
+                    } catch (Exception $e) {
+                        logError($e);
+                        respondWithError(500, 'internal error');
+                    }
                 }
             } catch (Exception $e) {
                 //no backup or can't get backup config
@@ -294,6 +296,34 @@ class Config
             }
         }
         return null;
+    }
+
+    function deleteConfigFromAppFolder($fileName = 'config.json')
+    {
+        $client = getClient();
+        if ($client) {
+            $service = new Google_Service_Drive($client);
+            try {
+                $fileList = $service->files->listFiles([
+                    'q' => 'name = "' . $fileName . '"',
+                    'spaces' => 'appDataFolder',
+                    'fields' => '*',
+                    'pageSize' => 100
+                ]);
+                $files = $fileList->getFiles();
+                if (count($files) == 1) {
+                    $configFile = $service->files->get($files[0]->getId());
+                    $tempFile = new Google_Service_Drive_DriveFile;
+                    $tempFile->setTrashed(true);
+                    $tempFile->setName($fileName . '.trashed');
+                    $service->files->update($configFile->getId(), $tempFile);
+                }
+            } catch (Google_Service_Exception $e) {
+                $errMsg = json_decode($e->getMessage());
+                logError($errMsg);
+                respondWithFatalError(500, 'cannot delete file from Drive\'s AppData');
+            }
+        }
     }
 
     function updateConfigOnGDriveAppFolder(string $fileName, string $jsonStr, $init = false): bool

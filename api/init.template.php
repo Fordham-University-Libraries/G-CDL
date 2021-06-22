@@ -247,12 +247,12 @@
             </div>
             <?php elseif ($hasServiceAccountCreds) : ?>
                 <!-- Service Account -->
-                <h2>Step 2: Set Up Main Folder (Using Service Account)</h2>
+                <h2>Step 2: Set Up Main Folder <small>(Using Service Account: <?= $serviceAccountEmail ?>)</small></h2>
                 <form method="post">
                     <div class="mb-3">
                         <label for="owner" class="form-label">Drive Owner</label>
                         <input required type="email" class="form-control" id="owner" name="owner">
-                        <small class="form-text text-muted">Pick a Google account e.g. jdoe@myuniv.edu you want use to login as the app owner to manage and etc. The app will only allow user from the same domina of the owner e.g. @myuniv.edu to login</small>
+                        <small class="form-text text-muted">Pick a Google account e.g. jdoe@myuniv.edu you want use to login as the app owner to manage and etc. The app will only allow users from the same domain of the owner e.g. @myuniv.edu to login</small>
                     </div>
                     <button class="btn btn-primary">Submit</button>
 
