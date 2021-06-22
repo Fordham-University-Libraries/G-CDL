@@ -7,7 +7,7 @@
 function getClient($authCode = null, $state = null)
 {
     $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
-    $serviceAccountCredsPath = Config::getLocalFilePath('serviceAccCreds.json', 'creds');
+    $serviceAccountCredsPath = Config::getLocalFilePath('serviceAccountCreds.json', 'creds');
 
     if(!file_exists($credsPath) && !file_exists($serviceAccountCredsPath)) throw new Exception('getClient error: no credentials');
 
