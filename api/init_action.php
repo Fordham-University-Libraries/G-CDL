@@ -43,7 +43,7 @@ function init($step = 1, $authCode = null)
     if (!$v) {
         $phpVerWarning = "HEADS UP! can't get your PHP version, this app needs PHP $requiredVer or higher!";
     } else if(version_compare($v, $requiredVer) < 0) {
-        $phpVerWarning = "HEADS UP! this app needs PHP $requiredVer or higher! seem like your PHP is $v";
+        $phpVerWarning = "HEADS UP! this app needs PHP $requiredVer or higher! it seems like your PHP is $v";
     }
 
     if ($phpVerWarning) $view->data['phpVerWarning'] = $phpVerWarning;
@@ -54,6 +54,8 @@ function init($step = 1, $authCode = null)
     $view->data['dataDirRealPath'] = realpath(Config::getLocalFilePath('','data'));
     $view->data['tempDirRealPath'] = realpath(Config::getLocalFilePath('','temp'));
     $view->data['hasCreds'] = $hasCreds;
+    $view->data['hasServiceAccountCreds'] = $hasServiceAccountCreds;
+
     if ($hasCreds) {
         $creds = file_get_contents($credsPath);
         $creds = json_decode($creds, true);
@@ -100,8 +102,6 @@ function init($step = 1, $authCode = null)
             header("location: ./?action=init&step=2");
             die();
         }
-    
-    
         $view->data['scopeDefinitions'] = [
             Google_Service_Oauth2::USERINFO_EMAIL => 'View your email address',
             Google_Service_Oauth2::USERINFO_PROFILE => 'View your personal info, including any personal info you\'ve made publicly available',
@@ -119,144 +119,21 @@ function init($step = 1, $authCode = null)
                 die('Error: this application is designed to be used with G Suite (now Google Workspace) only i.e. you log in to your work Gmail as jdoe@myinstitution.edu. Looks like you tried to login with @gmail.com account?');
             }
         } else if ($step == 1) { //create creds - only allow annon access when there's no token (to be able to setup the first time)
-            if ($hasToken) {
-                //will show token info, so make sure user is logged in
-                try {
-                    $user = new User(true);
-                    if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
-                } catch (Exception $e) {
-                    //not login
-                    endUserGoogleLogin(null,null,'init&step=1');
-                    die();
-                }
-            }
-            if (!$hasCreds) $view->data['showRefresh'] = true;
+            initStep1($view, [
+                'hasCreds' => $hasCreds,
+                'hasToken' => $hasToken,
+                'hasServiceAccountCreds' => $hasServiceAccountCreds
+            ]);
         } else if ($step == 2) { //gen token
-            if ($hasToken) {
-                //will show token info, so make sure user is logged in
-                try {
-                    $user = new User(true);
-                    if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
-                } catch (Exception $e) {
-                    //not login
-                    endUserGoogleLogin(null,null,'init&step=2');
-                    die();
-                }
-
-                try {
-                    $view->data['driveOwner'] = $config->driveOwner;
-                    $view->data['mainFolderId'] = $config->mainFolderId;
-                    $token = json_decode(file_get_contents($tokenPath), true);
-                    $view->data['scopes'] = explode(" ", $token['scope']);
-                } catch (Exception $e) {
-                    die('has token but cannot get config?');
-                }
-                //check that app is connected to Drive
-                try {
-                    $client = getClient();
-                    $service = new Google_Service_Drive($client);
-                    $mainFolder = $service->files->get($config->mainFolderId);
-                    if ($mainFolder) { 
-                        $view->data['appIsConnected'] = true;
-                        $view->data['mainFolderId'] = $mainFolder->getId();
-                    }
-                } catch (Google_Service_Exception $e) {
-                    $view->data['appIsConnected'] = false;
-                    $view->data['showNext'] = false;
-                }
-            } else { 
-            $authUrlInfo = getClient(null, 'init'); //will return auth info if no token & no authcode
-            $view->data['authUrl'] = $authUrlInfo['authUrl'];
-            $view->data['scopes'] = $authUrlInfo['scopes'];
-            $view->data['showNext'] = false;
-        } 
+            initStep2($view, 'OAuth', [
+                'config' => $config,
+                'hasToken' => $hasToken,
+                'tokenPath' => $tokenPath
+            ]);
         } else if ($step == 3) { //add first library
-            global $user;
-            try {
-                $config = new Config();
-                $client = getClient();
-                $oauth2 = new \Google_Service_Oauth2($client);    
-                // $userInfo = $oauth2->userinfo->get();
-            } catch (Google_Service_Exception $e) {
-                $errMsg = json_decode($e->getMessage());
-                logError($errMsg);
-                header("location: ./?action=init&step=2");
-                die();
-            }
-            try {
-                $user = new User(true);
-                if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
-            } catch (Exception $e) {
-                //not login
-                endUserGoogleLogin(null,null,'init&step=3');
-                die();
-            }
-            //GET        
-            if (!$_POST['libKey'] && !$_POST['libName']) {
-                $view->data['userName'] = $user->userName;
-                $view->data['libKey'] = array_key_first((array) $config->libraries) ?? 'main';
-                $view->data['libName'] = $config->libraries[$view->data['libKey']]->name;
-                $view->data['borrowPeriod'] =  $config->libraries[$view->data['libKey']]->borrowingPeriod ?? 2;
-                $view->data['cooldown'] = $config->libraries[$view->data['libKey']]->backToBackBorrowCoolDown ?? 60;
-                $view->data['driveOwner'] = $config->driveOwner;
-                $view->data['gSuitesDomain'] = $config->gSuitesDomain;
-                if (count($config->libraries)) {
-                    $view->data['admins'] = implode(',', $config->libraries[$view->data['libKey']]->admins);
-                    $view->data['staff'] = implode(',', $config->libraries[$view->data['libKey']]->staff);
-                } else {
-                    $view->data['showNext'] = false;
-                }
-            } elseif ($_POST['libKey'] && $_POST['libName']) {
-                $libKey = $_POST['libKey'];
-                if (!ctype_alpha($libKey)) die('Error: Library Short Name Must be Aplha only');
-                $libName = $_POST['libName'];
-                $options = [];
-                $options['borrowingPeriod'] = $_POST['borrowPeriod'];
-                $options['backToBackBorrowCoolDown'] = $_POST['cooldown'];
-                if ($_POST['admins']) {
-                    $options['admins'] = array_map('trim', explode(",", $_POST['admins']));
-                }
-                if ($_POST['staff']) {
-                    $options['staff'] = array_map('trim', explode(",", $_POST['staff']));
-                }
-                $config->createNewLibrary($libKey, $libName, $options);
-                header("location: ./?action=init&step=3");
-                die();
-            } 
+            initStep3($view);
         } else if ($step == 4) { //next step info
-            global $user;
-            try {
-                $user = new User(true);
-                if (!$user->isDriveOwner) die("only drive owner can init stuff! please log in with the account " . $config->driveOwner . '@' . $config->gSuitesDomain);
-            } catch (Exception $e) {
-                endUserGoogleLogin(null,null,'init&step=4');
-                die();
-            }
-            $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
-            $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
-            $view->data['privateDataWritable'] = is_writable(Config::$privateDataDirPath);
-            $view->data['privateTempWritable'] = is_writable(Config::$tempDirPath);
-            $view->data['privateCredsWritable'] = is_writable(Config::$credentialsDirPath);
-            $view->data['shellExecEnable'] = is_callable('shell_exec') && false === stripos(ini_get('disable_functions'), 'shell_exec');
-
-            $config = new Config();
-            if (!count($config->libraries)) {
-                header("location: ./?action=init&step=3");
-                die();
-            } else {
-                $view->data['host'] = $host . $baseDir;
-                $view->data['libKey'] = array_key_first((array) $config->libraries);
-                $view->data['libName'] = $config->libraries[$view->data['libKey']]->name;
-                $view->data['mainFolderId'] = $config->mainFolderId;
-                $view->data['borrowPeriod'] =  2;
-                $view->data['cooldown'] = 60;
-                if ($config->libraries[$view->data['libKey']]->staff) {
-                    $view->data['staff'] = implode(',', $config->libraries[$view->data['libKey']]->staff);
-                }
-                $view->data['driveOwner'] = $config->driveOwner;
-                $view->data['gSuitesDomain'] = $config->gSuitesDomain;
-                $view->data['showNext'] = $false;
-            }
+            initStep4($view);
         } else {
             header("location: ./?action=init&step=1");
             die();
@@ -266,38 +143,28 @@ function init($step = 1, $authCode = null)
         $view->data['hasServiceAccountCreds'] = true;
         if (!$config->mainFolderId && $step != 2) {
             header("location: ./?action=init&step=2");
+            die();
         } else if ($config->mainFolderId && !count($config->libraries) && $step != 3) {
             header("location: ./?action=init&step=3");
+            die();
         }
-
-        if ($step == 2) {
+        if ($step == 1) {
+            initStep1($view, [
+                'hasCreds' => $hasCreds,
+                'hasToken' => $hasToken,
+                'hasServiceAccountCreds' => $hasServiceAccountCreds
+            ]);
+        } else if ($step == 2) {
             $creds = json_decode(file_get_contents($serviceAccountCredsPath));
-            $view->data['serviceAccountEmail'] = $creds->client_email;
-            $view->data['showNext'] = false;
-            if ($_POST['owner']) {
-                $owner = $_POST['owner'];
-                $hd = explode('@', $owner)[1];
-                initMainFolderWithServiceAccount($owner, $hd);
-                header("location: ./?action=init&step=3");
-            }
+            initStep2($view, 'serviceAccount', ['creds' => $creds, 'config' => $config]);
         } else if ($step == 3) {
-            if ($_POST['libKey'] && $_POST['libName']) {
-                $libKey = $_POST['libKey'];
-                if (!ctype_alpha($libKey)) die('Error: Library Short Name Must be Aplha only');
-                $libName = $_POST['libName'];
-                $options = [];
-                $options['borrowingPeriod'] = $_POST['borrowPeriod'];
-                $options['backToBackBorrowCoolDown'] = $_POST['cooldown'];
-                if ($_POST['admins']) {
-                    $options['admins'] = array_map('trim', explode(",", $_POST['admins']));
-                }
-                if ($_POST['staff']) {
-                    $options['staff'] = array_map('trim', explode(",", $_POST['staff']));
-                }
-                $config->createNewLibrary($libKey, $libName, $options, true);
-                header("location: ./?action=init&step=3");
-                die();
-            } 
+            //step 3 for service account
+            initStep3($view, 'serviceAccount');
+        } else if ($step == 4) { //next step info
+            initStep4($view);
+        } else {
+            header("location: ./?action=init&step=1");
+            die();
         }
     }
 
@@ -308,30 +175,35 @@ function init($step = 1, $authCode = null)
     $view->render(dirname(__DIR__) . '/api/init.template.php');
 }
 
-function initMainFolder($client)
+function initMainFolder($mode = 'OAuth', $owner = null)
 {
     //has token.json now, create main folder and config
     $config = new Config();
     if (!$config || !isset($config->mainFolderId)) {
         $client = getClient();
-        try {
-            //default leeway is 1, increase it in case clocks are not quite synced
-            $jwt = new \Firebase\JWT\JWT;
-            $jwt::$leeway = 5;
-            $tokenData = $client->verifyIdToken();
-            $tokenOwner = $tokenData['email'];
-            $hostedDomain = $tokenData['hd'];
-        } catch (Google_Service_Exception $e) {
-            $errMsg = json_decode($e->getMessage());
-            die('ERROR: cannot verify token - Error is: ' . $errMsg->error->message );
-        }
-        //get user info
-        $oauth2 = new \Google_Service_Oauth2($client);
-        $userInfo = $oauth2->userinfo->get();
+        
+        if ($mode == 'OAuth') {
+            try {
+                //default leeway is 1, increase it in case clocks are not quite synced
+                $jwt = new \Firebase\JWT\JWT;
+                $jwt::$leeway = 5;
+                $tokenData = $client->verifyIdToken();
+                $owner = $tokenData['email'];
+                $hostedDomain = $tokenData['hd'];
+            } catch (Google_Service_Exception $e) {
+                $errMsg = json_decode($e->getMessage());
+                die('ERROR: cannot verify token - Error is: ' . $errMsg->error->message );
+            }
+            //get user info
+            $oauth2 = new \Google_Service_Oauth2($client);
+            $userInfo = $oauth2->userinfo->get();
 
-        //only allow GSuites account
-        if ($tokenOwner != $userInfo->email || !$hostedDomain) {
-            return false;
+            //only allow GSuites account
+            if ($owner != $userInfo->email || !$hostedDomain) {
+                return false;
+            }
+        } else if ($mode == 'serviceAccount') {
+            $hostedDomain = explode('@', $owner)[1];
         }
 
         $driveService = new Google_Service_Drive($client);
@@ -343,6 +215,21 @@ function initMainFolder($client)
             $mainFolder = $driveService->files->create($driveFile);
         } catch (Exception $e) {
             die('failed to create main folder');
+        }
+
+        if ($mode == 'serviceAccount') {
+            $newPermission = new Google_Service_Drive_Permission(array(
+                'type' => 'user',
+                'role' => 'writer',
+                'emailAddress' => $owner
+            ));
+            try {
+                $driveService->permissions->create($mainFolder->getId(), $newPermission);
+            } catch (Exception $e) {
+                $errMsg = json_decode($e->getMessage());
+                logError($errMsg);
+                die('failed to add permission to main folder (serviceAccount mode)');
+            }
         }
         
         //create sheet to store accessible users
@@ -359,7 +246,7 @@ function initMainFolder($client)
 
         //save mainFolder id and etc.to AppConfig
         $configData = [
-            'driveOwner' => $tokenOwner,
+            'driveOwner' => $owner,
             'gSuitesDomain' => $hostedDomain,
             'mainFolderId' => $mainFolder->getId(),
             'accessibleUsersSheetId' => $accessbileUsersSheet->getId()
@@ -383,76 +270,169 @@ function initMainFolder($client)
     die();
 }
 
-function initMainFolderWithServiceAccount($owner, $hd)
-{
-    // $client = getClient();
-    // $driveService = new Google_Service_Drive($client);
-    // $newPermission = new Google_Service_Drive_Permission(array(
-    //     'type' => 'user',
-    //     'role' => 'writer',
-    //     'emailAddress' => $owner
-    // ));
-    // try {
-    //     $driveService->permissions->create('1X4X6jXgc8wo_RlstzdSoPizQfj7mxEP2', $newPermission);
-    // } catch (Exception $e) {
-    //     $errMsg = json_decode($e->getMessage());
-    //     logError($errMsg);
-    // }
-    // die();
-
-    $config = new Config();
-    if (!$config || !isset($config->mainFolderId)) {
-        $client = getClient();
-        $driveService = new Google_Service_Drive($client);
-        $driveFile = new Google_Service_Drive_DriveFile;
-        $driveFile->setName("CDL APP");
-        $driveFile->setDescription("Main Folder for CDL Application data, contains the PDF files and etc. No dot touch it directly");
-        $driveFile->setMimeType("application/vnd.google-apps.folder");
+function initStep1($view, $params) {
+    global $config;
+    if ($params['hasToken']) {
+        //will show token info, so make sure user is logged in
         try {
-            $mainFolder = $driveService->files->create($driveFile);
-            $newPermission = new Google_Service_Drive_Permission(array(
-                'type' => 'user',
-                'role' => 'writer',
-                'emailAddress' => $owner
-            ));
-            $driveService->permissions->create($mainFolder->getId(), $newPermission);
+            $user = new User(true);
+            if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
         } catch (Exception $e) {
+            //not login
+            endUserGoogleLogin(null,null,'init&step=1');
+            die();
+        }
+    }
+
+    if (!$params['hasCreds']) $view->data['showRefresh'] = true;
+}
+
+function initStep2($view, $mode = 'OAuth', $params = null) {
+    if ($mode == 'serviceAccount') {
+        $view->data['serviceAccountEmail'] = $params['creds']->client_email;
+        $view->data['showNext'] = false;
+        if ($params['config']->driveOwner) {
+            $view->data['driveOwner'] = $params['config']->driveOwner;
+            $view->data['showNext'] = true;
+        }
+        if ($_POST['owner']) {
+            $owner = $_POST['owner'];
+            initMainFolder('serviceAccount', $owner);
+            header("location: ./?action=init&step=3");
+        }
+    } else if ($mode == 'OAuth') {
+        if ($params['hasToken']) {
+            //will show token info, so make sure user is logged in
+            try {
+                $user = new User(true);
+                if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $params['config']->driveOwner);
+            } catch (Exception $e) {
+                //not login
+                endUserGoogleLogin(null,null,'init&step=2');
+                die();
+            }
+
+            try {
+                $view->data['driveOwner'] = $params['config']->driveOwner;
+                $view->data['mainFolderId'] = $params['config']->mainFolderId;
+                $token = json_decode(file_get_contents($params['tokenPath']), true);
+                $view->data['scopes'] = explode(" ", $token['scope']);
+            } catch (Exception $e) {
+                die('has token but cannot get config?');
+            }
+            //check that app is connected to Drive
+            try {
+                $client = getClient();
+                $service = new Google_Service_Drive($client);
+                $mainFolder = $service->files->get($params['config']->mainFolderId);
+                if ($mainFolder) { 
+                    $view->data['appIsConnected'] = true;
+                    $view->data['mainFolderId'] = $mainFolder->getId();
+                }
+            } catch (Google_Service_Exception $e) {
+                $view->data['appIsConnected'] = false;
+                $view->data['showNext'] = false;
+            }
+        } else { 
+            $authUrlInfo = getClient(null, 'init'); //will return auth info if no token & no authcode
+            $view->data['authUrl'] = $authUrlInfo['authUrl'];
+            $view->data['scopes'] = $authUrlInfo['scopes'];
+            $view->data['showNext'] = false;
+        } 
+    }
+}
+
+function initStep3($view, $mode = 'OAuth') {
+    global $user;
+    global $config;
+    if ($mode == 'OAuth') {
+        try {
+            $config = new Config();
+            $client = getClient();
+            $oauth2 = new \Google_Service_Oauth2($client);    
+            $userInfo = $oauth2->userinfo->get();
+        } catch (Google_Service_Exception $e) {
             $errMsg = json_decode($e->getMessage());
             logError($errMsg);
-            die('failed to create main folder');
+            header("location: ./?action=init&step=2");
+            die();
         }
-        
-        //create sheet to store accessible users
-        $driveFile = new Google_Service_Drive_DriveFile;
-        $driveFile->setName("Accessible Users");
-        $driveFile->setParents([$mainFolder->getId()]);
-        $driveFile->setDescription("Spreadsheet for CDL Application accessible users data (for ALL libraries). Do NO touch it directly");
-        $driveFile->setMimeType("application/vnd.google-apps.spreadsheet");
         try {
-            $accessbileUsersSheet = $driveService->files->create($driveFile);
+            $user = new User(true);
+            if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
         } catch (Exception $e) {
-            die('failed to create accessible users sheet');
+            //not login
+            endUserGoogleLogin(null,null,'init&step=3');
+            die();
         }
-
-        //save mainFolder id and etc.to AppConfig
-        $configData = [
-            'driveOwner' => $owner,
-            'gSuitesDomain' => $hd,
-            'mainFolderId' => $mainFolder->getId(),
-            'accessibleUsersSheetId' => $accessbileUsersSheet->getId()
-        ];
-        //write config.json locally
-        $configFilePath = Config::getLocalFilePath('config.json');
-        try {
-            $file = fopen($configFilePath, 'wb');
-            fwrite($file, json_encode($configData));
-            fclose($file);
-        } catch (Exception $e) {
-            logError($e);
-            respondWithError(500, 'internal error');
+    }
+    //GET        
+    if (!$_POST['libKey'] && !$_POST['libName']) {
+        $view->data['userName'] = $user->userName;
+        $view->data['libKey'] = array_key_first((array) $config->libraries) ?? 'main';
+        $view->data['libName'] = $config->libraries[$view->data['libKey']]->name;
+        $view->data['borrowPeriod'] =  $config->libraries[$view->data['libKey']]->borrowingPeriod ?? 2;
+        $view->data['cooldown'] = $config->libraries[$view->data['libKey']]->backToBackBorrowCoolDown ?? 60;
+        $view->data['driveOwner'] = $config->driveOwner;
+        $view->data['gSuitesDomain'] = $config->gSuitesDomain;
+        if (count($config->libraries)) {
+            $view->data['admins'] = implode(',', $config->libraries[$view->data['libKey']]->admins);
+            $view->data['staff'] = implode(',', $config->libraries[$view->data['libKey']]->staff);
+        } else {
+            $view->data['showNext'] = false;
         }
-        //also save to GDrive appFolder
-        if (!$config->updateConfigOnGDriveAppFolder('config.json',json_encode($configData),true)) logError("failed to create config.json in AppData");
+    } elseif ($_POST['libKey'] && $_POST['libName']) {
+        $libKey = $_POST['libKey'];
+        if (!ctype_alpha($libKey)) die('Error: Library Short Name Must be Aplha only');
+        $libName = $_POST['libName'];
+        $options = [];
+        $options['borrowingPeriod'] = $_POST['borrowPeriod'];
+        $options['backToBackBorrowCoolDown'] = $_POST['cooldown'];
+        if ($_POST['admins']) {
+            $options['admins'] = array_map('trim', explode(",", $_POST['admins']));
+        }
+        if ($_POST['staff']) {
+            $options['staff'] = array_map('trim', explode(",", $_POST['staff']));
+        }
+        $config->createNewLibrary($libKey, $libName, $options);
+        header("location: ./?action=init&step=3");
+        die();
+    } 
+}
 
+function initStep4($view) {
+    global $user;
+    global $config;
+    try {
+        $user = new User(true);
+        if (!$user->isDriveOwner) die("only drive owner can init stuff! please log in with the account " . $config->driveOwner . '@' . $config->gSuitesDomain);
+    } catch (Exception $e) {
+        endUserGoogleLogin(null,null,'init&step=4');
+        die();
+    }
+    $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
+    $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
+    $view->data['privateDataWritable'] = is_writable(Config::$privateDataDirPath);
+    $view->data['privateTempWritable'] = is_writable(Config::$tempDirPath);
+    $view->data['privateCredsWritable'] = is_writable(Config::$credentialsDirPath);
+    $view->data['shellExecEnable'] = is_callable('shell_exec') && false === stripos(ini_get('disable_functions'), 'shell_exec');
+
+    $config = new Config();
+    if (!count($config->libraries)) {
+        header("location: ./?action=init&step=3");
+        die();
+    } else {
+        $view->data['host'] = $host . $baseDir;
+        $view->data['libKey'] = array_key_first((array) $config->libraries);
+        $view->data['libName'] = $config->libraries[$view->data['libKey']]->name;
+        $view->data['mainFolderId'] = $config->mainFolderId;
+        $view->data['borrowPeriod'] =  2;
+        $view->data['cooldown'] = 60;
+        if ($config->libraries[$view->data['libKey']]->staff) {
+            $view->data['staff'] = implode(',', $config->libraries[$view->data['libKey']]->staff);
+        }
+        $view->data['driveOwner'] = $config->driveOwner;
+        $view->data['gSuitesDomain'] = $config->gSuitesDomain;
+        $view->data['showNext'] = false;
     }
 }
