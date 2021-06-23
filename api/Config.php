@@ -641,6 +641,7 @@ class Config
         try {
             $statsSheet = $driveService->files->create($driveFile);
         } catch (Exception $e) {
+            logError("can't get accessible users sheet");
             logError($e->getMessage());
             respondWithFatalError(500, 'can NOT create sheet to store accessible users data');
         }

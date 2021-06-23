@@ -27,6 +27,7 @@ function logStats(CdlItem $item, $action, $usersLibrary = '', $isAccessibleUser 
     try {
         $sheetService->spreadsheets_values->append($statsSheetId, $range, $body, $params);
     } catch (Google_Service_Exception $e) {
+        logError('stats append fail');
         logError($e->getMessage());
     }
 }
@@ -213,6 +214,7 @@ function getTitleByItemId($itemId, $libKey) {
             try {
                 $sheetService->spreadsheets_values->append($config->libraries[$libKey]->statsSheetId, $range, $body, $params);
             } catch (Google_Service_Exception $e) {
+                logError('stats title cache failed');
                 logError($e->getMessage());
             }
             return $cdlItem->title;

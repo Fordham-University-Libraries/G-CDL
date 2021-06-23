@@ -22,6 +22,7 @@ class CdlItem
     public bool $shouldCreateNoOcr = true; //to track if uploader explicitely choose to not run OCR removal on this file
     public string $fileWithOcrId;
     public string $due; //zulu date
+    public bool $isCheckedOutWithNoAutoExpiration;
     public bool $isCheckedOutToMe = false;
     public int $lastReturned;
     public int $lastBorrowed;
@@ -103,7 +104,10 @@ class CdlItem
                 $this->available = false;
                 $this->currentlyCheckedOutToUser = $permission->getEmailAddress();
                 if (!$permission->getExpirationTime()) {
-                    compliantBreachNotify('File ' . $this->name . '(' . $this->id . ') is shared to viewer WITHOUT expiration time!', $this->id);
+                    $this->due = date("c", $this->lastReturned);
+                    if (!$this->isCheckedOutWithNoAutoExpiration) {
+                        compliantBreachNotify('File ' . $this->name . '(' . $this->id . ') is shared to viewer WITHOUT expiration time!', $this->id);
+                    }
                 } else {
                     $this->due = $permission->getExpirationTime();
                 }
@@ -217,12 +221,18 @@ class CdlItem
                 'role' => 'reader',
                 'expirationTime' => $expTime
             ));
-            //exp back off if 500
-            $updated = retry(function () use ($service, $permissionsId, $updatedPermission) {
-                return $service->permissions->update($this->id, $permissionsId, $updatedPermission, ['fields' => 'id, expirationTime']);
-            });
+            
+            try {
+                $updated = retry(function () use ($service, $permissionsId, $updatedPermission) {
+                    return $service->permissions->update($this->id, $permissionsId, $updatedPermission, ['fields' => 'id, expirationTime']);
+                });
+            } catch (Exception $e) {
+                logError("can't set auto expiration");
+                logError($e->getMessage());
+                $this->isCheckedOutWithNoAutoExpiration = true;
+            }
 
-            $respond = ['borrowSuccess' => true, 'id' => $this->id, 'due' => $updated->expirationTime];
+            $respond = ['borrowSuccess' => true, 'id' => $this->id, 'due' => $expTime];
             
             //stats
             logStats($this, 'borrow', $user->homeLibrary, $user->isAccessibleUser ? 1 : 0, count($user->isStaffOfLibraries) ? 1 : 0);
@@ -278,20 +288,33 @@ class CdlItem
             //track last borrower -- needed for back to back cooldown check
             //set lastReturned to expected loan expiration time, if user manully return, return.php will update it.
             $tempFile = new Google_Service_Drive_DriveFile;
-            $tempFile->setAppProperties(['lastViewer' =>  $user->email, 'lastBorrowed' => time(), 'lastReturned' => $expTimeTimeStamp]);
-            $service->files->update($this->id, $tempFile);
+            $tempAppProps = ['lastViewer' =>  $user->email, 'lastBorrowed' => time(), 'lastReturned' => $expTimeTimeStamp];
+            if ($this->isCheckedOutWithNoAutoExpiration) $tempAppProps['isCheckedOutWithNoAutoExpiration'] = 1;
+            $tempFile->setAppProperties($tempAppProps);
+            try {
+                $service->files->update($this->id, $tempFile);
+            } catch (Google_Service_Exception $e) {
+                logError("set app props on borrow fail");
+                logError($e->getMessage());
+            }
 
             //if it's a 'normal' user -- done
             if (!$user->isAccessibleUser) {
                 //email notify user
                 if ($config->notifications['emailOnBorrow']) {
-                    email('borrow', $user, $this);
+                    try {
+                        email('borrow', $user, $this);
+                    } catch (Google_Service_Exception $e) {
+                        logError('fail to email with gmail');
+                        logError($e->getMessage());
+                    }
                 }
                 //return
                 respondWithData($respond);
             }
         } catch (Google_Service_Exception $e) {
             //borrow fail
+            logError("borrow fail");
             logError($e->getMessage());
             respondWithError(500, "Internal Error - on Borrow");
         }
@@ -321,6 +344,7 @@ class CdlItem
                 respondWithData($respond);
             } catch (Google_Service_Exception $e) {
                 //borrow fail
+                logError("fail accessible borrow");
                 logError($e->getMessage());
                 respondWithError(500, "Internal Error - on Accessible Borrow");
             }
@@ -364,12 +388,15 @@ class CdlItem
             
             //it's a manual return, update the lastReturn prop
             $tempFile = new Google_Service_Drive_DriveFile;
-            $tempFile->setAppProperties(['lastReturned' => time()]);
+            $tempAppProps = ['lastReturned' => time()];
+            if ($this->isCheckedOutWithNoAutoExpiration) $tempAppProps['isCheckedOutWithNoAutoExpiration'] = 0;
+            $tempFile->setAppProperties($tempAppProps);
             try {
                 retry(function () use ($service, $tempFile) {
                     $service->files->update($this->id, $tempFile);
                 });
             } catch (Google_Service_Exception $e) {
+                logError('fail to set appProps on return');
                 logError(json_decode($e->getMessage()));
                 respondWithError(500, "Internal Error - on update lastReturn");
             }
@@ -379,7 +406,12 @@ class CdlItem
             $emailOnManualReturn = $config->notifications['emailOnManualReturn'];
             $emailOnAutoReturn = $config->notifications['emailOnAutoReturn']['enable'];
             if ($emailOnManualReturn) {
-                email('return', $user, $this);
+                try {
+                    email('return', $user, $this);
+                } catch (Google_Service_Exception $e) {
+                    logError('fail to email with gmail');
+                    logError($e->getMessage());
+                }
             }
             //remove it from cron watch list since it has been manually returned
             if ($emailOnAutoReturn) {
@@ -492,6 +524,7 @@ class CdlItem
             });
             $this->isSuspended = $suspend;
         } catch (Google_Service_Exception $e) {
+            logError("fail to suspend");
             logError($e->getMessage());
             respondWithError(500, "Internal Error - on Suspend");
         }
@@ -519,6 +552,7 @@ class CdlItem
             });
             $this->isTrashed = true;
         } catch (Google_Service_Exception $e) {
+            logError('fail to trash');
             logError($e->getMessage());
             respondWithError(500, "Internal Error");
         }
@@ -587,7 +621,9 @@ class CdlItem
             $item['lastViewer'] = $this->lastViewer ?? null;
             $item['isSuspended'] = $this->isSuspended ?? false;
             $item['isTrashed'] = $this->isTrashed ?? null;
-            //$item['appProperties'] = $this->driveFile->getAppProperties();
+            $item['isCheckedOutWithNoAutoExpiration'] = isset($this->isCheckedOutWithNoAutoExpiration) ? $this->isCheckedOutWithNoAutoExpiration : false;
+
+            $item['appProperties'] = $this->driveFile->getAppProperties();
         }
 
         return $item;
