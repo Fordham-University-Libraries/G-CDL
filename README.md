@@ -64,6 +64,7 @@ Example of App/GDrive Interactions
     - run `ng build --prod`
         - if you plan to put it under a directory e.g. https://library.myuniv.edu/dir_name run `ng build --prod --base-href /dir_name/`
     - copy the content of the `dist` directory e.g. /G-CDL/dist/cdl/ directory to your server
+      - add Angular rewrite/redirect e.g. https://julianpoemp.github.io/ngx-htaccess-generator/#/generator   
     - copy the dir /api to /api on your server
         - make sure the /api/private_data
             - is NOT accessible to the public
