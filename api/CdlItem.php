@@ -216,19 +216,23 @@ class CdlItem
             $expTime = date("c", strtotime('+' . $this->borrowingPeriod . 'hours')); //RFC 3339 / ISO 8601 date
             $expTimeTimeStamp = date(strtotime('+' . $this->borrowingPeriod . 'hours')); //it'll be used to set lastReturned prop
             //you CAN'T set EXP time on create... no shit!
-            //NOTE: sharing with Expiration does NOT available on Shared Drives
+            //NOTE: sharing with Expiration is NOT available on Shared Drives, nor non GSuites account
             $updatedPermission = new Google_Service_Drive_Permission(array(
                 'role' => 'reader',
                 'expirationTime' => $expTime
             ));
             
-            try {
-                $updated = retry(function () use ($service, $permissionsId, $updatedPermission) {
-                    return $service->permissions->update($this->id, $permissionsId, $updatedPermission, ['fields' => 'id, expirationTime']);
-                });
-            } catch (Exception $e) {
-                logError("can't set auto expiration");
-                logError($e->getMessage());
+            if (!isset($config->driveOwnerGooglePermissions['canSetAutoExpiration']) || $config->driveOwnerGooglePermissions['canSetAutoExpiration']) {
+                try {
+                    $updated = retry(function () use ($service, $permissionsId, $updatedPermission) {
+                        return $service->permissions->update($this->id, $permissionsId, $updatedPermission, ['fields' => 'id, expirationTime']);
+                    });
+                } catch (Exception $e) {
+                    logError("can't set auto expiration");
+                    logError($e->getMessage());
+                    $this->isCheckedOutWithNoAutoExpiration = true;
+                }
+            } else {
                 $this->isCheckedOutWithNoAutoExpiration = true;
             }
 
@@ -351,7 +355,7 @@ class CdlItem
         }
     }
 
-    public function return(User $user)
+    public function return(User $user, $mode = 'manual')
     {
         global $config;
         global $service;
@@ -405,7 +409,7 @@ class CdlItem
             //email when manualReturnNotif is enabled && use Cron for autoReturnNotif
             $emailOnManualReturn = $config->notifications['emailOnManualReturn'];
             $emailOnAutoReturn = $config->notifications['emailOnAutoReturn']['enable'];
-            if ($emailOnManualReturn) {
+            if (($emailOnManualReturn && $mode = 'manual') || ($emailOnAutoReturn && $mode == 'auto')) {
                 try {
                     email('return', $user, $this);
                 } catch (Google_Service_Exception $e) {
@@ -413,6 +417,7 @@ class CdlItem
                     logError($e->getMessage());
                 }
             }
+
             //remove it from cron watch list since it has been manually returned
             if ($emailOnAutoReturn) {
                 $cronDataFileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);

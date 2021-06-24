@@ -60,6 +60,7 @@ $nowStr = date("c", $now); //RFC 3339 / ISO 8601 date
 $totalItems = count($currentOutItems);
 $itemsEmail = 0;
 $itemsRemoved = 0;
+$itemsReturned = 0;
 //item and user serialized as object
 foreach ($currentOutItems as $key => $item) {
     $cdlItem = $item['cdlItem'];
@@ -68,19 +69,24 @@ foreach ($currentOutItems as $key => $item) {
     $due = strtotime($dueStr);
     $secDiff = $due - $now;
     if ($secDiff < 1) { //past due
-        if ($secDiff < 86400) { //only email if item due is less than a day (in case cron wasn't running and the file is backing up)
+        if ($cdlItem->isCheckedOutWithNoAutoExpiration) {
+            $cdlItem->return();
+            $itemsReturned++;
+        } else if ($secDiff < 86400) { //only email if item due is less than a day (in case cron wasn't running and the file is backing up)
             email('return', $user, $cdlItem);
             $itemsEmail++;
+            //remove from array
+            unset($newCurrentOutItems[$key]);
+            $itemsRemoved++;
         }
-        //remove from array
-        unset($newCurrentOutItems[$key]);
-        $itemsRemoved++;
     }
 }
 
 if ($itemsRemoved) {
     echo "total items $totalItems ($itemsRemoved removed), emailed $itemsEmail item(s)! ";
     file_put_contents($fileName, serialize($newCurrentOutItems));
+} else if ($itemsReturned) {
+    echo "total items $totalItems ($itemsReturned returned)! ";
 } else {
     echo "total items $totalItems, no changes";
 }
