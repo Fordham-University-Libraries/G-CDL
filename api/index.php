@@ -8,10 +8,11 @@ require 'CdlItem.php';
 require 'User.php';
 require 'respond.php';
 require 'get_client.php';
-require 'email.php';
-require 'ils_api_action.php';
-require 'retry.php';
 require 'stats_action.php';
+require_once('email.php');
+require_once('ils_api_action.php');
+require_once('retry.php');
+require_once('utils.php');
 require __DIR__ . '/vendor/autoload.php';
 
 //force trailing slash
@@ -409,15 +410,6 @@ function logout()
 
     //redirect to log out frontend message page
     header("Location: " . $host . $baseDir . "/logged-out");
-}
-
-function logError($error) {
-    $logFilePath = Config::getLocalFilePath('error.log');
-    if (is_array($error) || is_object($error)) {
-        error_log(time() . ': ' . print_r($error, true), 3, $logFilePath);
-    } else {
-        error_log(time() . ": " . $error . "\n", 3, $logFilePath);
-    }
 }
 
 function test() {

@@ -17,7 +17,6 @@ if ($method == 'web') {
     if ($secret) {
         if (!isset($_GET['secret']) || $_GET['secret'] != $secret) die('unauthorized');
     }
-
 }
 
 if ($method == 'webHook') {
@@ -33,12 +32,12 @@ if ($method == 'webHook') {
     }
 }
 
-//make sure we don't send double/triple same return notif emails
-sleep(5);
-
 date_default_timezone_set($config->timeZone);
 $fileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
 if (!file_exists($fileName)) die('no items currenlty checked out');
+
+//make sure we don't send double/triple same return notif emails
+sleep(5);
 
 require 'Lang.php';
 require 'get_client.php';
@@ -61,6 +60,7 @@ $totalItems = count($currentOutItems);
 $itemsEmail = 0;
 $itemsRemoved = 0;
 $itemsReturned = 0;
+
 //item and user serialized as object
 foreach ($currentOutItems as $key => $item) {
     $cdlItem = $item['cdlItem'];
@@ -70,7 +70,7 @@ foreach ($currentOutItems as $key => $item) {
     $secDiff = $due - $now;
     if ($secDiff < 1) { //past due
         if ($cdlItem->isCheckedOutWithNoAutoExpiration) {
-            $cdlItem->return();
+            $cdlItem->return($user, 'auto');
             $itemsReturned++;
         } else if ($secDiff < 86400) { //only email if item due is less than a day (in case cron wasn't running and the file is backing up)
             email('return', $user, $cdlItem);

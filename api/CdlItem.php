@@ -233,6 +233,9 @@ class CdlItem
                     $this->isCheckedOutWithNoAutoExpiration = true;
                 }
             } else {
+                //needs to be manaully return when due
+                logError("config said this account cannot set auto expiration");
+                $this->driveFile = $service->files->get($this->id, ['fields' => $config->fieldsGet]); //refresh becuase it'll have saved to the items currently checked out file, which we'll need perm id to return it later
                 $this->isCheckedOutWithNoAutoExpiration = true;
             }
 
@@ -361,6 +364,16 @@ class CdlItem
         global $service;
         global $lang;
         if (!$lang) $lang = getLanguages();
+        if ($mode == 'auto') {
+            require_once('retry.php');
+            require_once('email.php');
+            require_once('ils_api_action.php');
+            require_once('utils.php');
+            require_once('respond.php');
+            $client = getClient();
+            $service = new Google_Service_Drive($client);
+        }
+
 
         $permissions = $this->driveFile->getPermissions();
         $permissionId = null; //to be removed
@@ -370,6 +383,8 @@ class CdlItem
                 break;
             }
         }
+
+
 
         if (isset($permissionId)) {
             //remove the perm
@@ -383,7 +398,7 @@ class CdlItem
                 respondWithError(500, "Internal Error - on Return");
             }
             //stats
-            logStats($this, 'manual_return');
+            if ($mode == 'manual') logStats($this, 'manual_return');
 
             //if set to update ILS status on borrow/return
             if ($config->libraries[$this->library]->ils['api']['enable'] && $config->libraries[$this->library]->ils['api']['changeItemStatusOnBorrowReturn'] && Config::$isProd) {
@@ -438,12 +453,12 @@ class CdlItem
                 }
             } 
 
-            if (!$user->isAccessibleUser) {
+            if (!$user->isAccessibleUser && $mode == 'manual') {
                 $respond = ['returnSuccess' => true, 'id' => $this->id];
                 respondWithData($respond);
             }
         } else {
-            respondWithError(400, $lang['libraries'][$this->library]['error']['return']['userDoesNotHaveItemCheckedOut']);
+            if ($mode == 'manual') respondWithError(400, $lang['libraries'][$this->library]['error']['return']['userDoesNotHaveItemCheckedOut']);
         }
 
         //if user is in accessible users list
@@ -468,12 +483,12 @@ class CdlItem
                     });
                 } catch (Google_Service_Exception $e) {
                     logError(json_decode($e->getMessage()));
-                    respondWithError(500, "Internal Error - on Accessible Return");
+                    if ($mode == 'manual') respondWithError(500, "Internal Error - on Accessible Return");
                 }
             }
 
             $respond = ['returnSuccess' => true, 'id' => $this->id];
-            respondWithData($respond);
+            if ($mode == 'manual') respondWithData($respond);
         }
     }
 

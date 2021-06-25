@@ -93,6 +93,12 @@ class Config
         ],
         'mainFolderId' => ['FYI, ID of the main CDL folder in Google Drive', -1],
         'driveOwner' => ['FYI, the account that owns the main CDL Folder on Google Drive (drive owner has full/unlimited power, can edit EVERYTHING)', -1],
+        'driveOwnerGooglePermissions' => [
+            'canSetAutoExpiration' => ['non G Suite account can\'t auto expired', -2],
+            'canEmailWithGmail' => ['service account can\'t send email', -2],
+            'accessMode' => ['how GDrive is accessed -- OAuth or serviceAccount', -2, ['OAuth','serviceAccount']],
+            'realDriveOwner' => ['when using service account, there\'s an option to set other account as the "driveOwner", so store the actual service account email here', -2]
+        ],
         'accessibleUsersSheetId' => ['FYI, ID of the Google Sheet that is used to store all the accessible users', -1],
         'accessibleUserCacheMinutes' => ['how long (minutes) should the accessible users data is cached', 1],
         'accessibleUserCachefileName' => ['cache filename -- data is stored on Gsheet', -2],
@@ -552,6 +558,7 @@ class Config
                 $this->_createField('appName'),
                 $this->_createField('gSuitesDomain'),
                 $this->_createField('driveOwner'),
+                $this->_createField('driveOwnerGooglePermissions'),
                 $this->_createField('appSuperAdmins'),
                 $this->_createField('googleTagManagerUA'),
                 $this->_createField('auth'),
