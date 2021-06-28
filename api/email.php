@@ -65,7 +65,7 @@ function email(string $kind, User $user, CdlItem $cdlItem)
                 return 0;
             }
         } else {
-            logError('the config said this account cant send with gmail');
+            //logError('the config said this account cant send with gmail');
             return 0;
         }
     } else if ($config->emails['method'] == 'SMTP') {
@@ -152,7 +152,7 @@ function errorNotifyEmail($message, $errorId)
     } catch (Google_Service_Exception $e) {
         logError('cannot email with Gmail');
         logError($e->getMessage());
-        return;
+        return 0;
     }
 
     $sender = 'me';
