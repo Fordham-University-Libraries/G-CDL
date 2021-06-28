@@ -367,7 +367,11 @@ function getLangAdmin() {
 
 function compliantBreachNotify(string $error, string $errorId = null)
 {
-    errorNotifyEmail("Compliant ERROR: $error", $errorId);
+    try {
+        errorNotifyEmail("Compliant ERROR: $error", $errorId);
+    } catch (Exception $e) {
+        //
+    }
 }
 
 function logout()
