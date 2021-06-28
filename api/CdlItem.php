@@ -358,7 +358,7 @@ class CdlItem
         }
     }
 
-    public function return(User $user, $mode = 'manual')
+    public function return(User $user, string $mode = 'manual')
     {
         global $config;
         global $service;
@@ -424,7 +424,7 @@ class CdlItem
             //email when manualReturnNotif is enabled && use Cron for autoReturnNotif
             $emailOnManualReturn = $config->notifications['emailOnManualReturn'];
             $emailOnAutoReturn = $config->notifications['emailOnAutoReturn']['enable'];
-            if (($emailOnManualReturn && $mode = 'manual') || ($emailOnAutoReturn && $mode == 'auto')) {
+            if (($emailOnManualReturn && $mode == 'manual') || ($emailOnAutoReturn && $mode == 'auto')) {
                 try {
                     email('return', $user, $this);
                 } catch (Google_Service_Exception $e) {
