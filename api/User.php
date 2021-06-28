@@ -109,8 +109,13 @@ class User
         if (file_exists($fileName) && time() - filemtime($fileName) < $config->accessibleUserCacheMinutes * 3600) {
             // use cache
             $file = file_get_contents($fileName);
-            $accessibleUsers = unserialize($file);
-            $this->isAccessibleUser = in_array($this->userName, $accessibleUsers);
+            if ($file) {
+                $accessibleUsers = unserialize($file);
+                $this->isAccessibleUser = in_array($this->userName, $accessibleUsers);
+            } else {
+                logError('cannot get accessible users data from cache file: ' . $fileName);
+                $this->isAccessibleUser = false;
+            }
         } else {
             // grab new
             $client = getClient();
