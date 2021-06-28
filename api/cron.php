@@ -51,6 +51,9 @@ if (!flock($fp, LOCK_EX|LOCK_NB, $wouldblock)) {
 }
 else {
     // lock obtained
+    // log last time cron ran
+    $cronLogFile = Config::getLocalFilePath('cronLastRan.txt');
+    touch($cronLogFile);
 }
 
 

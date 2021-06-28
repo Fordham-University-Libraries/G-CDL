@@ -234,9 +234,25 @@ class CdlItem
                 }
             } else {
                 //needs to be manaully return when due
-                logError("config said this account cannot set auto expiration");
+                //logError("config said this account cannot set auto expiration");
                 $this->driveFile = $service->files->get($this->id, ['fields' => $config->fieldsGet]); //refresh becuase it'll have saved to the items currently checked out file, which we'll need perm id to return it later
                 $this->isCheckedOutWithNoAutoExpiration = true;
+            }
+
+            //if CheckedOutWithNoAutoExpiration check that cron is setup
+            if ($this->isCheckedOutWithNoAutoExpiration) {
+                $cronLogFile = Config::getLocalFilePath('cronLastRan.txt');
+                if (file_exists($cronLogFile)) {
+                    if (time() - filemtime($cronLogFile) > 600) { //10 minutes
+                        $cronError = 'DANGER! item checked out with NO auto expiration BUT cron has\'t ran in the past 10 minutes';
+                        logError($cronError);
+                        compliantBreachNotify($cronError);
+                    }
+                } else {
+                    $cronError = 'DANGER! item checked out with NO auto expiration BUT cron has NEVER ran';
+                    logError($cronError);
+                    compliantBreachNotify($cronError);
+                }
             }
 
             $respond = ['borrowSuccess' => true, 'id' => $this->id, 'due' => $expTime];
