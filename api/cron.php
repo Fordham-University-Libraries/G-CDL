@@ -37,7 +37,22 @@ $fileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']
 if (!file_exists($fileName)) die('no items currenlty checked out');
 
 //make sure we don't send double/triple same return notif emails
-sleep(5);
+//check lock
+$fp = fopen($fileName, 'w+');
+if (!flock($fp, LOCK_EX|LOCK_NB, $wouldblock)) {
+    if ($wouldblock) {
+        echo "another cron running... (can't lock)";
+        die();
+    }
+    else {
+        echo "couldn't lock for some reasons, e.g. no such file";
+        die();
+    }
+}
+else {
+    // lock obtained
+}
+
 
 require 'Lang.php';
 require 'get_client.php';
@@ -70,10 +85,18 @@ foreach ($currentOutItems as $key => $item) {
     $secDiff = $due - $now;
     if ($secDiff < 1) { //past due
         if ($cdlItem->isCheckedOutWithNoAutoExpiration) {
-            $cdlItem->return($user, 'auto');
+            try {
+                $cdlItem->return($user, 'auto');
+            } catch (Exception $e) {
+                //do nothing, keep going
+            }
             $itemsReturned++;
         } else if ($secDiff < 86400) { //only email if item due is less than a day (in case cron wasn't running and the file is backing up)
-            email('return', $user, $cdlItem);
+            try {
+                email('return', $user, $cdlItem);
+            } catch (Exception $e) {
+                //do nothing, keep going
+            }
             $itemsEmail++;
             //remove from array
             unset($newCurrentOutItems[$key]);
@@ -84,9 +107,17 @@ foreach ($currentOutItems as $key => $item) {
 
 if ($itemsRemoved) {
     echo "total items $totalItems ($itemsRemoved removed), emailed $itemsEmail item(s)! ";
-    file_put_contents($fileName, serialize($newCurrentOutItems));
+    try {
+        file_put_contents($fileName, serialize($newCurrentOutItems));
+    } catch (Exception $e) {
+        //caught so at least the file will be unlocked
+    }
 } else if ($itemsReturned) {
     echo "total items $totalItems ($itemsReturned returned)! ";
 } else {
     echo "total items $totalItems, no changes";
 }
+
+//unlock all the things
+flock($fp, LOCK_UN);
+fclose($fp);
