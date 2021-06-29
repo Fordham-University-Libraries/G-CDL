@@ -40,6 +40,20 @@ try {
     die();
 }
 
+//login
+$action = $_GET['action'];
+
+if ($action == 'login') {
+    //when init step2 (link accont, will have state == init), let the init_action handle it
+    if($_GET['state'] != 'init') {
+        $authCode = $_GET['code'] ?? null;
+        $apiAction = $_GET['apiActionTarget'] ?? null;
+        $target = $_GET['target'] ?? null;
+        endUserGoogleLogin($authCode, $target, $apiAction);
+        die();
+    }
+}
+
 //init wizard (if no token and etc.)
 $needsInit = true;
 if ($_GET['state'] != 'init' && $_GET['action'] != 'init') {
@@ -72,15 +86,7 @@ if (Config::$isProd) error_reporting(0);
 
 //allow annon access
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
-    $action = $_GET['action'];
-    if ($action == 'login') {
-        $state = $_GET['state'] ?? null;
-        $authCode = $_GET['code'] ?? null;
-        $apiAction = $_GET['apiActionTarget'] ?? null;
-        $target = $_GET['target'] ?? null;
-        endUserGoogleLogin($authCode, $target, $apiAction);
-        die();
-    } else if ($action == 'logout') {
+    if ($action == 'logout') {
         logout();
         die();
     } else if ($action == 'get_config') {
