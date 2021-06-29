@@ -115,7 +115,7 @@ function init($step = 1, $authCode = null)
 
         if ($authCode) { //redirect back from Google login, generate token and init folders and etc.
             $client = getClient($authCode);  //gen token
-            if(!initMainFolder($client)) {
+            if(!initMainFolder('OAuth', $client)) {
                 die('Error: this application is designed to be used with G Suite (now Google Workspace) only i.e. you log in to your work Gmail as jdoe@myinstitution.edu. Looks like you tried to login with @gmail.com account?');
             }
         } else if ($step == 1) { //create creds - only allow annon access when there's no token (to be able to setup the first time)
@@ -175,13 +175,11 @@ function init($step = 1, $authCode = null)
     $view->render(dirname(__DIR__) . '/api/init.template.php');
 }
 
-function initMainFolder($mode = 'OAuth', $owner = null)
+function initMainFolder($mode = 'OAuth', $client = null, $owner = null)
 {
     //has token.json now, create main folder and config
     $config = new Config();
-    if (!$config || !isset($config->mainFolderId)) {
-        $client = getClient();
-        
+    if (!$config || !isset($config->mainFolderId)) {        
         if ($mode == 'OAuth') {
             try {
                 //default leeway is 1, increase it in case clocks are not quite synced
@@ -288,6 +286,8 @@ function initStep1($view, $params) {
 }
 
 function initStep2($view, $mode = 'OAuth', $params = null) {
+    global $client;
+
     if ($mode == 'serviceAccount') {
         $view->data['serviceAccountEmail'] = $params['creds']->client_email;
         $view->data['showNext'] = false;
@@ -297,7 +297,7 @@ function initStep2($view, $mode = 'OAuth', $params = null) {
         }
         if ($_POST['owner']) {
             $owner = $_POST['owner'];
-            initMainFolder('serviceAccount', $owner);
+            initMainFolder('serviceAccount', $client, $owner);
             header("location: ./?action=init&step=3");
         }
     } else if ($mode == 'OAuth') {
@@ -362,7 +362,11 @@ function initStep3($view, $mode = 'OAuth') {
             if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
         } catch (Exception $e) {
             //not login
-            endUserGoogleLogin(null,null,'init&step=3');
+            logError($e->getMessage());
+            // echo "gaha";
+            // die();
+            $authCode = $_GET['code'] ?? null;
+            endUserGoogleLogin($authCode,null,'init&step=3');
             die();
         }
     }
