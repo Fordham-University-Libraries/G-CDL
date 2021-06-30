@@ -22,7 +22,7 @@ class CdlItem
     public bool $shouldCreateNoOcr = true; //to track if uploader explicitely choose to not run OCR removal on this file
     public string $fileWithOcrId;
     public string $due; //zulu date
-    public bool $isCheckedOutWithNoAutoExpiration;
+    public bool $isCheckedOutWithNoAutoExpiration = false;
     public bool $isCheckedOutToMe = false;
     public int $lastReturned;
     public int $lastBorrowed;
@@ -145,8 +145,6 @@ class CdlItem
         if ($user->isDriveOwner) {
             respondWithError(400, 'can NOT borrow item since you are logged in as the drive owner (cannot add you as a "viewer" since you are already the owner of the file)');
         }
-
-        $permissions = $this->driveFile->getPermissions();
 
         //check that user haven't just returned the item ($config->backToBackBorrowCoolDown minutes cooldown)
         //also check at title level (if title has mulitple copies, user shold not be able to borrow other copies of the same title right away)
