@@ -296,6 +296,7 @@ function initStep2($view, $mode = 'OAuth', $params = null) {
             $view->data['showNext'] = true;
         }
         if ($_POST['owner']) {
+            if (!$client) $client = getClient();
             $owner = $_POST['owner'];
             initMainFolder('serviceAccount', $client, $owner);
             header("location: ./?action=init&step=3");
