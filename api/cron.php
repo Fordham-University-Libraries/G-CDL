@@ -13,7 +13,7 @@ if (!$isEnabled) die('this feature is not enabled');
 if ($method == 'cronJob') die('this feature is only enabled for using local cronjob');
 $secret = $config->notifications['emailOnAutoReturn']['secret'];
 
-if ($method == 'web') {
+if ($method == 'web' && php_sapi_name() != "cli") {
     if ($secret) {
         if (!isset($_GET['secret']) || $_GET['secret'] != $secret) die('unauthorized');
     }
