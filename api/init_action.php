@@ -17,21 +17,6 @@ function init($step = 1, $authCode = null)
 
     $tokenPath = Config::getLocalFilePath('token.json', 'creds');
     $hasToken = file_exists($tokenPath);
-    if ($hasCreds && $hasToken) {
-        if ($config) {
-            if (count($config->libraries)) {
-                require 'view_all_action.php';
-                $configs = $config->getFrontendConfig();
-                $defaultLibrary = $configs['defaultLibrary'] ?? null;
-                $client = getClient();
-                global $service;
-                $service = new Google_Service_Drive($client);
-                if ($defaultLibrary) {
-                    $items = getAllFiles($defaultLibrary, null, true);
-                }
-            }
-        }
-    }
 
     $view = new View();
     
@@ -56,6 +41,7 @@ function init($step = 1, $authCode = null)
     $view->data['hasCreds'] = $hasCreds;
     $view->data['hasServiceAccountCreds'] = $hasServiceAccountCreds;
 
+    $auth = false;
     if ($hasCreds) {
         $creds = file_get_contents($credsPath);
         $creds = json_decode($creds, true);
@@ -346,31 +332,30 @@ function initStep2($view, $mode = 'OAuth', $params = null) {
 function initStep3($view, $mode = 'OAuth') {
     global $user;
     global $config;
-    if ($mode == 'OAuth') {
-        try {
-            $config = new Config();
-            $client = getClient();
-            $oauth2 = new \Google_Service_Oauth2($client);    
-            $userInfo = $oauth2->userinfo->get();
-        } catch (Google_Service_Exception $e) {
-            $errMsg = json_decode($e->getMessage());
-            logError($errMsg);
-            header("location: ./?action=init&step=2");
-            die();
-        }
-        try {
-            $user = new User(true);
-            if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
-        } catch (Exception $e) {
-            //not login
-            logError($e->getMessage());
-            // echo "gaha";
-            // die();
-            $authCode = $_GET['code'] ?? null;
-            endUserGoogleLogin($authCode,null,'init&step=3');
-            die();
-        }
+
+    //step 3 == add first library, app must've already been init
+    try {
+        $config = new Config();
+        $client = getClient();
+        $oauth2 = new \Google_Service_Oauth2($client);    
+        $userInfo = $oauth2->userinfo->get();
+    } catch (Google_Service_Exception $e) {
+        $errMsg = json_decode($e->getMessage());
+        logError($errMsg);
+        header("location: ./?action=init&step=2");
+        die();
     }
+    try {
+        $user = new User(true);
+        if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
+    } catch (Exception $e) {
+        //not login, redirect to login
+        //logError($e->getMessage());
+        $authCode = $_GET['code'] ?? null;
+        endUserGoogleLogin($authCode,null,'init&step=3');
+        die();
+    }
+
     //GET        
     if (!$_POST['libKey'] && !$_POST['libName']) {
         $view->data['userName'] = $user->userName;
