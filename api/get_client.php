@@ -83,7 +83,12 @@ function getClient($authCode = null, $state = null)
         }
     } else {
         //if there's token
-        $client->setAccessToken(json_decode(file_get_contents($tokenPath), true));
+        $_token = json_decode(file_get_contents($tokenPath), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            respondWithFatalError(500, "token error: " . json_last_error());
+            die();
+        }
+        $client->setAccessToken($_token);
         // If token expired.
         if ($client->isAccessTokenExpired()) {
             // Refresh the token if possible, else fetch a new one.
@@ -102,7 +107,17 @@ function getClient($authCode = null, $state = null)
             if (!file_exists(dirname($tokenPath))) {
                 mkdir(dirname($tokenPath), 0700, true);
             }
-            file_put_contents($tokenPath, json_encode($client->getAccessToken()));    
+            $_token = json_encode($client->getAccessToken());
+            if (json_last_error() === JSON_ERROR_NONE) {
+                try {
+                    file_put_contents($tokenPath, $_token, LOCK_EX);
+                } catch (Exception $e) {
+                    logError("can't write refreshed token to file");
+                    logError($e->getMessage());
+                }
+            } else {
+                logError("can't encode refresed token to json");
+            }
         }
         return $client;
     }
