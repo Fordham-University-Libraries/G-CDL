@@ -25,7 +25,6 @@ export class ReaderComponent implements OnInit {
   mode: number; //for debuggin'
   pageTitle: string;
   user: User;
-  item: Item;
   isLoadingUser: boolean = true;
   checkedOutItem: Item;
   isCheckedOutItemLoading: boolean;
@@ -72,7 +71,7 @@ export class ReaderComponent implements OnInit {
     });
   }
 
-  ngOnDestroy():void {
+  ngOnDestroy():void {    
     if (this.timeOut) clearTimeout(this.timeOut);
   }
 
@@ -81,17 +80,29 @@ export class ReaderComponent implements OnInit {
     this.driveService.getUserCheckedOutItem(forceRefresh).subscribe(res => {
       if (res?.item) {
         this.checkedOutItem = res.item;
-        //console.log(this.checkedOutItem);
         this.due = new Date(this.checkedOutItem.due);
-        this._setExpiration();
+        if (this.due < new Date()) {
+          //item already expired
+          this._getUserCheckedOutItem(true);
+          this.return;
+        } else {
+          //set expiration for UI
+          this._setExpiration();
+        }
+      } else {
+        this.checkedOutItem = null;
+        this.due = null;
       }
+
       this.isCheckedOutItemLoading = false;
       this.ConfigService.getLang().subscribe(langRes => {
-        this.lang = langRes;
-        this.readerLang = this.checkedOutItem ? this.lang.libraries[this.checkedOutItem.library].reader : this.lang.libraries[this.user.homeLibrary].reader;        
+        this.lang = langRes;                
         if (this.checkedOutItem) {
+          this.readerLang = JSON.parse(JSON.stringify(langRes.libraries[this.checkedOutItem.library].reader)); //clone
           this.readerLang.readerHead = this.readerLang.readerHead.replace('{{$title}}', this.checkedOutItem.title);
-          this.readerLang.dueBack = this.readerLang.dueBack.replace('{{$due}}', this.datePipe.transform(this.checkedOutItem.due, 'medium'));             
+          this.readerLang.dueBack = this.readerLang.dueBack.replace('{{$due}}', this.datePipe.transform(this.checkedOutItem.due, 'MMM d, y, h:mm a'));             
+        } else {
+          this.readerLang = langRes.libraries[this.user.homeLibrary].reader;
         }
       });
     })
@@ -157,13 +168,15 @@ export class ReaderComponent implements OnInit {
         this.snackBar.open('The item has been returned', 'Dismiss', {
           duration: 3000,
         });
-        this.driveService.clearAllItemsCache;
-        this.driveService.getUserCheckedOutItem(true); 
-        this.driveService.getAllItems(true, this.user.homeLibrary).subscribe(res => {
-          this.isBusy = false;
-          this.router.navigate(['/']);
-        });
-        
+        this.driveService.clearAllItemsCache();
+        this.driveService.clearUserCheckedOutItemCache();
+        this.isBusy = false;
+        this.router.navigate(['/']);
+        // this.driveService.getUserCheckedOutItem(true); 
+        // this.driveService.getAllItems(true, this.user.homeLibrary).subscribe(res => {
+        //   this.isBusy = false;
+        //   this.router.navigate(['/']);
+        // });
       } else {
         console.error(res);
         this.isBusy = false;

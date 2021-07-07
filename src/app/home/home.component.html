@@ -121,11 +121,11 @@
                                         <span *ngIf="item.items[0].available"
                                             class="cdk-visually-hidden">Available</span>
                                         <mat-icon *ngIf="!item.items[0].available" role="presentation"
-                                            [matTooltip]="item.items[0].due ? 'Unavailable - Checked Out (until: ' + (item.items[0].due | date:'medium') + ')' : 'Unavailable - Checked Out'">
+                                            [matTooltip]="item.items[0].due ? 'Unavailable - Checked Out (until: ' + (item.items[0].due | date:'MMM d, y, h:mm a') + ')' : 'Unavailable - Checked Out'">
                                             event_busy
                                         </mat-icon>
                                         <span *ngIf="!item.items[0].available" class="cdk-visually-hidden">Unavailable
-                                            until {{ item.items[0].due | date:'medium' }}</span>
+                                            until {{ item.items[0].due | date:'MMM d, y, h:mm a' }}</span>
                                         <span
                                             [matTooltip]="userHasItemCheckedOut ? 'You can only borrow one item at a time!' : ''">
                                             <button mat-raised-button color="primary" class="button-primary"
@@ -177,11 +177,11 @@
                                                 <span *ngIf="copy.available"
                                                     class="cdk-visually-hidden">Available</span>
                                                 <mat-icon *ngIf="!copy.available" role="presentation"
-                                                    [matTooltip]="item.items[0].due ? 'Unavailable - Checked Out (until: ' + (item.items[0].due | date:'medium') + ')' : 'Unavailable - Checked Out'">
+                                                    [matTooltip]="item.items[0].due ? 'Unavailable - Checked Out (until: ' + (item.items[0].due | date:'MMM d, y, h:mm a') + ')' : 'Unavailable - Checked Out'">
                                                     event_busy
                                                 </mat-icon>
                                                 <span *ngIf="!copy.available" class="cdk-visually-hidden">Unavailable
-                                                    until {{ copy.due | date:'medium' }}</span>
+                                                    until {{ copy.due | date:'MMM d, y, h:mm a' }}</span>
                                                 <span
                                                     [matTooltip]="userHasItemCheckedOut ? 'You can only borrow one item at a time!' : ''">
                                                     <button mat-raised-button color="primary" class="button-primary"

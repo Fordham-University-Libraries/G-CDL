@@ -95,9 +95,7 @@ export class HomeComponent implements OnInit {
   private _getAllItems(forceRefresh: boolean = false) {
     this.isAllItemsLoading = true;
     this.items.length = 0;
-    this.driveService.getAllItems(forceRefresh, this.library).subscribe(res => {
-      //console.log(res);
-      
+    this.driveService.getAllItems(forceRefresh, this.library).subscribe(res => {      
       res.nextPageToken ? this.nextPageToken = res.nextPageToken : this.nextPageToken = null;
       if (res.items?.length) {
         this._processItems(res.items, false);
@@ -288,7 +286,7 @@ export class HomeComponent implements OnInit {
     this.userHasItemCheckedOut = event;
   }
 
-  onRefreshParent() {
+  onRefreshParent() {    
     this._getAllItems(true);
   }
 }

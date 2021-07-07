@@ -142,8 +142,6 @@ class CdlItem
             respondWithError(400, 'can NOT borrow item since you are logged in as the drive owner (cannot add you as a "viewer" since you are already the owner of the file)');
         }
 
-        $permissions = $this->driveFile->getPermissions();
-
         //check that user haven't just returned the item ($config->backToBackBorrowCoolDown minutes cooldown)
         //also check at title level (if title has mulitple copies, user shold not be able to borrow other copies of the same title right away)
         //BUT if it's a 'mulit-parts' item, it should allow e.g. can borrow book 'foo part 2 of 2' right after just returned 'foo part 1 of 2'

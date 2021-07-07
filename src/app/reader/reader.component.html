@@ -20,7 +20,7 @@
         <div *ngIf="checkedOutItem && !isFullScreen" fxLayout="row" class="due">
             <div>
                 {{ readerLang.dueBack }}
-                <!-- Due back: {{ checkedOutItem.due | date:'medium' }} &nbsp;&nbsp; -->
+                <!-- Due back: {{ checkedOutItem.due | date:'MMM d, y, h:mm a' }} &nbsp;&nbsp; -->
             </div>
             <div class="buttons" fxLayoutGap=".5em">
                 <button *ngIf="user.isAccessibleUser && !isFullScreen" class="download" mat-raised-button color="primary" class="button-primary"

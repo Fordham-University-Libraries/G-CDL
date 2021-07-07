@@ -41,6 +41,10 @@ export class DriveService {
     this.allItems$ = [];
   }
 
+  clearUserCheckedOutItemCache() {
+    this.userCheckedOutItem = null;
+  }
+
   getAllItemsNextPage(nextPageToken: string): Observable<{nextPageToken?: string, items?: Item[]}> {
     let subject = new Subject<{nextPageToken?: string, items?: Item[]}>();
     if (!nextPageToken) subject.error('no next page token');
@@ -71,8 +75,8 @@ export class DriveService {
     }
     let subject = new Subject<any>();
     this.httpClient.get(`${this.apiBase}/?action=view_borrowed`, {withCredentials: true}).subscribe(res => {
-      subject.next(res['data']);
       this.userCheckedOutItem = res['data'];
+      subject.next(this.userCheckedOutItem);
     })
     return subject;
   }
@@ -85,6 +89,7 @@ export class DriveService {
     let formData: any = new FormData();
     formData.append("action", 'borrow');
     formData.append("fileId", fileId);
+    this.userCheckedOutItem = null;
     return this.httpClient.post(`${this.apiBase}/`, formData, {withCredentials: true}).pipe(map(val => val['data']));
   }
 
@@ -92,6 +97,7 @@ export class DriveService {
     let formData: any = new FormData();
     formData.append("action", 'return');
     formData.append("fileId", fileId);
+    this.userCheckedOutItem = null;
     return this.httpClient.post(`${this.apiBase}/`, formData, {withCredentials: true}).pipe(map(val => val['data']));
   }
 

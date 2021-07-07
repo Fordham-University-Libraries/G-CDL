@@ -106,6 +106,8 @@ function suspendItem($fileId, $suspend = true)
         respondWithError(401, 'Not Authorized - Suspend Item, Not a Staff of this Library');
     }
     $cdlItem->suspend($suspend);
+    require_once('search_action.php');
+    clearCheckMultiCopiesCache();
 }
 
 function trashItem($fileId)

@@ -1,6 +1,7 @@
 <?php
-//upload is not part or Angular frontend so user can try uploading stuff right after they done initing API
+//upload can also be a standalone (not part or Angular frontend) so user can try uploading stuff right after they done initing API
 require 'View.php';
+require_once 'search_action.php';
 
 function adminUploadGet(string $libKey = null) {
     global $config;
@@ -36,7 +37,6 @@ function adminUploadGet(string $libKey = null) {
 
 function adminUploadPost($uploadedFile, string $libKey) {
     global $config;
-    global $service;
     global $user;
     $respondFormat = $_POST['respondFormat'] ?? null;
 
@@ -91,6 +91,7 @@ function adminUploadPost($uploadedFile, string $libKey) {
                     respondWithError(500, $errMsg);
                 }
             }
+            clearCheckMultiCopiesCache();
         } catch (Exception $e) {
             respondWithError(500, $e);
         }

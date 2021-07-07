@@ -122,6 +122,17 @@ function searchByBibIds($libKey, $bibIdsStr)
 
 function checkMulti($library)
 {
+    //if has cache
+    $fileName = Config::getLocalFilePath('multiple_copies_count_cache.php.serialzied');
+    if (file_exists($fileName)) {
+        $file = file_get_contents($fileName);
+        if ($file) {
+            $result = unserialize($file);
+            respondWithData(['results' => $result]);
+            return;
+        }
+    } 
+
     $allItems = search('title', null, $library, null, true); //internal call
     $bibIdsCount = [];
     foreach ($allItems as $cdlItem) {
@@ -137,7 +148,25 @@ function checkMulti($library)
             $result[$bibId] = $count;
         }
     }
+
+    //cache it
+    $file = fopen($fileName, 'wb');
+    fwrite($file, serialize($result));
+    fclose($file);
+
     respondWithData(['results' => $result]);
+}
+
+function clearCheckMultiCopiesCache()
+{
+    $fileName = Config::getLocalFilePath('multiple_copies_count_cache.php.serialzied');
+    if (file_exists($fileName)) {
+        try {
+            unlink($fileName);
+        } catch (Exception $e) {
+            logError('can\t remove multiple_copies_count cache file');
+        }
+    }
 }
 
 ?>
