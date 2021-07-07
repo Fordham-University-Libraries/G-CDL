@@ -212,14 +212,16 @@ class Config
             //if no local config, try grab the backup config stored in appData on GDrive
             try {
                 $backupConfig = $this->_getConfigFromAppFolder();
+                if($backupConfig) {
                 $this->_map($backupConfig);
                 $file = fopen($configFilePath, 'wb');
-                try {
-                    fwrite($file, json_encode($backupConfig));
-                    fclose($file);
-                } catch (Exception $e) {
-                    logError($e);
-                    respondWithError(500, 'internal error');
+                    try {
+                        fwrite($file, json_encode($backupConfig));
+                        fclose($file);
+                    } catch (Exception $e) {
+                        logError($e);
+                        respondWithError(500, 'internal error');
+                    }
                 }
             } catch (Exception $e) {
                 //no backup or can't get backup config
