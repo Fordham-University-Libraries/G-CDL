@@ -115,7 +115,7 @@
                             class="status available">Available</small>
                         <small *ngIf="!item.isCheckedOutToMe && !item.available" class="status unavailable">Unavailable
                             (until:
-                            {{ item.due | date:'medium' }} or sooner) </small>
+                            {{ item.due | date:'MMM d, y, h:mm a' }} or sooner) </small>
                         <small *ngIf="item.isCheckedOutToMe" class="status checked-out-to-me">Checked out to you</small>
                     </div>
                     <div *ngIf="!item.isCheckedOutToMe && item.available" class="margin-top-default">

@@ -227,6 +227,7 @@ class Config
                 if ($backupConfig) {
                     $this->_map($backupConfig);
                     $file = fopen($configFilePath, 'wb');
+
                     try {
                         fwrite($file, json_encode($backupConfig));
                         fclose($file);

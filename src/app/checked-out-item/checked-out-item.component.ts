@@ -22,6 +22,7 @@ export class CheckedOutItemComponent implements OnInit {
   parentItemId: string;
   isCheckedOutItemLoading: boolean;
   checkedOutItem: any;
+  due: Date;
   isBusy: boolean;
   busyAction: string;
   accessibleUserDialogRef: any;
@@ -32,6 +33,7 @@ export class CheckedOutItemComponent implements OnInit {
   shouldHide: boolean;
   private readClickedEventSubscription: Subscription;
   private refreshEventSubscription: Subscription;
+  private timeOut: any;
   @Input() parent: string;
   @Input() library: string;
   @Input() lang: Language;
@@ -74,16 +76,24 @@ export class CheckedOutItemComponent implements OnInit {
   ngOnDestroy() {
     this.readClickedEventSubscription?.unsubscribe();
     this.refreshEventSubscription?.unsubscribe();
+    if (this.timeOut) clearTimeout(this.timeOut);
   }
 
   private _getUserCheckedOutItem(forceRefresh: boolean = false) {
     this.isCheckedOutItemLoading = true;
+    if (forceRefresh) this.checkedOutItem = null;
     this.driveService.getUserCheckedOutItem(forceRefresh).subscribe(res => {      
       if (res) {        
         this.isAccessibleUser = res['isAccessibleUser'];
         this.usersLibrary = res['usersLibrary'];
-        this.checkedOutItem = res['item'];
-        if (!this.library) this.library = this.checkedOutItem.library
+        if (res['item']) {
+          this.due = new Date(res['item'].due);
+          if (this.due > new Date()) {
+            this.checkedOutItem = res['item'];
+            if (!this.library) this.library = this.checkedOutItem.library
+            this._setExpirationRecheck();
+          }
+        }
       }
       //The !! (double bang) logical operators return a value’s truthy value.
       this.userHasItemCheckedOut.emit(!!this.checkedOutItem);
@@ -107,6 +117,23 @@ export class CheckedOutItemComponent implements OnInit {
       console.error(error);
       this.gaService.logError('home-compo: _getUserCheckedOutItem() error', false);
     });
+  }
+
+  private _setExpirationRecheck() {
+    if (this.checkedOutItem.due) {
+      const now:any = new Date();
+      const due:any = new Date(this.checkedOutItem.due);
+      if (due > now) {
+        let diffTime = Math.abs(due - now); //millisecs         
+        if (diffTime) {
+          diffTime += 45000; //wait extra 45 secs since Google API is not as in sync
+          this.timeOut = setTimeout(()=>{
+            this._getUserCheckedOutItem(true);
+            this.refreshParent.emit('return');
+          }, diffTime);
+        }
+      }
+    }
   }
 
   return(id: string) {

@@ -20,7 +20,7 @@
                     {{checkedOutItem.partTotal}})</span><br>
                 <span *ngIf="library != checkedOutItem.library">Library: {{ checkedOutItem.libraryName }}<br></span>
             </ng-container>
-            <ng-container *ngIf="checkedOutItem.due">Due back: {{ checkedOutItem.due | date:'medium' }}</ng-container>
+            <ng-container *ngIf="checkedOutItem.due">Due back: {{ checkedOutItem.due | date:'MMM d, y, h:mm a' }}</ng-container>
             <div class="margin-top-default" fxLayoutGap=".5em">
                 <button id="main-read-button" mat-raised-button color="primary" class="button-primary"
                     (click)="read(checkedOutItem.id)" [class.hidden]="mode == 'return'" [class.embiggen]="mode == 'read'">Read</button>

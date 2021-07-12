@@ -1,7 +1,8 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 #API stuff
 /api/vendor
-/api/private_data
+/api/private_data/
+!/api/private_data/.htaccess
 
 # compiled output
 /dist

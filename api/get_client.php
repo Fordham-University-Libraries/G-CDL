@@ -4,6 +4,7 @@
  * @return Google_Client the authorized client object
  */
 //for app / as drive owner
+//see https://developers.google.com/drive/api/v3/quickstart/php
 function getClient($authCode = null, $state = null)
 {
     $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
@@ -93,13 +94,46 @@ function getClient($authCode = null, $state = null)
         }
     } else {
         //if there's token
-        $client->setAccessToken(json_decode(file_get_contents($tokenPath), true));
+        $_token = json_decode(file_get_contents($tokenPath), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            respondWithFatalError(500, "token error: " . json_last_error());
+            die();
+        }
+        $client->setAccessToken($_token);
+        // OMG - this is so awful
         // If token expired.
         if ($client->isAccessTokenExpired()) {
-            // Refresh the token if possible, else fetch a new one.
+            //check that there's no other process refreshing it (if the file is_refreshing_token.json exists that mean it's being refreshed)
+            $isRefreshingTokenPath = Config::getLocalFilePath('is_refreshing_token.json', 'creds');
+            $beenWaitingFor = 0;
+            //if there is, wait for 30 sec....
+            while (file_exists($isRefreshingTokenPath)) {
+                sleep(1);
+                if (!file_exists($isRefreshingTokenPath)) {
+                    //the isRefreshingTokenPath note file is gone, meaning the token has been refreshed, grab the new token and return client
+                    $_token = json_decode(file_get_contents($tokenPath), true);
+                    $client->setAccessToken($_token);
+                    return $client;
+                }
+                if ($beenWaitingFor++ > 30) {
+                    //waited for 30 sec now but still nothing, let's refresh it ourselves
+                    unlink($isRefreshingTokenPath);
+                    break;
+                }
+            }
+
+            //nobody refreshing it, will refresh now, touch a file so other process knows to wait
+            try {
+                touch($isRefreshingTokenPath);
+            } catch (Exception $e) {
+                logError('cat\'t write isRefreshingToken note to file');
+            }
+
+            // Refresh the token
             if ($client->getRefreshToken()) {
                 $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
             }
+
             //check that the refreshed token is valid p.s. default JWT leeway is 1, increase it in case clocks are not quite synced
             $jwt = new \Firebase\JWT\JWT;
             $jwt::$leeway = 5;
@@ -112,8 +146,26 @@ function getClient($authCode = null, $state = null)
             if (!file_exists(dirname($tokenPath))) {
                 mkdir(dirname($tokenPath), 0700, true);
             }
-            file_put_contents($tokenPath, json_encode($client->getAccessToken()));    
+            $_token = json_encode($client->getAccessToken());
+            if (json_last_error() === JSON_ERROR_NONE) {
+                try {
+                    file_put_contents($tokenPath, $_token, LOCK_EX);
+                } catch (Exception $e) {
+                    logError("can't write refreshed token to file");
+                    logError($e->getMessage());
+                }
+            } else {
+                logError("can't encode refresed token to json");
+            }
+
+            //refreshed (or fail) - remove the isRefreshingToken note file
+            try {
+                unlink($isRefreshingTokenPath);
+            } catch (Exception $e) {
+                logError("can't delete isRefreshingToken note file"); 
+            }
         }
+
         return $client;
     }
 }

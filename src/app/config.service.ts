@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, Subject, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { map, publishReplay, refCount } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { EventEmitter } from '@angular/core';
@@ -42,13 +42,19 @@ export class ConfigService {
     return this.authConfig$;
   }
 
-  getLang(forceRefresh = false): Observable<any> {
-    if (!this.lang$) {
-      this.lang$ = this.httpClient.get<any>(`${this.apiBase}/?action=get_lang`, {withCredentials: true}).pipe(
-        map((res) => res['data']),
-        publishReplay(1),
-        refCount()
-      );
+  getLang(forceRefresh = false): Observable<any> {    
+    if (!this.lang$ || forceRefresh) {
+      if (!forceRefresh) {
+        this.lang$ = this.httpClient.get<any>(`${this.apiBase}/?action=get_lang`, {withCredentials: true}).pipe( 
+          map((res) => res['data']),
+          publishReplay(1),
+          refCount()
+        );
+      } else {
+        this.lang$ = this.httpClient.get<any>(`${this.apiBase}/?action=get_lang`, {withCredentials: true}).pipe( 
+          map((res) => res['data'])
+        );
+      }
     }
     return this.lang$;
   }

@@ -64,11 +64,13 @@ Example of App/GDrive Interactions
     - run `ng build --prod`
         - if you plan to put it under a directory e.g. https://library.myuniv.edu/dir_name run `ng build --prod --base-href /dir_name/`
     - copy the content of the `dist` directory e.g. /G-CDL/dist/cdl/ directory to your server
+      - add Angular rewrite/redirect e.g. https://julianpoemp.github.io/ngx-htaccess-generator/#/generator   
     - copy the dir /api to /api on your server
         - make sure the /api/private_data
             - is NOT accessible to the public
             - IS writable by your server
     - NOTE: if you host the api on a different host than the front-end, you can edit Angular's `environment.prod.ts` and change the `apiBase` from `./api` to where ever e.g. `//gcdl-api.myuni.edu/api`
+    - DONE! NOTE! If you use this app for production, please [drop us a line](https://docs.google.com/forms/d/e/1FAIpQLScqLS0DsEOrDLfgeqzFyNKI-MM3vp9MDwQdYGL9zxjM6gRoNw/viewform?usp=pp_url&entry.2033461527=__other_option__&entry.2033461527.other_option_response=letting+you+know+that+we're+using+the+app!) -- knowing how many institutions are using it would help us justify staff time maintaining the app and adding new features
         
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 

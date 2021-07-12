@@ -70,7 +70,7 @@
 
             <ng-container matColumnDef="last_borrow_tstamp">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Last Borrowed</th>
-                <td mat-cell *matCellDef="let item">{{ item.last_borrow_tstamp | date:'medium' }}</td>
+                <td mat-cell *matCellDef="let item">{{ item.last_borrow_tstamp | date:'MMM d, y, h:mm a' }}</td>
                 <td mat-footer-cell *matFooterCellDef>-</td>
 
             </ng-container>
