@@ -208,7 +208,7 @@ function initMainFolder($mode = 'OAuth', $client = null, $owner = null)
                 'emailAddress' => $owner
             ));
             try {
-                $driveService->permissions->create($mainFolder->getId(), $newPermission);
+                $driveService->permissions->create($mainFolder->getId(), $newPermission, ['sendNotificationEmail' => false]);
             } catch (Exception $e) {
                 $errMsg = json_decode($e->getMessage());
                 logError($errMsg);
