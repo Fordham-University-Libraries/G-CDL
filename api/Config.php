@@ -19,6 +19,12 @@ class Config
     public $accessibleUsersSheetId;
     public $gSuitesDomain;
     public $driveOwner;
+    public $driveOwnerGooglePermissions = [
+        'canSetAutoExpiration' => true,
+        'canEmailWithGmail' => true,
+        'accessMode' => "OAuth",
+        'realDriveOwner' => null //when using service account, there's an option to set other account as the "driveOwner", so store the actual service email here
+    ];
     public $timeZone = null; //https://www.php.net/manual/en/timezones.america.php
     public $appName = 'My Library CDL APP';
     public $appSuperAdmins = []; //can change everything and will get email when there's a problem
@@ -87,6 +93,12 @@ class Config
         ],
         'mainFolderId' => ['FYI, ID of the main CDL folder in Google Drive', -1],
         'driveOwner' => ['FYI, the account that owns the main CDL Folder on Google Drive (drive owner has full/unlimited power, can edit EVERYTHING)', -1],
+        'driveOwnerGooglePermissions' => [
+            'canSetAutoExpiration' => ['non G Suite account can\'t auto expired', -2],
+            'canEmailWithGmail' => ['service account can\'t send email', -2],
+            'accessMode' => ['how GDrive is accessed -- OAuth or serviceAccount', -2, ['OAuth','serviceAccount']],
+            'realDriveOwner' => ['when using service account, there\'s an option to set other account as the "driveOwner", so store the actual service account email here', -2]
+        ],
         'accessibleUsersSheetId' => ['FYI, ID of the Google Sheet that is used to store all the accessible users', -1],
         'accessibleUserCacheMinutes' => ['how long (minutes) should the accessible users data is cached', 1],
         'accessibleUserCachefileName' => ['cache filename -- data is stored on Gsheet', -2],
@@ -212,9 +224,10 @@ class Config
             //if no local config, try grab the backup config stored in appData on GDrive
             try {
                 $backupConfig = $this->_getConfigFromAppFolder();
-                if($backupConfig) {
-                $this->_map($backupConfig);
-                $file = fopen($configFilePath, 'wb');
+                if ($backupConfig) {
+                    $this->_map($backupConfig);
+                    $file = fopen($configFilePath, 'wb');
+
                     try {
                         fwrite($file, json_encode($backupConfig));
                         fclose($file);
@@ -296,6 +309,34 @@ class Config
             }
         }
         return null;
+    }
+
+    function deleteConfigFromAppFolder($fileName = 'config.json')
+    {
+        $client = getClient();
+        if ($client) {
+            $service = new Google_Service_Drive($client);
+            try {
+                $fileList = $service->files->listFiles([
+                    'q' => 'name = "' . $fileName . '"',
+                    'spaces' => 'appDataFolder',
+                    'fields' => '*',
+                    'pageSize' => 100
+                ]);
+                $files = $fileList->getFiles();
+                if (count($files) == 1) {
+                    $configFile = $service->files->get($files[0]->getId());
+                    $tempFile = new Google_Service_Drive_DriveFile;
+                    $tempFile->setTrashed(true);
+                    $tempFile->setName($fileName . '.trashed');
+                    $service->files->update($configFile->getId(), $tempFile);
+                }
+            } catch (Google_Service_Exception $e) {
+                $errMsg = json_decode($e->getMessage());
+                logError($errMsg);
+                respondWithFatalError(500, 'cannot delete file from Drive\'s AppData');
+            }
+        }
     }
 
     function updateConfigOnGDriveAppFolder(string $fileName, string $jsonStr, $init = false): bool
@@ -392,7 +433,7 @@ class Config
     }
 
     //update ALL config to local config.json
-    private function _updatePropsAll()
+    private function _updatePropsAll($init = false)
     {
         $configFilePath = self::getLocalFilePath('config.json');
         //update
@@ -404,7 +445,7 @@ class Config
             $result = ['success' => true];
             //also save to Gdrive AppFolder
             try {
-                $this->updateConfigOnGDriveAppFolder("config.json", json_encode($data));
+                $this->updateConfigOnGDriveAppFolder("config.json", json_encode($data), $init);
             } catch (Exception $e) {
                 logError('cannot back up config file: ' . $e->getMessage());
             }
@@ -518,6 +559,7 @@ class Config
                 $this->_createField('appName'),
                 $this->_createField('gSuitesDomain'),
                 $this->_createField('driveOwner'),
+                $this->_createField('driveOwnerGooglePermissions'),
                 $this->_createField('appSuperAdmins'),
                 $this->_createField('googleTagManagerUA'),
                 $this->_createField('auth'),
@@ -572,10 +614,10 @@ class Config
         return explode(' ', $accessToken['scope']);
     }
 
-    public function createNewLibrary(string $libKey, string $libName, array $options = null)
+    public function createNewLibrary(string $libKey, string $libName, array $options = null, $init = false)
     {
         global $user;
-        if (!$user->isSuperAdmin) {
+        if (!$user->isSuperAdmin && !$init) {
             respondWithError(401, 'Not Authorized - Add new Library');
         }
 
@@ -613,6 +655,7 @@ class Config
         try {
             $statsSheet = $driveService->files->create($driveFile);
         } catch (Exception $e) {
+            logError("can't get accessible users sheet");
             logError($e->getMessage());
             respondWithFatalError(500, 'can NOT create sheet to store accessible users data');
         }
@@ -630,7 +673,7 @@ class Config
         if (!count($this->libraries)) $libData['isDefault'] = true;
         $library = new Library($libData);
         $this->libraries[$libKey] = $library;
-        $result = $this->_updatePropsAll();
+        $result = $this->_updatePropsAll($init);
 
         return $result;
     }

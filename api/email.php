@@ -15,52 +15,57 @@ function email(string $kind, User $user, CdlItem $cdlItem)
 
     // gmail
     if ($config->emails['method'] == 'gMail') {
-        $client = getClient();
-        try {
-            $gmailService = new Google_Service_Gmail($client);
-        } catch (Google_Service_Exception $e) {
-            logError('cannot email with Gmail');
-            logError($e->getMessage());
-            return 0;
-        }
-        $sender = 'me'; //The special value **me** can be used to indicate the authenticated user. (in this case, the driveOwner)
-        $toName = isset($user->fullName) ? $user->fullName : $user->userName;
-        $toEmail = $user->email;
-        $strSubject = '';
-        $strBody = '';
-        if ($kind == 'borrow') {
-            $strSubject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowSubject']);
-            $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowBody']);
-            $strBody = str_replace('{{$libraryName}}', $config->libraries[$cdlItem->library]->name, $strBody);
-            $strBody = str_replace('{{$borrowingPeriod}}', '' . $config->libraries[$cdlItem->library]->borrowingPeriod, $strBody);
-            $strBody = str_replace('{{$readLink}}', $host . $baseDir . '/read', $strBody);
-            $strBody = str_replace('{{$returnLink}}', $host . $baseDir . '/return', $strBody);
-        } elseif ($kind == 'return') {
-            $strSubject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnSubject']);
-            $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnBody']);
-            $strBody = str_replace('{{$libraryName}}', $config->libraries[$cdlItem->library]->name, $strBody);
-        } else {
-            return 0;
-            die();
-        }
+        if (!isset($config->driveOwnerGooglePermissions['canEmailWithGmail']) || $config->driveOwnerGooglePermissions['canEmailWithGmail']) {
+            $client = getClient();
+            try {
+                $gmailService = new Google_Service_Gmail($client);
+            } catch (Google_Service_Exception $e) {
+                logError('cannot email with Gmail');
+                logError($e->getMessage());
+                return 0;
+            }
+            $sender = 'me'; //The special value **me** can be used to indicate the authenticated user. (in this case, the driveOwner)
+            $toName = isset($user->fullName) ? $user->fullName : $user->userName;
+            $toEmail = $user->email;
+            $strSubject = '';
+            $strBody = '';
+            if ($kind == 'borrow') {
+                $strSubject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowSubject']);
+                $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['borrowBody']);
+                $strBody = str_replace('{{$libraryName}}', $config->libraries[$cdlItem->library]->name, $strBody);
+                $strBody = str_replace('{{$borrowingPeriod}}', '' . $config->libraries[$cdlItem->library]->borrowingPeriod, $strBody);
+                $strBody = str_replace('{{$readLink}}', $host . $baseDir . '/read', $strBody);
+                $strBody = str_replace('{{$returnLink}}', $host . $baseDir . '/return', $strBody);
+            } elseif ($kind == 'return') {
+                $strSubject = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnSubject']);
+                $strBody = str_replace('{{$title}}', $cdlItem->title, $lang['libraries'][$cdlItem->library]['emails']['returnBody']);
+                $strBody = str_replace('{{$libraryName}}', $config->libraries[$cdlItem->library]->name, $strBody);
+            } else {
+                return 0;
+                die();
+            }
 
-        $oauth2 = new \Google_Service_Oauth2($client);
-        $userInfo = $oauth2->userinfo->get();
-        $fromEmail = $userInfo->email;
-        $strRawMessage = "From: \"$config->appName\"<$fromEmail>\r\n";
-        $strRawMessage .= "To: \"$toName\"<$toEmail>\r\n";
-        $strRawMessage .= 'Subject: =?utf-8?B?' . base64_encode($strSubject) . "?=\r\n";
-        $strRawMessage .= "MIME-Version: 1.0\r\n";
-        $strRawMessage .= "Content-Type: text/html; charset=utf-8\r\n";
-        $strRawMessage .= 'Content-Transfer-Encoding: quoted-printable' . "\r\n\r\n";
-        $strRawMessage .= "$strBody\r\n";
-        $mime = rtrim(strtr(base64_encode($strRawMessage), '+/', '-_'), '='); // The message needs to be encoded in Base64URL
-        $msg = new Google_Service_Gmail_Message();
-        $msg->setRaw($mime);
-        try {
-            $gmailService->users_messages->send($sender, $msg);
-            return 1;
-        } catch (Exception $e) {
+            $oauth2 = new \Google_Service_Oauth2($client);
+            $userInfo = $oauth2->userinfo->get();
+            $fromEmail = $userInfo->email;
+            $strRawMessage = "From: \"$config->appName\"<$fromEmail>\r\n";
+            $strRawMessage .= "To: \"$toName\"<$toEmail>\r\n";
+            $strRawMessage .= 'Subject: =?utf-8?B?' . base64_encode($strSubject) . "?=\r\n";
+            $strRawMessage .= "MIME-Version: 1.0\r\n";
+            $strRawMessage .= "Content-Type: text/html; charset=utf-8\r\n";
+            $strRawMessage .= 'Content-Transfer-Encoding: quoted-printable' . "\r\n\r\n";
+            $strRawMessage .= "$strBody\r\n";
+            $mime = rtrim(strtr(base64_encode($strRawMessage), '+/', '-_'), '='); // The message needs to be encoded in Base64URL
+            $msg = new Google_Service_Gmail_Message();
+            $msg->setRaw($mime);
+            try {
+                $gmailService->users_messages->send($sender, $msg);
+                return 1;
+            } catch (Exception $e) {
+                return 0;
+            }
+        } else {
+            //logError('the config said this account cant send with gmail');
             return 0;
         }
     } else if ($config->emails['method'] == 'SMTP') {
@@ -147,7 +152,7 @@ function errorNotifyEmail($message, $errorId)
     } catch (Google_Service_Exception $e) {
         logError('cannot email with Gmail');
         logError($e->getMessage());
-        return;
+        return 0;
     }
 
     $sender = 'me';
