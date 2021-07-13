@@ -202,6 +202,9 @@ function getAlmaCourses(string $library, string $field = "courseName", string $t
         while (true) {
             $params = "courses?limit=99999999&offset=$offSet&status=$courseStatus&order_by=code%2Csection&direction=ASC&exact_search=false";
             if ($term) {
+                //To search for a phrase, separate words with an underscore (or in some cases with “+” encoded as %2b ) -- sigh....
+                //https://developers.exlibrisgroup.com/blog/How-we-re-building-APIs-at-Ex-Libris/#BriefSearch
+                $term = str_replace('+', '_', urlencode($term));
                 $q = "$field~$term";
                 $params .= "&q=$q";
             }

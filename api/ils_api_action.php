@@ -408,5 +408,9 @@ function checkIlsApiSettings(string $libKey)
             respondWithError(501, 'ILS API is not properly configured (no api key)');
             die();
         }
+        if (!extension_loaded('xml')) {
+            respondWithError(501, 'PHP XML module is required for Alma API, please install/enable it first');
+            die();
+        }
     }
 }
