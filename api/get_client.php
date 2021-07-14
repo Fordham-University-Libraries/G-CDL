@@ -128,6 +128,7 @@ function getClient($authCode = null, $state = null)
             $jwt = new \Firebase\JWT\JWT;
             $jwt::$leeway = 5;
             if(!$client->verifyIdToken()) {
+                unlink($isRefreshingTokenPath);
                 logError('Cannot Refresh OAuth Token, most likely its been revolked / app is disconnected from GDrive');
                 respondWithFatalError('401', 'Cannot Refresh Token');
             }
