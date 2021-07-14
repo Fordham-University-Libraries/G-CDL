@@ -9,15 +9,14 @@ require 'Config.php';
 $config = new Config();
 $isEnabled = $config->notifications['emailOnAutoReturn']['enable'];
 $method = $config->notifications['emailOnAutoReturn']['method'];
-if (!$isEnabled) die('this feature is not enabled');
-if ($method == 'cronJob') die('this feature is only enabled for using local cronjob');
-$secret = $config->notifications['emailOnAutoReturn']['secret'];
+if (!$isEnabled) die('this feature is not enabled (notify after auto return is NOT enabled)');
+if ($method == 'cronJob' && php_sapi_name() !== "cli") die('this feature is only enabled for using local cronjob');
 
 if ($method == 'web') {
+    $secret = $config->notifications['emailOnAutoReturn']['secret'];
     if ($secret) {
         if (!isset($_GET['secret']) || $_GET['secret'] != $secret) die('unauthorized');
     }
-
 }
 
 if ($method == 'webHook') {
