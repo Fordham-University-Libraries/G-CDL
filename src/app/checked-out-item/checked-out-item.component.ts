@@ -3,11 +3,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Config } from '../models/config.model';
 import { Language } from '../models/language.model';
 import { Customization } from '../models/customization.model';
+import { Item } from '../models/item.model';
 import { DriveService } from '../drive.service';
+import { ReaderService } from '../reader.service';
+import { ConfigService } from '../config.service';
 import { GaService, ACTIONS, CATEGORIES } from '../ga.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { ConfigService } from '../config.service';
 import { Observable, Subscription } from 'rxjs';
 
 @Component({
@@ -21,7 +23,7 @@ export class CheckedOutItemComponent implements OnInit {
   parentBibId: string;
   parentItemId: string;
   isCheckedOutItemLoading: boolean;
-  checkedOutItem: any;
+  checkedOutItem: Item;
   due: Date;
   isBusy: boolean;
   busyAction: string;
@@ -31,6 +33,7 @@ export class CheckedOutItemComponent implements OnInit {
   usersLibrary:string;
   isAccessibleUser: boolean;
   shouldHide: boolean;
+  expirationCheckDelayMS = 45000; //wait extra x millsecs after item is auto returned since Google API is not as in sync
   private readClickedEventSubscription: Subscription;
   private refreshEventSubscription: Subscription;
   private timeOut: any;
@@ -49,7 +52,8 @@ export class CheckedOutItemComponent implements OnInit {
     private gaService: GaService,
     private snackBar: MatSnackBar,
     private liveAnnouncer: LiveAnnouncer,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private readerService: ReaderService
   ) {
   }
 
@@ -87,8 +91,8 @@ export class CheckedOutItemComponent implements OnInit {
         this.isAccessibleUser = res['isAccessibleUser'];
         this.usersLibrary = res['usersLibrary'];
         if (res['item']) {
-          this.due = new Date(res['item'].due);
-          if (this.due > new Date()) {
+          this.due = new Date(res['item'].due);          
+          if (this.due > new Date()) {            
             this.checkedOutItem = res['item'];
             if (!this.library) this.library = this.checkedOutItem.library
             this._setExpirationRecheck();
@@ -126,10 +130,11 @@ export class CheckedOutItemComponent implements OnInit {
       if (due > now) {
         let diffTime = Math.abs(due - now); //millisecs         
         if (diffTime) {
-          diffTime += 45000; //wait extra 45 secs since Google API is not as in sync
+          diffTime += this.expirationCheckDelayMS; //wait extra x secs since Google API is not as in sync
           this.timeOut = setTimeout(()=>{
             this._getUserCheckedOutItem(true);
             this.refreshParent.emit('return');
+            this.readerService.closeWindowRef();
           }, diffTime);
         }
       }
@@ -147,6 +152,7 @@ export class CheckedOutItemComponent implements OnInit {
         this.checkedOutItem = null;
         this._getUserCheckedOutItem(true);
         this.refreshParent.emit('return');
+        this.readerService.closeWindowRef();
       } else {
         console.error(res);
         this.isBusy = false;
@@ -171,7 +177,7 @@ export class CheckedOutItemComponent implements OnInit {
     if (this.config.useEmbedReader) {
       this.router.navigate(['/reader'])
     } else {
-      window.open(this.checkedOutItem.url);
+      this.readerService.openReaderDirectly(this.checkedOutItem);
     }
   }
 
@@ -181,6 +187,10 @@ export class CheckedOutItemComponent implements OnInit {
       this.gaService.logEvent(ACTIONS.download, CATEGORIES.home, id);
       window.open(this.checkedOutItem.downloadLink);
    }
+  }
+
+  hasReaderOpenedDirectly(): boolean {
+    return this.readerService.hasWindowRef();
   }
 
 }

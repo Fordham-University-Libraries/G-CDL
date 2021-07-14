@@ -15,7 +15,8 @@ class Lang {
             'head' => 'Current Digital Reserves Checkout:',
             'noItem' => 'You do not have a Digital Reserves item currently checked out.',
             'itemHead' => 'You\'re borrowing one item:',
-            'itemHeadThis' => 'You\'re borrowing THIS item:'
+            'itemHeadThis' => 'You\'re borrowing THIS item:',
+            'gDriveReaderOpenedWarning' => '* You\'re reading an item. Do NOT close or naviagate away from this page as it\'ll close the reader'
         ],
         'item' => [
             'itemHead' => 'Item View',
@@ -32,7 +33,8 @@ class Lang {
                 'helpDesc' => 'Read me if the book is not displayed below',
                 'helpText' => '<p>Try these steps:</p><ol><li><strong>Check Borwser Extensions</strong>: do you have any privacy/tracking related extensions such as <em>Privacy Badger</em>, <em>uBlock Origin</em>, and <em>Ghostery</em> installed? If so, try disable it or add this page to its "allowed list"</li></ol>',
                 'openReaderInNewWindowText' => 'If none of the above works, try open the reader in a new window',
-                'openReaderInNewWindowButtonText' => 'Open Reader in New Window'
+                'openReaderInNewWindowButtonText' => 'Open Reader in New Window',
+                'gDriveReaderOpenedWarning' => '* You\'ve opened the reader a in new window. Do NOT close or naviagate away from this page as it\'ll close the reader'
             ]
         ],
         'reserves' => [
@@ -135,7 +137,8 @@ class Lang {
             'head' => ['the heading of the snippet that show an item currently checked out to a user',1, null],
             'noItem' => ['what to say when there\'s no item checked out',1, null],
             'itemHead' => ['what to say when the shippet is shown at item level view, if user is borrowing other item',1, null],
-            'itemHeadThis' => ['what to say when the shippet is shown at item level view, if user is borrowing THIS item',1, null]
+            'itemHeadThis' => ['what to say when the shippet is shown at item level view, if user is borrowing THIS item',1, null],
+            'gDriveReaderOpenedWarning' => ['Text of the warning message if user has open the reader on a new window',1, null]
         ],
         'item' => [
             'itemHead' => ['header (h1) of the item page',1, null],
@@ -152,7 +155,8 @@ class Lang {
                 'helpDesc' => ['description of the viewer troubshooting snippet',1, null],
                 'helpText' => ['help/troublshooting text', 1, 'htmlOk'],
                 'openReaderInNewWindowText' => ['help to explain that uesr can try open the reader in a new window if it does not load. user the token {{$button}} to place the button within the help text',1, null],
-                'openReaderInNewWindowButtonText' => ['Text of the button that allows user to open Google viewer directly on a new tab/window',1, null]
+                'openReaderInNewWindowButtonText' => ['Text of the button that allows user to open Google viewer directly on a new tab/window',1, null],
+                'gDriveReaderOpenedWarning' => ['Text of the warning message if user has open the reader on a new window',1, null]
             ]
         ],
         'reserves' => [

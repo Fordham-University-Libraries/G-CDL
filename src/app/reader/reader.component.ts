@@ -10,6 +10,7 @@ import { Language } from '../models/language.model';
 import { DriveService } from '../drive.service';
 import { AuthenticationService } from '../auth.service';
 import { ConfigService } from '../config.service';
+import { ReaderService } from '../reader.service';
 import { GaService, ACTIONS, CATEGORIES } from '../ga.service';
 import { HostListener } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
@@ -34,7 +35,6 @@ export class ReaderComponent implements OnInit {
   hasExpired: boolean;
   thirdPartyCookiesSupported: boolean = true;
   showLoginBanner: boolean = true;
-  popRef: any;
   config: Config;
   lang: Language;
   readerLang: any;
@@ -49,6 +49,7 @@ export class ReaderComponent implements OnInit {
     private authService: AuthenticationService,
     private gaService: GaService,
     private ConfigService: ConfigService,
+    private readerService: ReaderService,
     private snackBar: MatSnackBar
   ) { }
 
@@ -100,7 +101,7 @@ export class ReaderComponent implements OnInit {
         if (this.checkedOutItem) {
           this.readerLang = JSON.parse(JSON.stringify(langRes.libraries[this.checkedOutItem.library].reader)); //clone
           this.readerLang.readerHead = this.readerLang.readerHead.replace('{{$title}}', this.checkedOutItem.title);
-          this.readerLang.dueBack = this.readerLang.dueBack.replace('{{$due}}', this.datePipe.transform(this.checkedOutItem.due, 'MMM d, y, h:mm a'));             
+          this.readerLang.dueBack = this.readerLang.dueBack.replace('{{$due}}', this.datePipe.transform(this.checkedOutItem.due, 'MMM d, y, h:mm a'));          
         } else {
           this.readerLang = langRes.libraries[this.user.homeLibrary].reader;
         }
@@ -116,6 +117,7 @@ export class ReaderComponent implements OnInit {
       this.timeOut = setTimeout(()=>{
         this.hasExpired = true;
         this.isFullScreen = false;
+        this.checkedOutItem = null;
         //console.log('expired!');
       }, diffTime);
       //console.log(`expiring in ${diffTime} ms`);
@@ -164,6 +166,7 @@ export class ReaderComponent implements OnInit {
       //console.log(res);
       if (res.returnSuccess) {
         this.checkedOutItem = null;
+        this.readerService.closeWindowRef();
         this.isCheckedOutItemLoading = false;
         this.snackBar.open('The item has been returned', 'Dismiss', {
           duration: 3000,
@@ -172,11 +175,6 @@ export class ReaderComponent implements OnInit {
         this.driveService.clearUserCheckedOutItemCache();
         this.isBusy = false;
         this.router.navigate(['/']);
-        // this.driveService.getUserCheckedOutItem(true); 
-        // this.driveService.getAllItems(true, this.user.homeLibrary).subscribe(res => {
-        //   this.isBusy = false;
-        //   this.router.navigate(['/']);
-        // });
       } else {
         console.error(res);
         this.isBusy = false;
@@ -198,18 +196,12 @@ export class ReaderComponent implements OnInit {
   }
 
   pop() {
-    if(this.popRef) this.popRef.self.close();
     this.gaService.logEvent(ACTIONS.openNewWindow, CATEGORIES.reader, this.checkedOutItem.id);
-    const readerUrl = this.checkedOutItem.url;
-    //console.log(readerUrl);
-    this.popRef = window.open(readerUrl,'Book Reader',`directories=no,titlebar=no,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=${screen.width},height=${screen.height}`);
-    const now:any = new Date();
-    const diffTime= Math.abs(this.due - now); //millisecs 
-    //console.log('will auto close in ' + diffTime);
-    setTimeout(() => {
-      //Wow so much cleverness, very highly techical, many CDL compliants, such a great idea!
-      if(this.popRef) this.popRef.self.close();      
-    }, diffTime);
+    this.readerService.openReaderDirectly(this.checkedOutItem);
+  }
+
+  hasReaderOpenedDirectly(): boolean {
+    return this.readerService.hasWindowRef();
   }
 
   login() {

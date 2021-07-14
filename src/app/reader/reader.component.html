@@ -53,6 +53,9 @@
                 <p *ngIf="readerLang.help.openReaderInNewWindowText">{{ readerLang.help.openReaderInNewWindowText }}</p>
                 <button *ngIf="readerLang.help.openReaderInNewWindowButtonText" mat-stroked-button (click)="pop()">{{ readerLang.help.openReaderInNewWindowButtonText }}</button>
             </div>
+            <div *ngIf="hasReaderOpenedDirectly() && readerLang?.help?.gDriveReaderOpenedWarning" class="on-before-unload-warning">
+                {{ readerLang.help.gDriveReaderOpenedWarning }}
+            </div>
         </mat-expansion-panel>
 
         <div id="reader" *ngIf="checkedOutItem && !hasExpired">
