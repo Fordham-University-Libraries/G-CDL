@@ -41,7 +41,7 @@ if (!file_exists($fileName)) die('no items currenlty checked out');
 
 //make sure we don't send double/triple same return notif emails
 //check lock
-$fp = fopen($fileName, 'w+');
+$fp = fopen($fileName, 'a+');
 if (!flock($fp, LOCK_EX|LOCK_NB, $wouldblock)) {
     if ($wouldblock) {
         echo "another cron running... (can't lock)";
@@ -58,7 +58,6 @@ else {
     $cronLogFile = Config::getLocalFilePath('cronLastRan.txt');
     touch($cronLogFile);
 }
-
 
 require 'Lang.php';
 require 'get_client.php';
