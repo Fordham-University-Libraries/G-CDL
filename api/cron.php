@@ -9,11 +9,14 @@ require 'Config.php';
 $config = new Config();
 $isEnabled = $config->notifications['emailOnAutoReturn']['enable'];
 $method = $config->notifications['emailOnAutoReturn']['method'];
-if (!$isEnabled) die('this feature is not enabled');
-if ($method == 'cronJob') die('this feature is only enabled for using local cronjob');
-$secret = $config->notifications['emailOnAutoReturn']['secret'];
+
+//check for our secret ServiceAccount mode
+if (!$isEnabled && !file_exists(Config::getLocalFilePath('serviceAccountCreds.json', 'creds'))) die('this feature is not enabled (notify after auto return is NOT enabled)');
+
+if ($method == 'cronJob' && php_sapi_name() !== "cli") die('this feature is only enabled for using local cronjob');
 
 if ($method == 'web' && php_sapi_name() != "cli") {
+    $secret = $config->notifications['emailOnAutoReturn']['secret'];
     if ($secret) {
         if (!isset($_GET['secret']) || $_GET['secret'] != $secret) die('unauthorized');
     }
@@ -95,12 +98,14 @@ foreach ($currentOutItems as $key => $item) {
             }
             $itemsReturned++;
         } else if ($secDiff < 86400) { //only email if item due is less than a day (in case cron wasn't running and the file is backing up)
-            try {
-                email('return', $user, $cdlItem);
-            } catch (Exception $e) {
-                //do nothing, keep going
+            if ($isEnabled) {
+                try {
+                    email('return', $user, $cdlItem);
+                } catch (Exception $e) {
+                    //do nothing, keep going
+                }
+                $itemsEmail++;
             }
-            $itemsEmail++;
             //remove from array
             unset($newCurrentOutItems[$key]);
             $itemsRemoved++;

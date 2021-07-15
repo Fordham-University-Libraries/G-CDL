@@ -136,7 +136,7 @@ class User
                 $this->isAccessibleUser = in_array($this->userName, $accessibleUsers);
             } catch (Google_Service_Exception $e) {
                 $errMsg = json_decode($e->getMessage());
-                logError('cannot get accessible users data from sheet: ' + $config->accessibleUsersSheetId);
+                logError('cannot get accessible users data from sheet: ' . $config->accessibleUsersSheetId);
                 logError($errMsg);
                 $this->isAccessibleUser = false;
             }

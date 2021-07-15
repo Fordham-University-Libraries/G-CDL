@@ -103,9 +103,10 @@ class CdlItem
                 }
                 $this->available = false;
                 $this->currentlyCheckedOutToUser = $permission->getEmailAddress();
+
                 if (!$permission->getExpirationTime()) {
-                    $this->due = date("c", $this->lastReturned);
-                    if (!$this->isCheckedOutWithNoAutoExpiration) {
+                    if (isset($this->lastReturned)) $this->due = date("c", $this->lastReturned);
+                    if (!isset($this->isCheckedOutWithNoAutoExpiration) || !$this->isCheckedOutWithNoAutoExpiration) {
                         compliantBreachNotify('File ' . $this->name . '(' . $this->id . ') is shared to viewer WITHOUT expiration time!', $this->id);
                     }
                 } else {
