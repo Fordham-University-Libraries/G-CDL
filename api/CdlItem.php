@@ -266,7 +266,7 @@ class CdlItem
             }
 
             //auto return notification
-            if ($config->notifications['emailOnAutoReturn']['enable']) {
+            if ($config->notifications['emailOnAutoReturn']['enable'] || file_exists(Config::getLocalFilePath('serviceAccountCreds.json', 'creds'))) {
                 //write it to file so we can look at later
                 $this->due = $expTime;
                 $fileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
