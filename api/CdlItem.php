@@ -221,7 +221,7 @@ class CdlItem
                 'expirationTime' => $expTime
             ));
             
-            if (!isset($config->driveOwnerGooglePermissions['canSetAutoExpiration']) || $config->driveOwnerGooglePermissions['canSetAutoExpiration']) {
+            if (!file_exists(Config::getLocalFilePath('serviceAccountCreds.json', 'creds'))) {
                 try {
                     $updated = retry(function () use ($service, $permissionsId, $updatedPermission) {
                         return $service->permissions->update($this->id, $permissionsId, $updatedPermission, ['fields' => 'id, expirationTime']);
@@ -232,8 +232,7 @@ class CdlItem
                     $this->isCheckedOutWithNoAutoExpiration = true;
                 }
             } else {
-                //needs to be manaully return when due
-                //logError("config said this account cannot set auto expiration");
+                //Service Account mode: CANNOT set auto exp -- needs to be manaully return when due
                 $this->driveFile = $service->files->get($this->id, ['fields' => $config->fieldsGet]); //refresh becuase it'll have saved to the items currently checked out file, which we'll need perm id to return it later
                 $this->isCheckedOutWithNoAutoExpiration = true;
             }
@@ -399,8 +398,6 @@ class CdlItem
             }
         }
 
-
-
         if (isset($permissionId)) {
             //remove the perm
             //If successful, this method returns an empty response body.
@@ -449,7 +446,7 @@ class CdlItem
             }
 
             //remove it from cron watch list since it has been manually returned
-            if ($emailOnAutoReturn) {
+            if ($emailOnAutoReturn || file_exists(Config::getLocalFilePath('serviceAccountCreds.json', 'creds'))) {
                 $cronDataFileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
                 if (file_exists($cronDataFileName)) {
                     $cronDataFile = file_get_contents($cronDataFileName);

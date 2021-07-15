@@ -20,7 +20,6 @@ class Config
     public $gSuitesDomain;
     public $driveOwner;
     public $driveOwnerGooglePermissions = [
-        'canSetAutoExpiration' => true,
         'canEmailWithGmail' => true,
         'accessMode' => "OAuth",
         'realDriveOwner' => null //when using service account, there's an option to set other account as the "driveOwner", so store the actual service email here
@@ -94,7 +93,6 @@ class Config
         'mainFolderId' => ['FYI, ID of the main CDL folder in Google Drive', -1],
         'driveOwner' => ['FYI, the account that owns the main CDL Folder on Google Drive (drive owner has full/unlimited power, can edit EVERYTHING)', -1],
         'driveOwnerGooglePermissions' => [
-            'canSetAutoExpiration' => ['non G Suite account can\'t auto expired', -2],
             'canEmailWithGmail' => ['service account can\'t send email', -2],
             'accessMode' => ['how GDrive is accessed -- OAuth or serviceAccount', -2, ['OAuth','serviceAccount']],
             'realDriveOwner' => ['when using service account, there\'s an option to set other account as the "driveOwner", so store the actual service account email here', -2]
