@@ -116,7 +116,7 @@ function errorNotifyEmail($message, $errorId)
     if ($errorId) {
         $fileName = Config::getLocalFilePath('errorEmailLogs.json');
         if (file_exists($fileName)) {
-            $file = file_get_contents($fileName);
+            $file = file_get_contents('nette.safe://'.$fileName);
             $logs = json_decode($file, true);
             if (isset($logs[$errorId])) {
                 if (($logs[$errorId] - time()) < 60 * 60) { //just email about it less than an hour ago, skip
@@ -126,15 +126,15 @@ function errorNotifyEmail($message, $errorId)
             } else {
                 $logs[$errorId] = time();
             }
-            $file = fopen($fileName, 'wb');
-            fwrite($file, json_encode($logs));
-            fclose($file);
+            try {
+                file_put_contents("nette.safe://$fileName", json_encode($logs));
+            } catch (Exception $e) {
+                logError($e);
+            }
         } else {
             $logs = [$errorId => time()];
-            $file = fopen($fileName, 'wb');
             try {
-                fwrite($file, json_encode($logs));
-                fclose($file);
+                file_put_contents("nette.safe://$fileName", json_encode($logs));
             } catch (Exception $e) {
                 logError($e);
             }

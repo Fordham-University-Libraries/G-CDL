@@ -189,10 +189,8 @@ function getAccessibleUsers(string $libKey = null, bool $internal = false)
         foreach ($values as $row) {
             array_push($accessibleUsers, $row[0]);    
         }
-        $file = fopen($fileName, 'wb');
         try {
-            fwrite($file, serialize($accessibleUsers));
-            fclose($file);
+            file_put_contents("nette.safe://$fileName", serialize($accessibleUsers));
         } catch (Exception $e) {
             logError($e);
             respondWithError(500, 'ERROR: cannot save accessible cache data');

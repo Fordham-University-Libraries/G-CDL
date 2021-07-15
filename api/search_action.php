@@ -26,7 +26,7 @@ function search($field = 'title', $term = null, $library = null, $admin = null, 
 
     if (file_exists($fileName) && time() - filemtime($fileName) < $cacheSec) {
         // use cache
-        $file = file_get_contents($fileName);
+        $file = file_get_contents('nette.safe://'.$fileName);
         $files = unserialize($file);
         $isCachedData = true;
     }  else {
@@ -58,10 +58,8 @@ function search($field = 'title', $term = null, $library = null, $admin = null, 
             } else {
                 //save it to cache file
                 if (count($files)) {
-                    $file = fopen($fileName, 'wb');
                     try {
-                        fwrite($file, serialize($files));
-                        fclose($file);
+                        file_put_contents("nette.safe://$fileName", serialize($files));
                     } catch (Exception $e) {
                         logError($e);
                         respondWithError(500, 'Internal Error');
@@ -125,7 +123,7 @@ function checkMulti($library)
     //if has cache
     $fileName = Config::getLocalFilePath('multiple_copies_count_cache.php.serialzied');
     if (file_exists($fileName)) {
-        $file = file_get_contents($fileName);
+        $file = file_get_contents('nette.safe://'.$fileName);
         if ($file) {
             $result = unserialize($file);
             respondWithData(['results' => $result]);
@@ -150,9 +148,11 @@ function checkMulti($library)
     }
 
     //cache it
-    $file = fopen($fileName, 'wb');
-    fwrite($file, serialize($result));
-    fclose($file);
+    try {
+        file_put_contents("nette.safe://$fileName", serialize($result));
+    } catch (Exception $e) {
+        logError($e->getMessage());
+    }   
 
     respondWithData(['results' => $result]);
 }

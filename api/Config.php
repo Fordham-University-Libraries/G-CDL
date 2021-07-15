@@ -203,7 +203,7 @@ class Config
     {
         $configFilePath = self::getLocalFilePath('config.json');
         if (file_exists($configFilePath)) { //local config exists
-            $file = file_get_contents($configFilePath);
+            $file = file_get_contents('nette.safe://'.$configFilePath);
             $data = json_decode($file);
             $this->_map($data);
         }
@@ -214,10 +214,8 @@ class Config
                 $backupConfig = $this->_getConfigFromAppFolder();
                 if($backupConfig) {
                 $this->_map($backupConfig);
-                $file = fopen($configFilePath, 'wb');
                     try {
-                        fwrite($file, json_encode($backupConfig));
-                        fclose($file);
+                        file_put_contents("nette.safe://$configFilePath", json_encode($backupConfig));
                     } catch (Exception $e) {
                         logError($e);
                         respondWithError(500, 'internal error');
@@ -398,9 +396,7 @@ class Config
         //update
         try {
             $data = $this->_reverseMap();
-            $file = fopen($configFilePath, 'wb');
-            fwrite($file, json_encode($data));
-            fclose($file);
+            file_put_contents("nette.safe://$configFilePath", json_encode($data));
             $result = ['success' => true];
             //also save to Gdrive AppFolder
             try {
@@ -568,7 +564,7 @@ class Config
     private function _getScopes()
     {
         $tokenPath = self::getLocalFilePath('token.json', 'creds');
-        $accessToken = json_decode(file_get_contents($tokenPath), true);
+        $accessToken = json_decode(file_get_contents('nette.safe://'.$tokenPath), true);
         return explode(' ', $accessToken['scope']);
     }
 

@@ -183,7 +183,7 @@ function getAlmaCourses(string $library, string $field = "courseName", string $t
     $fileName = Config::getLocalFilePath($library . '_' . $config->libraries[$library]->ils['api']['courseCacheFile']);
     if (!$term && file_exists($fileName) && time() - filemtime($fileName) < $cacheSec) {
         //browse all -- use cache
-        $file = file_get_contents($fileName);
+        $file = file_get_contents('nette.safe://'.$fileName);
         $courses = unserialize($file);
         //$isCachedData = true;
     } else {
@@ -238,9 +238,7 @@ function getAlmaCourses(string $library, string $field = "courseName", string $t
 
         if (!$term && $courses) {
             try {
-                $file = fopen($fileName, 'wb');
-                fwrite($file, serialize($courses));
-                fclose($file);
+                file_put_contents("nette.safe://$fileName", serialize($courses));
             } catch (Exception $e) {
                 logError($e);
             }

@@ -49,7 +49,7 @@ require __DIR__ . '/vendor/autoload.php'; //for Google_Service_Drive_DriveFile
 $langObj = new Lang();
 $lang = $langObj->serialize();
 
-$file = file_get_contents($fileName);
+$file = file_get_contents('nette.safe://'.$fileName);
 $currentOutItems = unserialize($file); //serialized CdlItem object 
 if (!$currentOutItems) die('no items currenlty checked out');
 $newCurrentOutItems = unserialize($file); //make a copy so we cam remove emailed items
@@ -79,7 +79,7 @@ foreach ($currentOutItems as $key => $item) {
 
 if ($itemsRemoved) {
     echo "total items $totalItems ($itemsRemoved removed), emailed $itemsEmail item(s)! ";
-    file_put_contents($fileName, serialize($newCurrentOutItems));
+    file_put_contents("nette.safe://$fileName", serialize($newCurrentOutItems));
 } else {
     echo "total items $totalItems, no changes";
 }

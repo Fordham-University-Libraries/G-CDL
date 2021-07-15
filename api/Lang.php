@@ -263,7 +263,7 @@ class Lang {
         global $config;
         $fileName = Config::getLocalFilePath('lang.json');
         if (file_exists($fileName)) {
-            $file = file_get_contents($fileName);
+            $file = file_get_contents('nette.safe://'.$fileName);
             $this->libraries = json_decode($file, true);
         }
     }
@@ -389,10 +389,8 @@ class Lang {
         $org = $this->libraries[$libKey];
         $result = $this->_update($data, $this->libraries[$libKey]);
         $fileName = Config::getLocalFilePath('lang.json');
-        $file = fopen($fileName, 'wb');
         try {
-            fwrite($file, json_encode($this->libraries));
-            fclose($file);
+            file_put_contents("nette.safe://$fileName", json_encode($this->libraries));
         } catch (Exception $e) {
             logError($e);
             respondWithError(500, 'ERROR: cannot save Language data');
@@ -425,7 +423,7 @@ class Lang {
         global $user;
         $fileName = Config::getLocalFilePath($libKey . '_about.html');
         if (file_exists($fileName)) {
-            $html = file_get_contents($fileName);
+            $html = file_get_contents('nette.safe://'.$fileName);
         } else {
             $html = '<div>About Page</div>';
         }
@@ -443,9 +441,7 @@ class Lang {
         $fileName = Config::getLocalFilePath($libKey . '_about.html');
         $result = ['success' => false];
         try {
-            $file = fopen($fileName, 'wb');
-            fwrite($file, $html);
-            fclose($file);
+            file_put_contents("nette.safe://$fileName", $html);
             $result['success'] = true;
         } catch (Exception $e) {
             logError($e);
@@ -461,10 +457,8 @@ class Lang {
 
         unset($this->libraries[$libKey]);
         $fileName = Config::getLocalFilePath('lang.json');
-        $file = fopen($fileName, 'wb');
         try {
-            fwrite($file, json_encode($this->libraries));
-            fclose($file);
+            file_put_contents("nette.safe://$fileName", json_encode($this->libraries));
         } catch (Exception $e) {
             logError($e);
             respondWithError(500, 'ERROR: cannot save Laguage data');

@@ -52,7 +52,7 @@ function init($step = 1, $authCode = null)
     $view->data['tempDirRealPath'] = realpath(Config::getLocalFilePath('','temp'));
     $view->data['hasCreds'] = $hasCreds;
     if ($hasCreds) {
-        $creds = file_get_contents($credsPath);
+        $creds = file_get_contents('nette.safe://'.$credsPath);
         $creds = json_decode($creds, true);
         $view->data['creds'] = $creds['web'];
         $view->data['creds']['client_id'] = substr($view->data['creds']['client_id'], 0, 5) . '⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛ googleusercontent.com';
@@ -142,7 +142,7 @@ function init($step = 1, $authCode = null)
             try {
                 $view->data['driveOwner'] = $config->driveOwner;
                 $view->data['mainFolderId'] = $config->mainFolderId;
-                $token = json_decode(file_get_contents($tokenPath), true);
+                $token = json_decode(file_get_contents('nette.safe://'.$tokenPath), true);
                 $view->data['scopes'] = explode(" ", $token['scope']);
             } catch (Exception $e) {
                 die('has token but cannot get config?');

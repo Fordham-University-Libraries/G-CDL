@@ -156,7 +156,7 @@ function getSierraCourses($library)
     $fileName = Config::getLocalFilePath($library . '_' . $config->libraries[$library]->ils['api']['courseCacheFile']);
     if (file_exists($fileName) && time() - filemtime($fileName) < $cacheSec) {
         //use cache
-        $file = file_get_contents($fileName);
+        $file = file_get_contents('nette.safe://'.$fileName);
         $data = unserialize($file);
         //$isCachedData = true;
     } else {
@@ -178,10 +178,8 @@ function getSierraCourses($library)
         $response = curl_exec($curl);
         curl_close($curl);
         $data = json_decode($response, true);
-        $file = fopen($fileName, 'wb');
         try {
-            fwrite($file, serialize($data));
-            fclose($file);
+            file_put_contents("nette.safe://$fileName", serialize($data));
         } catch (Exception $e) {
             logError($e);
             respondWithError(500, 'Internal Error');
@@ -196,7 +194,7 @@ function getSierraToken($library)
     
     $fileName = Config::getLocalFilePath($library . $config->libraries[$library]->ils['api']['tokenFile']);
     if (file_exists($fileName)) {
-        $file = file_get_contents($fileName);
+        $file = file_get_contents('nette.safe://'.$fileName);
         $sierraTokenInfo = unserialize($file);
         $expires = $sierraTokenInfo['expires'];
         if (time() < $expires) {
@@ -236,10 +234,9 @@ function getNewSierraToken($library)
     $response = curl_exec($curl);
     $sierraToken = json_decode($response, true);
     $sierraToken['expires'] = time() + $sierraToken['expires_in'] - 60; //minus one minute
-    $file = fopen(Config::getLocalFilePath($library . $config->libraries[$library]->ils['api']['tokenFile']), 'wb');
+    $fileName = Config::getLocalFilePath($library . $config->libraries[$library]->ils['api']['tokenFile']);
     try {
-        fwrite($file, serialize($sierraToken));
-        fclose($file);
+        file_put_contents("nette.safe://$fileName", serialize($sierraToken));
     } catch (Exception $e) {
         logError($e);
         respondWithError(500, 'Internal Error');

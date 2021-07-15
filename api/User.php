@@ -108,7 +108,7 @@ class User
         $fileName = Config::getLocalFilePath($config->accessibleUserCachefileName);
         if (file_exists($fileName) && time() - filemtime($fileName) < $config->accessibleUserCacheMinutes * 3600) {
             // use cache
-            $file = file_get_contents($fileName);
+            $file = file_get_contents('nette.safe://'.$fileName);
             if ($file) {
                 $accessibleUsers = unserialize($file);
                 $this->isAccessibleUser = in_array($this->userName, $accessibleUsers);
@@ -130,9 +130,7 @@ class User
                         array_push($accessibleUsers, $row[0]);
                     }
                 }
-                $file = fopen($fileName, 'wb');
-                fwrite($file, serialize($accessibleUsers));
-                fclose($file);
+                file_put_contents("nette.safe://$fileName", serialize($accessibleUsers));
                 $this->isAccessibleUser = in_array($this->userName, $accessibleUsers);
             } catch (Google_Service_Exception $e) {
                 $errMsg = json_decode($e->getMessage());

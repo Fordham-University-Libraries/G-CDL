@@ -42,7 +42,7 @@ function getIlsLocationsDefinition($libKey)
     } else {
     $fileName = Config::getLocalFilePath($libKey . "_ils_locations.json"); //key: loc name
     if (file_exists($fileName)) {
-        $file = file_get_contents($fileName);
+        $file = file_get_contents('nette.safe://'.$fileName);
         $locations = json_decode($file, true);
     } else {
         $locations = getSirsiLoations($libKey);

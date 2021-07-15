@@ -69,17 +69,15 @@ function getStats($libKey, $from = null, $to = null)
     $fileName = Config::getLocalFilePath($libKey . '_stats_cache.php.serialized');
     if (file_exists($fileName) && time() - filemtime($fileName) < 1 * 3600) { //1 hour
         // use cache
-        $file = file_get_contents($fileName);
+        $file = file_get_contents('nette.safe://'.$fileName);
         $values = unserialize($file);
     } else {
         $range = 'Sheet1!A1:H';
         $response = $sheetService->spreadsheets_values->get($config->libraries[$libKey]->statsSheetId, $range);
         $values = $response->getValues();
         if (!empty($values)) {
-            $file = fopen($fileName, 'wb');
             try {
-                fwrite($file, serialize($values));
-                fclose($file);
+                file_put_contents("nette.safe://$fileName", serialize($values));
             } catch (Exception $e) {
                 logError($e);
                 respondWithError(500, 'Error: cannot save cache stats file');
@@ -164,7 +162,7 @@ function getTitleByItemId($itemId, $libKey) {
     $fileName = Config::getLocalFilePath($libKey . '_stats_titles_cache.php.serialized');
     if (file_exists($fileName) && time() - filemtime($fileName) < 1 * 3600) { //1 hour
         // use cache
-        $file = file_get_contents($fileName);
+        $file = file_get_contents('nette.safe://'.$fileName);
         $titles = unserialize($file);
     } else {
         //get from Sheet
@@ -176,10 +174,8 @@ function getTitleByItemId($itemId, $libKey) {
             foreach ($values as $value) {
                 $titles[$value[0]] = $value[1];
             }
-            $file = fopen($fileName, 'wb');
             try {
-                fwrite($file, serialize($titles));
-                fclose($file);
+                file_put_contents("nette.safe://$fileName", serialize($titles));
             } catch (Exception $e) {
                 logError($e);
                 respondWithError(500, 'Error: cannot save cached titles data');

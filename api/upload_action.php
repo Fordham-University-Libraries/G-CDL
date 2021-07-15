@@ -152,7 +152,7 @@ function upload($filePath, $bib, $libKey, $orgFileName, $shouldCreateNoOcr = tru
     $withOcrFile->setCopyRequiresWriterPermission(false); //allow viewer to copy/download
     if (!$shouldCreateNoOcr) $bib['shouldCreateNoOcr'] = false;
     $withOcrFile->setAppProperties($bib);
-    $data = file_get_contents($filePath);
+    $data = file_get_contents('nette.safe://'.$filePath);
     $withOcrFile = retry(function () use ($service, $withOcrFile, $data) {
         return $service->files->create($withOcrFile, array(
             'data' => $data,
@@ -164,10 +164,10 @@ function upload($filePath, $bib, $libKey, $orgFileName, $shouldCreateNoOcr = tru
     $noOcrFile = new Google_Service_Drive_DriveFile;
     if ($shouldCreateNoOcr) {
         $noOcrFile->setName($bib['itemId'] . "-No-OCR.pdf");
-        $data = file_get_contents("$filePath-NO-OCR.pdf");
+        $data = file_get_contents('nette.safe://'."$filePath-NO-OCR.pdf");
     } else {
         $noOcrFile->setName($bib['itemId']);
-        $data = file_get_contents($filePath);
+        $data = file_get_contents('nette.safe://'.$filePath);
     }
 
     $noOcrFile->setDescription($bib['title']);
