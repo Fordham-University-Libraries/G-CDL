@@ -84,8 +84,9 @@ Example of App/GDrive Interactions
   - https://sites.google.com/view/cdl-implementers/  
 - CDL implementation
    - [Internet Archive](https://archive.org/details/inlibrary) / [Open Library](https://github.com/internetarchive/openlibrary/)
-   - [IIIF based](https://iiif.io/api/auth/1.0/#authentication-for-description-resources) -- being implemented in the wild by that two techy, comp sciency universities on the West Coast
-      - well, since it's already on Github [https://github.com/caltechlibrary/dibs](https://github.com/caltechlibrary/dibs)  
+   - [IIIF based](https://iiif.io/api/auth/1.0/#authentication-for-description-resources)
+      - That [huge university in Silicon Valley](https://github.com/sul-dlss/SearchWorks/search?q=cdl) 
+      - Caltech's DIBS [https://github.com/caltechlibrary/dibs](https://github.com/caltechlibrary/dibs)  
    - [project ReShare](https://projectreshare.org/products/reshare-controlled-digital-lending/)
    - [CIRC project](https://www.cdlproject.org/)
    - Commercial System
