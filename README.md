@@ -43,7 +43,6 @@ Example of App/GDrive Interactions
         - PHP 7.4+
 - Clone this repo
     - CD into the cloned repo directory (/G-CDL) and run `npm install` to install NODE dependencies
-        - you might need to use `npm install --force` to force resolve dependency for [a package](https://github.com/kolkov/angular-editor/issues/325) with dependency issue (tested, works with Angular 11)
     - CD into ./api and run `composer install` to install PHP dependencies
 - Setup Google API
     - on your local machine
