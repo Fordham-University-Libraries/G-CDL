@@ -5,6 +5,13 @@
 
 //this file is accessible to the public! make sure to NOT leak any sensitive info
 require 'Config.php';
+require 'Lang.php';
+require 'get_client.php';
+require 'CdlItem.php';
+require 'User.php';
+require 'email.php';
+require __DIR__ . '/vendor/autoload.php'; //for Google_Service_Drive_DriveFile
+//ini_set('display_errors','1');
 
 $config = new Config();
 $isEnabled = $config->notifications['emailOnAutoReturn']['enable'];
@@ -25,6 +32,7 @@ if ($method == 'webHook') {
         $logFilePath = Config::getLocalFilePath('webHook-debug.log');
         error_log(time() . ': ' . print_r($headers, true), 3, $logFilePath);
     }
+    $secret = $config->notifications['emailOnAutoReturn']['secret'];
     if ($secret) {
         if (!isset($headers['X-Goog-Channel-Id']) || strpos($headers['X-Goog-Channel-Id'], $secret) === false) die('unauthorized');
         if (!isset($headers['X-Goog-Changed'])) die('ignored');
@@ -39,18 +47,11 @@ date_default_timezone_set($config->timeZone);
 $fileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
 if (!file_exists($fileName)) die('no items currenlty checked out');
 
-require 'Lang.php';
-require 'get_client.php';
-require 'CdlItem.php';
-require 'User.php';
-require 'email.php';
-require __DIR__ . '/vendor/autoload.php'; //for Google_Service_Drive_DriveFile
-
 $langObj = new Lang();
 $lang = $langObj->serialize();
 
 $file = file_get_contents('nette.safe://'.$fileName);
-$currentOutItems = unserialize($file); //serialized CdlItem object 
+$currentOutItems = unserialize($file); //serialized CdlItem object
 if (!$currentOutItems) die('no items currenlty checked out');
 $newCurrentOutItems = unserialize($file); //make a copy so we cam remove emailed items
 
