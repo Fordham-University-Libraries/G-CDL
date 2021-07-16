@@ -60,11 +60,15 @@ Example of App/GDrive Interactions
 - Deployment
     - on your local machine
     - make sure you did run the `npm install`, and `composer install`
+      - if PHP on your server is of lower version than one on your local machine e.g. server = 7.4, local machine = 8.0
+        - rename the file `/G-CDL/api/composer.json.php74` to `/G-CDL/api/composer.json` (and replace the original one)
+          - run `composer update`   
     - run `ng build --prod`
         - if you plan to put it under a directory e.g. https://library.myuniv.edu/dir_name run `ng build --prod --base-href /dir_name/`
     - copy the content of the `dist` directory e.g. /G-CDL/dist/cdl/ directory to your server
       - add Angular rewrite/redirect e.g. https://julianpoemp.github.io/ngx-htaccess-generator/#/generator   
     - copy the dir /api to /api on your server
+        - edit Config.php and set $isProd = true;   
         - make sure the /api/private_data
             - is NOT accessible to the public
             - IS writable by your server
