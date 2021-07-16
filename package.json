@@ -23,7 +23,7 @@
     "@angular/platform-browser": "~11.2.4",
     "@angular/platform-browser-dynamic": "~11.2.4",
     "@angular/router": "~11.2.4",
-    "@kolkov/angular-editor": "^1.1.4",
+    "@kolkov/angular-editor": "^1.2.0",
     "rxjs": "~6.6.6",
     "tslib": "^2.0.0",
     "xlsx": "^0.16.9",
