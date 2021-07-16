@@ -1,0 +1,17 @@
+G-CDL app uses https://github.com/coherentgraphics/cpdf-binaries to process uploaded PDF (remove text/OCR)
+binaries included here (technically, we probably shouldn't do this but we did it to make installing the app easier) are for:
+- Linux-Intel-64bit (cpdf)
+- Windows64Bit (cpdf.exe)
+
+The CPDF Repo https://github.com/coherentgraphics/cpdf-binaries has multiple versions of it:
+
+- Linux-Intel-32bit
+- Linux-Intel-64bit
+- OSX-ARM
+- OSX-Intel
+- Windows32bit
+- Windows64bit
+
+If you run into any troubles, try grabbing a correct/newer version from there.
+
+!!!!! CPDF is free for non-commercial use only !!!!!!!
