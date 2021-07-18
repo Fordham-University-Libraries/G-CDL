@@ -16,10 +16,14 @@ require __DIR__ . '/vendor/autoload.php'; //for Google_Service_Drive_DriveFile
 $config = new Config();
 $isEnabled = $config->notifications['emailOnAutoReturn']['enable'];
 $method = $config->notifications['emailOnAutoReturn']['method'];
-if (!$isEnabled) die('this feature is not enabled (notify after auto return is NOT enabled)');
+
+//check for our secret ServiceAccount mode
+if (!$isEnabled && !file_exists(Config::getLocalFilePath('serviceAccountCreds.json', 'creds'))) die('this feature is not enabled (notify after auto return is NOT enabled)');
+
 if ($method == 'cronJob' && php_sapi_name() !== "cli") die('this feature is only enabled for using local cronjob');
 
-if ($method == 'web') {
+if ($method == 'web' && php_sapi_name() != "cli") {
+
     $secret = $config->notifications['emailOnAutoReturn']['secret'];
     if ($secret) {
         if (!isset($_GET['secret']) || $_GET['secret'] != $secret) die('unauthorized');
@@ -40,9 +44,6 @@ if ($method == 'webHook') {
     }
 }
 
-//make sure we don't send double/triple same return notif emails
-sleep(5);
-
 date_default_timezone_set($config->timeZone);
 $fileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
 if (!file_exists($fileName)) die('no items currenlty checked out');
@@ -60,6 +61,8 @@ $nowStr = date("c", $now); //RFC 3339 / ISO 8601 date
 $totalItems = count($currentOutItems);
 $itemsEmail = 0;
 $itemsRemoved = 0;
+$itemsReturned = 0;
+
 //item and user serialized as object
 foreach ($currentOutItems as $key => $item) {
     $cdlItem = $item['cdlItem'];
@@ -68,13 +71,26 @@ foreach ($currentOutItems as $key => $item) {
     $due = strtotime($dueStr);
     $secDiff = $due - $now;
     if ($secDiff < 1) { //past due
-        if ($secDiff < 86400) { //only email if item due is less than a day (in case cron wasn't running and the file is backing up)
-            email('return', $user, $cdlItem);
-            $itemsEmail++;
+        if ($cdlItem->isCheckedOutWithNoAutoExpiration) {
+            try {
+                $cdlItem->return($user, 'auto');
+            } catch (Exception $e) {
+                //do nothing, keep going
+            }
+            $itemsReturned++;
+        } else if ($secDiff < 86400) { //only email if item due is less than a day (in case cron wasn't running and the file is backing up)
+            if ($isEnabled) {
+                try {
+                    email('return', $user, $cdlItem);
+                } catch (Exception $e) {
+                    //do nothing, keep going
+                }
+                $itemsEmail++;
+            }
+            //remove from array
+            unset($newCurrentOutItems[$key]);
+            $itemsRemoved++;
         }
-        //remove from array
-        unset($newCurrentOutItems[$key]);
-        $itemsRemoved++;
     }
 }
 

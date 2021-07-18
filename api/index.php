@@ -8,10 +8,11 @@ require 'CdlItem.php';
 require 'User.php';
 require 'respond.php';
 require 'get_client.php';
-require 'email.php';
-require 'ils_api_action.php';
-require 'retry.php';
 require 'stats_action.php';
+require_once('email.php');
+require_once('ils_api_action.php');
+require_once('retry.php');
+require_once('utils.php');
 require __DIR__ . '/vendor/autoload.php';
 
 //force trailing slash
@@ -23,9 +24,13 @@ if (strpos($_SERVER["REQUEST_URI"], 'api/') === FALSE) {
 }
 
 //get config
+$credsPath = Config::getLocalFilePath('credentials.json', 'creds');
+$serviceAccountcredsPath = Config::getLocalFilePath('serviceAccountCreds.json', 'creds');
+$tokenPath = Config::getLocalFilePath('token.json', 'creds');
+$hasCreds = file_exists($credsPath);
+$hasToken = file_exists($tokenPath);
+$hasServiceAccountCreds = file_exists($serviceAccountcredsPath);
 try {
-    $credsPath = Config::getLocalFilePath('credentials.json', 'creds');
-    $tokenPath = Config::getLocalFilePath('token.json', 'creds');
     $config = new Config();
 } catch (Google_Service_Exception $e) {
     $error = json_decode($e->getMessage());
@@ -35,8 +40,31 @@ try {
     die();
 }
 
+//login
+$action = $_GET['action'];
+
+if ($action == 'login') {
+    //when init step2 (link accont, will have state == init), let the init_action handle it
+    if($_GET['state'] != 'init') {
+        $authCode = $_GET['code'] ?? null;
+        $apiAction = $_GET['apiActionTarget'] ?? null;
+        $target = $_GET['target'] ?? null;
+        endUserGoogleLogin($authCode, $target, $apiAction);
+        die();
+    }
+}
+
 //init wizard (if no token and etc.)
-if (!file_exists($credsPath) || !file_exists($tokenPath) || $_GET['state'] == 'init' || $_GET['action'] == 'init' || !$config->mainFolderId) {
+$needsInit = true;
+if ($_GET['state'] != 'init' && $_GET['action'] != 'init') {
+    if (($hasCreds && $hasToken) || ($hasServiceAccountCreds && $hasCreds)) {
+        if ($config->mainFolderId && count($config->libraries)) {
+            $needsInit = false;
+        }
+    }
+}
+
+if ($needsInit) {
     //if front end try to access
     if ($_GET['action'] == 'auth') {
         respondWithFatalError(500, 'API not set up');
@@ -58,15 +86,7 @@ if (Config::$isProd) error_reporting(E_ERROR);
 
 //allow annon access
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
-    $action = $_GET['action'];
-    if ($action == 'login') {
-        $state = $_GET['state'] ?? null;
-        $authCode = $_GET['code'] ?? null;
-        $apiAction = $_GET['apiActionTarget'] ?? null;
-        $target = $_GET['target'] ?? null;
-        endUserGoogleLogin($authCode, $target, $apiAction);
-        die();
-    } else if ($action == 'logout') {
+    if ($action == 'logout') {
         logout();
         die();
     } else if ($action == 'get_config') {
@@ -353,7 +373,11 @@ function getLangAdmin() {
 
 function compliantBreachNotify(string $error, string $errorId = null)
 {
-    errorNotifyEmail("Compliant ERROR: $error", $errorId);
+    try {
+        errorNotifyEmail("Compliant ERROR: $error", $errorId);
+    } catch (Exception $e) {
+        //
+    }
 }
 
 function logout()
@@ -396,15 +420,6 @@ function logout()
 
     //redirect to log out frontend message page
     header("Location: " . $host . $baseDir . "/logged-out");
-}
-
-function logError($error) {
-    $logFilePath = Config::getLocalFilePath('error.log');
-    if (is_array($error) || is_object($error)) {
-        error_log(time() . ': ' . print_r($error, true), 3, $logFilePath);
-    } else {
-        error_log(time() . ": " . $error . "\n", 3, $logFilePath);
-    }
 }
 
 function test() {

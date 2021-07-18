@@ -22,9 +22,15 @@ function getFilesForViewer()
         'q' => "'$user->email' in readers AND ($parentFolderIdsQuery) AND mimeType != 'application/vnd.google-apps.folder' AND trashed = false",
       );
     
-    $results = retry(function () use ($service, $optParams) {
-        return $service->files->listFiles($optParams);
-    });
+    try {
+        $results = retry(function () use ($service, $optParams) {
+            return $service->files->listFiles($optParams);
+        });
+    } catch (Google_Service_Exception $e) {
+        logError('view_borrowed_actopn.php: can\'t get files on GDrive');
+        logError($e->getMessage());
+        respondWithFatalError(500, 'Internal Error');
+    }
 
     if (count($results) == 1) {
         $files = $results->getFiles();

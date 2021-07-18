@@ -64,6 +64,25 @@
             <div class="row align-items-start step">
                 <div class="col-8">
                     <h2>Step 1: Setup Credentials for Google API</h2>
+                    <!-- has serviceAccount creds -->
+                    <?php if ($hasServiceAccountCreds) : ?>
+                        <div class="container-fluid justify-content-center">
+                            <div class="alert alert-success" role="alert">
+                                serviceAccountCreds.json found! Looks like you want to use a serviceAccount to access GDrive?
+                            </div>
+                            <?php if (!$hasCreds) : ?>
+                            <div class="alert alert-warning" role="alert">
+                                you still need to generate OAuth credentials for endusers login, please follow the instructions below
+                            </div>
+
+                            <?php endif; ?>
+                            <div>
+    
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+
                     <!-- no creds -->
                     <?php if (!$hasCreds) : ?>
                         <div class="alert alert-warning" role="alert">
@@ -133,8 +152,9 @@
                     <?php endif; ?>
 
                 </div>
-                <!-- has creds -->
-                <?php if ($hasCreds) : ?>
+
+
+                <?php if ($hasCreds && !$hasServiceAccountCreds) : ?>
                     <div class="container-fluid justify-content-center">
                         <div class="alert alert-success" role="alert">
                             credentials.json found! Looking good!
@@ -170,7 +190,8 @@
                         </form>
                     </div>
                 <?php endif; ?>
-                <?php if ($authed) : ?>
+
+                <?php if ($authed && (($hasCreds && $hasToken)) || ($hasServiceAccountCreds && $hasCreds)): ?>
                     <div class="container-fluid justify-content-center" style="margin-top: 1em">
                         <div class="alert alert-success" role="alert">
                             You can proceed to the next step!
@@ -183,6 +204,7 @@
 
         <!-- step 2 -->
         <?php if ($step == 2) : ?>
+            <?php if (!$hasServiceAccountCreds) : ?>
             <div class="row align-items-start step">
                 <h2>Step 2: Generate OAuth Token</h2>
                 <div class="container-fluid justify-content-center">
@@ -244,6 +266,19 @@
 
                 </div>
             </div>
+            <?php elseif ($hasServiceAccountCreds) : ?>
+                <!-- Service Account -->
+                <h2>Step 2: Set Up Main Folder <small>(Using Service Account: <?= $serviceAccountEmail ?>)</small></h2>
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="owner" class="form-label">Drive Owner</label>
+                        <input required type="email" class="form-control" id="owner" name="owner" value="<?= $driveOwner ?>" <?= $driveOwner ? 'disabled' : '' ?>>
+                        <small class="form-text text-muted">Pick a Google account e.g. jdoe@myuniv.edu you want use to login as the app owner to manage and etc. The app will only allow users from the same domain of the owner e.g. @myuniv.edu to login</small>
+                    </div>
+                    <button class="btn btn-primary" <?= $driveOwner ? 'disabled' : '' ?>>Submit</button>
+
+                </form>
+            <?php endif ?>
         <?php endif ?>
 
         <!-- step 3 -->
