@@ -87,10 +87,11 @@ foreach ($currentOutItems as $key => $item) {
                 }
                 $itemsEmail++;
             }
-            //remove from array
-            unset($newCurrentOutItems[$key]);
-            $itemsRemoved++;
         }
+
+        //remove from array
+        unset($newCurrentOutItems[$key]);
+        $itemsRemoved++;
     }
 }
 
