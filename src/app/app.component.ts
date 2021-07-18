@@ -7,14 +7,16 @@ import { Config } from './models/config.model';
 import { Language } from './models/language.model';
 import { Customization } from './models/customization.model';
 import { ConfigService } from './config.service';
+import { ReaderService } from './reader.service';
 import { GaService } from './ga.service';
 import { environment } from 'src/environments/environment';
 import { IdleDialogComponent } from './idle-dialog/idle-dialog.component';
+import { HostListener } from '@angular/core';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit {
   user: User;
@@ -34,13 +36,23 @@ export class AppComponent implements OnInit {
   unauthedMode: boolean;
   appPathToCheckIdle: string[] = ['home', 'item', 'my'];
 
+  //gets called everytime before unload,  to try to close an open gDrive Reader
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload($event: Event) {
+    //close GDrive reader, if user close app, can't really warn user since we can't custommize confirm dialog's message anymore    
+    if (this.readerService.hasWindowRef) {
+      this.readerService.closeWindowRef();
+    }
+  }
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private dialog: MatDialog,
     private authService: AuthenticationService,
     private configService: ConfigService,
-    private gaService: GaService
+    private gaService: GaService,
+    private readerService: ReaderService
   ) {
   }
 
@@ -79,7 +91,7 @@ export class AppComponent implements OnInit {
     });
   }
 
-  ngOnDestroy() {
+  ngOnDestroy() {    
     this.configService.onForceRefresh.unsubscribe();
     if (this.timeOut) clearTimeout(this.timeOut);
   }

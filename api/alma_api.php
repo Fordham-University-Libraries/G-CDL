@@ -183,7 +183,7 @@ function getAlmaCourses(string $library, string $field = "courseName", string $t
     $fileName = Config::getLocalFilePath($library . '_' . $config->libraries[$library]->ils['api']['courseCacheFile']);
     if (!$term && file_exists($fileName) && time() - filemtime($fileName) < $cacheSec) {
         //browse all -- use cache
-        $file = file_get_contents($fileName);
+        $file = file_get_contents('nette.safe://'.$fileName);
         $courses = unserialize($file);
         //$isCachedData = true;
     } else {
@@ -202,6 +202,9 @@ function getAlmaCourses(string $library, string $field = "courseName", string $t
         while (true) {
             $params = "courses?limit=99999999&offset=$offSet&status=$courseStatus&order_by=code%2Csection&direction=ASC&exact_search=false";
             if ($term) {
+                //To search for a phrase, separate words with an underscore (or in some cases with “+” encoded as %2b ) -- sigh....
+                //https://developers.exlibrisgroup.com/blog/How-we-re-building-APIs-at-Ex-Libris/#BriefSearch
+                $term = str_replace('+', '_', urlencode($term));
                 $q = "$field~$term";
                 $params .= "&q=$q";
             }
@@ -235,9 +238,7 @@ function getAlmaCourses(string $library, string $field = "courseName", string $t
 
         if (!$term && $courses) {
             try {
-                $file = fopen($fileName, 'wb');
-                fwrite($file, serialize($courses));
-                fclose($file);
+                file_put_contents("nette.safe://$fileName", serialize($courses));
             } catch (Exception $e) {
                 logError($e);
             }

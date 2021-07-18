@@ -42,7 +42,7 @@ function getIlsLocationsDefinition($libKey)
     } else {
     $fileName = Config::getLocalFilePath($libKey . "_ils_locations.json"); //key: loc name
     if (file_exists($fileName)) {
-        $file = file_get_contents($fileName);
+        $file = file_get_contents('nette.safe://'.$fileName);
         $locations = json_decode($file, true);
     } else {
         $locations = getSirsiLoations($libKey);
@@ -406,6 +406,10 @@ function checkIlsApiSettings(string $libKey)
     } else if (strtolower($config->libraries[$libKey]->ils['kind']) == 'alma') {
         if (!$config->libraries[$libKey]->ils['api']['key']) {
             respondWithError(501, 'ILS API is not properly configured (no api key)');
+            die();
+        }
+        if (!extension_loaded('xml')) {
+            respondWithError(501, 'PHP XML module is required for Alma API, please install/enable it first');
             die();
         }
     }

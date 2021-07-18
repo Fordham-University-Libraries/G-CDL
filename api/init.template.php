@@ -383,8 +383,8 @@
                             </ul>
                             <li>Deploy API</li>
                             <ul>
-                                <li>copy the /api directory (and all its subdirectories) to your server e.g. if your app is at /var/www/mycdlapp, copy it to /var/www/mycdlapp/api </li>
-                                <li>update the static configs at <?= $dataDirRealPath ?>/config.php as needed (especially, set the <em>$isProd</em> property to TRUE, which will set cookies' <em>Secure</em> and <em>HttpOnly</em> attributes to <em>TRUE</em> by default)</li>
+                                <li>copy the /api directory (and all its subdirectories) to your server e.g. if you app is at /var/www/mycdlapp, copy it to /var/www/mycdlapp/api </li>
+                                <li>update the static configs at <?= $dataDirRealPath ?>/config.php as needed <span style="color: brown;">(especially, set the <em>$isProd</em> property to TRUE)</span></li>
                                         <ul>
                                             <li>If you host the frontend of a different host, set it at the <em>$frontEndHost</em> property</li>
                                         </ul>

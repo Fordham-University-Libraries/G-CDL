@@ -345,12 +345,12 @@ class Customization
         
         $fileName = Config::getLocalFilePath('customization_app.json');
         if (file_exists($fileName)) {
-            $file = file_get_contents($fileName);
+            $file = file_get_contents('nette.safe://'.$fileName);
             $this->appGlobal = json_decode($file, true);
         }
         $fileName = Config::getLocalFilePath('customization.json');
         if (file_exists($fileName)) {
-            $file = file_get_contents($fileName);
+            $file = file_get_contents('nette.safe://'.$fileName);
             $this->libraries = json_decode($file, true);
         }
     }
@@ -551,10 +551,8 @@ class Customization
             }
             $result = $this->_update($data, $this->appGlobal);
             $fileName = Config::getLocalFilePath('customization_app.json');
-            $file = fopen($fileName, 'wb');
             try {
-                fwrite($file, json_encode($this->appGlobal));
-                fclose($file);
+                file_put_contents("nette.safe://$fileName", json_encode($this->appGlobal));
             } catch (Exception $e) {
                 logError($e);
                 respondWithError(500, 'ERROR: cannot save appGlobal customization data');
@@ -570,10 +568,8 @@ class Customization
             $org = $this->libraries[$libKey];
             $result = $this->_update($data, $this->libraries[$libKey]);
             $fileName = Config::getLocalFilePath('customization.json');
-            $file = fopen($fileName, 'wb');
             try {
-                fwrite($file, json_encode($this->libraries));
-                fclose($file);
+                file_put_contents("nette.safe://$fileName", json_encode($this->libraries));
             } catch (Exception $e) {
                 logError($e);
                 respondWithError(500, 'ERROR: cannot save customization data');
@@ -610,10 +606,8 @@ class Customization
 
         unset($this->libraries[$libKey]);
         $fileName = Config::getLocalFilePath('customization.json');
-        $file = fopen($fileName, 'wb');
         try {
-            fwrite($file, json_encode($this->libraries));
-            fclose($file);
+            file_put_contents("nette.safe://$fileName", json_encode($this->libraries));
         } catch (Exception $e) {
             logError($e);
             respondWithError(500, 'ERROR: cannot save customization data');

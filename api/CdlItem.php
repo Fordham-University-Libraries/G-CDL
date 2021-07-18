@@ -270,7 +270,7 @@ class CdlItem
                 $this->due = $expTime;
                 $fileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
                 if (file_exists($fileName)) {
-                    $file = file_get_contents($fileName);
+                    $file = file_get_contents('nette.safe://'.$fileName);
                     $currentOutItems = unserialize($file);
                 }
                 if (!$currentOutItems) $currentOutItems = [];
@@ -278,7 +278,7 @@ class CdlItem
                     'cdlItem' => $this,
                     'user' => $user,
                 ]);
-                file_put_contents($fileName, serialize($currentOutItems));
+                file_put_contents("nette.safe://$fileName", serialize($currentOutItems));
 
                 //if webhook is enabled, set up a watch
                 if ($config->notifications['emailOnAutoReturn']['method'] == 'webHook') {
@@ -449,7 +449,7 @@ class CdlItem
             if ($emailOnAutoReturn || file_exists(Config::getLocalFilePath('serviceAccountCreds.json', 'creds'))) {
                 $cronDataFileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
                 if (file_exists($cronDataFileName)) {
-                    $cronDataFile = file_get_contents($cronDataFileName);
+                    $cronDataFile = file_get_contents('nette.safe://'.$cronDataFileName);
                     $currentOutItems = unserialize($cronDataFile);
                     $newCurrentOutItems = unserialize($cronDataFile);
                     $i = 0;
@@ -457,7 +457,7 @@ class CdlItem
                         $cdlItem = $outItem['cdlItem'];
                         if ($cdlItem->id == $this->id) {
                             unset($newCurrentOutItems[$i]);
-                            file_put_contents($cronDataFileName, serialize($newCurrentOutItems));
+                            file_put_contents("nette.safe://$cronDataFileName", serialize($newCurrentOutItems));
                             break;
                         }
                         $i++;

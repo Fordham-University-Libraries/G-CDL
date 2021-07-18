@@ -1,7 +1,7 @@
 <?php
 declare(strict_types = 1);
-error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
-//if (phpversion('tidy') < '7.4') die('Must use PHP 7.4 or higher');
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
 
 require 'Config.php';
 require 'CdlItem.php';
@@ -82,7 +82,7 @@ $client = getClient();
 $service = new Google_Service_Drive($client);
 
 if ($config->timeZone) date_default_timezone_set($config->timeZone);
-if (Config::$isProd) error_reporting(0);
+if (Config::$isProd) error_reporting(E_ERROR);
 
 //allow annon access
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {

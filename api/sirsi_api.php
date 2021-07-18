@@ -69,7 +69,7 @@ function getSirsiCourses($library)
     $fileName = Config::getLocalFilePath($library . "_" . $config->libraries[$library]->ils['api']['courseCacheFile']);
     if (file_exists($fileName) && time() - filemtime($fileName) < $cacheSec) {
         //use cache
-        $file = file_get_contents($fileName);
+        $file = file_get_contents('nette.safe://'.$fileName);
         $data = unserialize($file);
         //$isCachedData = true;
     } else {
@@ -96,10 +96,8 @@ function getSirsiCourses($library)
         $data = json_decode($response, true);
         if ($data) {
             if (!isset($data['faultResponse'])) {
-                $file = fopen($fileName, 'wb');
                 try {
-                    fwrite($file, serialize($data));
-                    fclose($file);
+                    file_put_contents("nette.safe://$fileName", serialize($data));
                 } catch (Exception $e) {
                     logError($e);
                     respondWithError(500, 'Internal Error');
@@ -134,7 +132,7 @@ function getSirsiCoursesProf($library)
     $fileName = Config::getLocalFilePath($library . "_prof_" . $config->libraries[$library]->ils['api']['courseCacheFile']);
     if (file_exists($fileName) && time() - filemtime($fileName) < $cacheSec) {
         //use cache
-        $file = file_get_contents($fileName);
+        $file = file_get_contents('nette.safe://'.$fileName);
         $data = unserialize($file);
         //$isCachedData = true;
     } else {
@@ -161,10 +159,8 @@ function getSirsiCoursesProf($library)
         $data = json_decode($response, true);
         if ($data) {
             if (!isset($data['faultResponse'])) {
-                $file = fopen($fileName, 'wb');
                 try {
-                    fwrite($file, serialize($data));
-                    fclose($file);
+                    file_put_contents("nette.safe://$fileName", serialize($data));
                 } catch (Exception $e) {
                     logError($e);
                     respondWithError(500, 'Internal Error');

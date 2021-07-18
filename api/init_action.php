@@ -43,7 +43,7 @@ function init($step = 1, $authCode = null)
 
     $auth = false;
     if ($hasCreds) {
-        $creds = file_get_contents($credsPath);
+        $creds = file_get_contents('nette.safe://'.$credsPath);
         $creds = json_decode($creds, true);
         $view->data['creds'] = $creds['web'];
         $view->data['creds']['client_id'] = substr($view->data['creds']['client_id'], 0, 5) . '⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛ googleusercontent.com';

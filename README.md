@@ -43,7 +43,6 @@ Example of App/GDrive Interactions
         - PHP 7.4+
 - Clone this repo
     - CD into the cloned repo directory (/G-CDL) and run `npm install` to install NODE dependencies
-        - you might need to use `npm install --force` to force resolve dependency for [a package](https://github.com/kolkov/angular-editor/issues/325) with dependency issue (tested, works with Angular 11)
     - CD into ./api and run `composer install` to install PHP dependencies
 - Setup Google API
     - on your local machine
@@ -61,11 +60,15 @@ Example of App/GDrive Interactions
 - Deployment
     - on your local machine
     - make sure you did run the `npm install`, and `composer install`
+      - if PHP on your server is of lower version than one on your local machine e.g. server = 7.4, local machine = 8.0
+        - rename the file `/G-CDL/api/composer.json.php74` to `/G-CDL/api/composer.json` (and replace the original one)
+          - run `composer update`   
     - run `ng build --prod`
         - if you plan to put it under a directory e.g. https://library.myuniv.edu/dir_name run `ng build --prod --base-href /dir_name/`
     - copy the content of the `dist` directory e.g. /G-CDL/dist/cdl/ directory to your server
       - add Angular rewrite/redirect e.g. https://julianpoemp.github.io/ngx-htaccess-generator/#/generator   
     - copy the dir /api to /api on your server
+        - edit Config.php and set $isProd = true;   
         - make sure the /api/private_data
             - is NOT accessible to the public
             - IS writable by your server
@@ -81,8 +84,9 @@ Example of App/GDrive Interactions
   - https://sites.google.com/view/cdl-implementers/  
 - CDL implementation
    - [Internet Archive](https://archive.org/details/inlibrary) / [Open Library](https://github.com/internetarchive/openlibrary/)
-   - [IIIF based](https://iiif.io/api/auth/1.0/#authentication-for-description-resources) -- being implemented in the wild by that two techy, comp sciency universities on the West Coast
-      - well, since it's already on Github [https://github.com/caltechlibrary/dibs](https://github.com/caltechlibrary/dibs)  
+   - [IIIF based](https://iiif.io/api/auth/1.0/#authentication-for-description-resources)
+      - That [huge university in Silicon Valley](https://github.com/sul-dlss/SearchWorks/search?q=cdl) 
+      - Caltech's DIBS [https://github.com/caltechlibrary/dibs](https://github.com/caltechlibrary/dibs)  
    - [project ReShare](https://projectreshare.org/products/reshare-controlled-digital-lending/)
    - [CIRC project](https://www.cdlproject.org/)
    - Commercial System

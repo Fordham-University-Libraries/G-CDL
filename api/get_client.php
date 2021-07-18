@@ -42,7 +42,7 @@ function getClient($authCode = null, $state = null)
         $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
         $redirectUri = $host .  $baseDir . '/?action=login';
         //check if redirect URI is set in creds.json
-        $authConfig = file_get_contents($credsPath);
+        $authConfig = file_get_contents('nette.safe://'.$credsPath);
         $authConfig = json_decode($authConfig, true);
         $redirectUrisInCreds = $authConfig[array_keys($authConfig)[0]]['redirect_uris'];
         if (!in_array($redirectUri, $redirectUrisInCreds)) {
@@ -82,7 +82,7 @@ function getClient($authCode = null, $state = null)
                 }
             }
             try {
-                file_put_contents($tokenPath, json_encode($client->getAccessToken()));
+                file_put_contents("nette.safe://$tokenPath", json_encode($client->getAccessToken()));
             } catch (Exception $e) {
                 respondWithFatalError(500, 'cannot save token');
             }
@@ -94,7 +94,7 @@ function getClient($authCode = null, $state = null)
         }
     } else {
         //if there's token
-        $_token = json_decode(file_get_contents($tokenPath), true);
+        $_token = json_decode(file_get_contents('nette.safe://'.$tokenPath), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             respondWithFatalError(500, "token error: " . json_last_error());
             die();
@@ -111,7 +111,7 @@ function getClient($authCode = null, $state = null)
                 sleep(1);
                 if (!file_exists($isRefreshingTokenPath)) {
                     //the isRefreshingTokenPath note file is gone, meaning the token has been refreshed, grab the new token and return client
-                    $_token = json_decode(file_get_contents($tokenPath), true);
+                    $_token = json_decode(file_get_contents('nette.safe://'.$tokenPath), true);
                     $client->setAccessToken($_token);
                     return $client;
                 }
@@ -138,6 +138,7 @@ function getClient($authCode = null, $state = null)
             $jwt = new \Firebase\JWT\JWT;
             $jwt::$leeway = 5;
             if(!$client->verifyIdToken()) {
+                unlink($isRefreshingTokenPath);
                 logError('Cannot Refresh OAuth Token, most likely its been revolked / app is disconnected from GDrive');
                 respondWithFatalError('401', 'Cannot Refresh Token');
             }
@@ -149,7 +150,7 @@ function getClient($authCode = null, $state = null)
             $_token = json_encode($client->getAccessToken());
             if (json_last_error() === JSON_ERROR_NONE) {
                 try {
-                    file_put_contents($tokenPath, $_token, LOCK_EX);
+                    file_put_contents("nette.safe://$tokenPath", $_token);
                 } catch (Exception $e) {
                     logError("can't write refreshed token to file");
                     logError($e->getMessage());

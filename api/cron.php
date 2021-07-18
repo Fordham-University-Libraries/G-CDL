@@ -5,6 +5,13 @@
 
 //this file is accessible to the public! make sure to NOT leak any sensitive info
 require 'Config.php';
+require 'Lang.php';
+require 'get_client.php';
+require 'CdlItem.php';
+require 'User.php';
+require 'email.php';
+require __DIR__ . '/vendor/autoload.php'; //for Google_Service_Drive_DriveFile
+//ini_set('display_errors','1');
 
 $config = new Config();
 $isEnabled = $config->notifications['emailOnAutoReturn']['enable'];
@@ -16,6 +23,7 @@ if (!$isEnabled && !file_exists(Config::getLocalFilePath('serviceAccountCreds.js
 if ($method == 'cronJob' && php_sapi_name() !== "cli") die('this feature is only enabled for using local cronjob');
 
 if ($method == 'web' && php_sapi_name() != "cli") {
+
     $secret = $config->notifications['emailOnAutoReturn']['secret'];
     if ($secret) {
         if (!isset($_GET['secret']) || $_GET['secret'] != $secret) die('unauthorized');
@@ -28,6 +36,7 @@ if ($method == 'webHook') {
         $logFilePath = Config::getLocalFilePath('webHook-debug.log');
         error_log(time() . ': ' . print_r($headers, true), 3, $logFilePath);
     }
+    $secret = $config->notifications['emailOnAutoReturn']['secret'];
     if ($secret) {
         if (!isset($headers['X-Goog-Channel-Id']) || strpos($headers['X-Goog-Channel-Id'], $secret) === false) die('unauthorized');
         if (!isset($headers['X-Goog-Changed'])) die('ignored');
@@ -39,38 +48,11 @@ date_default_timezone_set($config->timeZone);
 $fileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
 if (!file_exists($fileName)) die('no items currenlty checked out');
 
-//make sure we don't send double/triple same return notif emails
-//check lock
-$fp = fopen($fileName, 'a+');
-if (!flock($fp, LOCK_EX|LOCK_NB, $wouldblock)) {
-    if ($wouldblock) {
-        echo "another cron running... (can't lock)";
-        die();
-    }
-    else {
-        echo "couldn't lock for some reasons, e.g. no such file";
-        die();
-    }
-}
-else {
-    // lock obtained
-    // log last time cron ran
-    $cronLogFile = Config::getLocalFilePath('cronLastRan.txt');
-    touch($cronLogFile);
-}
-
-require 'Lang.php';
-require 'get_client.php';
-require 'CdlItem.php';
-require 'User.php';
-require 'email.php';
-require __DIR__ . '/vendor/autoload.php'; //for Google_Service_Drive_DriveFile
-
 $langObj = new Lang();
 $lang = $langObj->serialize();
 
-$file = file_get_contents($fileName);
-$currentOutItems = unserialize($file); //serialized CdlItem object 
+$file = file_get_contents('nette.safe://'.$fileName);
+$currentOutItems = unserialize($file); //serialized CdlItem object
 if (!$currentOutItems) die('no items currenlty checked out');
 $newCurrentOutItems = unserialize($file); //make a copy so we cam remove emailed items
 
@@ -114,17 +96,7 @@ foreach ($currentOutItems as $key => $item) {
 
 if ($itemsRemoved) {
     echo "total items $totalItems ($itemsRemoved removed), emailed $itemsEmail item(s)! ";
-    try {
-        file_put_contents($fileName, serialize($newCurrentOutItems));
-    } catch (Exception $e) {
-        //caught so at least the file will be unlocked
-    }
-} else if ($itemsReturned) {
-    echo "total items $totalItems ($itemsReturned returned)! ";
+    file_put_contents("nette.safe://$fileName", serialize($newCurrentOutItems));
 } else {
     echo "total items $totalItems, no changes";
 }
-
-//unlock all the things
-flock($fp, LOCK_UN);
-fclose($fp);

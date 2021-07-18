@@ -29,6 +29,9 @@
                 <button mat-stroked-button color="warn" class="return" (click)="return(checkedOutItem.id)" [class.hidden]="mode == 'read'" [class.embiggen]="mode == 'return'">Return
                     now</button>
             </div>
+            <div *ngIf="hasReaderOpenedDirectly() && lang?.libraries[checkedOutItem.library]?.currentCheckout?.gDriveReaderOpenedWarning" class="on-before-unload-warning">
+                {{ lang.libraries[checkedOutItem.library]?.currentCheckout?.gDriveReaderOpenedWarning }}
+            </div>
         </ng-container>
     </ng-container>
     <!-- no item -->
