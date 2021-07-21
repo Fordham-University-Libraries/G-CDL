@@ -208,6 +208,8 @@ export class ReservesComponent implements OnInit {
 
   getDetailedCourseReserve(course: any, shouldUpdateHistory = true) {
     this.isLoading = true;
+    if (this.courseDetailedResultCdl.length) this.courseDetailedResultCdl.length = 0;
+    if (this.courseDetailedResultPhysical.length) this.courseDetailedResultPhysical.length = 0;
     //console.log('reservesCompo.getDetailedCourseReserve()');
     //console.log(course);
     this.courseDetailedResult = null;
