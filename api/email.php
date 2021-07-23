@@ -109,6 +109,8 @@ function email(string $kind, User $user, CdlItem $cdlItem)
             $mailer->send();
             return 1;
         } catch (Exception $e) {
+            logError('SMTP send failed');
+            logError($e->getMessage());
             return 0;
         }
     }
