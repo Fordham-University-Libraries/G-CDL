@@ -1,7 +1,11 @@
 <?php
+//IMPORTANT - cron command must cd into the /api directory before runnning cron.php
 //run this file with Cron, may be every minute?
+//$ which php
 //$ crontab - e
-//* * * * * php [path_CDL_app]/cron.php
+//* * * * * cd [path to the cdlapp/api] && [path to php binary] cron.php
+//e.g.
+////* * * * * cd /var/www/html/G-CDL/api && /usr/bin/php cron.php
 
 //this file is accessible to the public! make sure to NOT leak any sensitive info
 require 'Config.php';
