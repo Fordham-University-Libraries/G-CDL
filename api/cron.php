@@ -17,8 +17,11 @@ $config = new Config();
 $isEnabled = $config->notifications['emailOnAutoReturn']['enable'];
 $method = $config->notifications['emailOnAutoReturn']['method'];
 
+$cronLogFilePath = Config::getLocalFilePath('cronLastRan.txt', 'data', true);
+touch($cronLogFilePath);
+
 //check for our secret ServiceAccount mode
-if (!$isEnabled && !file_exists(Config::getLocalFilePath('serviceAccountCreds.json', 'creds'))) die('this feature is not enabled (notify after auto return is NOT enabled)');
+if (!$isEnabled && !file_exists(Config::getLocalFilePath('serviceAccountCreds.json', 'creds', true))) die('this feature is not enabled (notify after auto return is NOT enabled)');
 
 if ($method == 'cronJob' && php_sapi_name() !== "cli") die('this feature is only enabled for using local cronjob');
 

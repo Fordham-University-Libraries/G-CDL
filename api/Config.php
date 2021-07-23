@@ -520,7 +520,7 @@ class Config
     }
 
     //@input $kind['data','creds','temp']
-    public static function getLocalFilePath($fileName = '', $kind = 'data')
+    public static function getLocalFilePath($fileName = '', $kind = 'data', $absolutePath = false)
     {
         if ($kind == 'data') {
             $dir = self::$privateDataDirPath;
@@ -532,8 +532,17 @@ class Config
             respondWithFatalError(400,'incorrect file type requested');
         }
 
-        if (substr($dir, -1) != '/') $dir .= '/';
-        return $dir . $fileName;
+        
+        if (!$absolutePath) {
+            if (substr($dir, -1) != '/') $dir .= '/';
+            return $dir . $fileName;
+        } else {
+            if (substr($dir, 0, 1) === '.') {
+                $dir = dirname(__FILE__) . ltrim($dir,'.');
+            }
+            if ($fileName) $fileName = '/' . $fileName;
+            return realpath($dir) . $fileName;
+        }
     }
 
     public function getAdminConfig()
