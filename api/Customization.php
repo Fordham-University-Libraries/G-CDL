@@ -102,6 +102,12 @@ class Customization
                         'color' => '',
                     ],
                 ],
+                'externalLink' => [
+                    'matIcon' => '',
+                    'titleText' => '',
+                    'url' => '',
+                    'openNewTab' => true
+                ]
             ]
         ],
         'bread' => [
@@ -232,7 +238,7 @@ class Customization
                 ]
             ],
             'third' => [
-                'display' => ['should the third row of the header be displayed?', 1],
+                'display' => ['should the third row (menu) of the header be displayed?', 1],
                 'css' => [
                     'background-color' => ['background color', 1],
                     'color' => ['color of the icon menu', 1],
@@ -248,6 +254,12 @@ class Customization
                         'color' => ['text color of the user menu',1]
                     ],
                 ],
+                'externalLink' => [
+                        'matIcon' => ['icon to use, e.g. "question_answer" see https://fonts.google.com/icons', 1],
+                        'titleText' => ['text to display when hovered, e.g. ask a librarian', 1],
+                        'url' => ['URL of the site the button should link to, e.g. https://myuniv.libanswers.com', 1],
+                        'openNewTab' => ['should it open in a new tab/window?', 1]
+                ]
             ]
         ],
         'bread' => [
@@ -332,6 +344,7 @@ class Customization
         'body' => 'Applies to every areas of this library',
         'a' => 'Links',
         'header' => 'Header has 3 rows. The 1st row is designed to hold a logo image. The 2nd for is designed to hold text of the application name. The 3rd row is the application navigation/menu',
+        'externalLink' => 'Add a custom button to the menu which can open an external link e.g. for ask a librarian service, or feedback form',
         'bread' => 'Breadcrumbs',
         'home' => 'The homepage of the app',
         'item' => 'The item level view of the app',

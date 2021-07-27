@@ -34,6 +34,11 @@
             <mat-icon role="presentation">info</mat-icon>
             <span class="cdk-visually-hidden">About</span>
         </button>
+        <!-- custom button link -->
+        <button mat-icon-button *ngIf="customization.libraries[library].header?.third?.externalLink?.url" [matTooltip]="customization.libraries[library].header.third.externalLink.titleText ? customization.libraries[library].header.third.externalLink.titleText : 'help'" (click)="openExternalLink()">
+            <mat-icon role="presentation">{{ customization.libraries[library].header.third.externalLink.matIcon ? customization.libraries[library].header.third.externalLink.matIcon : 'help'}}</mat-icon>
+            <span class="cdk-visually-hidden">{{ customization.libraries[library].header.third.externalLink.titleText ? customization.libraries[library].header.third.externalLink.titleText : 'help'}}</span>
+        </button>
         <button *ngIf="isStaff" mat-icon-button [class.is-active]="appPath == 'stats'"
             aria-label="Statistics" [routerLink]="isDefaultLibraryRoute ? '/stats' : '/library/' + library + '/stats'" matTooltip='Statistics'>
             <mat-icon role="presentation">assessment</mat-icon>

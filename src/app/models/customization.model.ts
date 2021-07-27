@@ -60,6 +60,12 @@ export interface LibraryCustomizationValues {
             },
             'user-button': {
                 css: LibraryCustomizationCSSValues
+            },
+            'externalLink': {
+                'matIcon': string,
+                'openNewTab': true,
+                'titleText': string,
+                'url': string
             }
         }
     },

@@ -113,8 +113,7 @@ export class AppComponent implements OnInit {
     this.loadCSS(`${environment.apiBase}/?action=get_custom_css`, forceRefresh);
     if (!this.customization || forceRefresh) {
       this.configService.getCustomization(forceRefresh).subscribe(res => {
-        this.customization = res;        
-        
+        this.customization = res;                
         if (this.customization.libraries) {
           for (const [key, value] of Object.entries(this.customization.libraries)) {
             if (this.customization.libraries[key].header.first?.logo && !this.customization.libraries[key].header.first.logo.startsWith('http') && !this.customization.libraries[key].header.first.logo.startsWith('//')) {
@@ -234,6 +233,11 @@ export class AppComponent implements OnInit {
 
   onFloatingButtonClicked() {
     if (this.customization?.global?.floatingButton?.enable && this.customization?.global?.floatingButton?.url) window.open(this.customization.global.floatingButton.url, '_blank');
+  }
+
+  openExternalLink() {
+    const target = this.customization?.libraries[this.library].header.third.externalLink.openNewTab ? '_blank' : ''; 
+    if (this.customization?.libraries[this.library].header?.third?.externalLink?.url) window.open(this.customization?.libraries[this.library].header.third.externalLink.url, target);
   }
 
 }
