@@ -26,7 +26,7 @@
     "@kolkov/angular-editor": "^1.2.0",
     "rxjs": "~6.6.6",
     "tslib": "^2.0.0",
-    "xlsx": "^0.16.9",
+    "xlsx": "^0.17.0",
     "zone.js": "~0.11.3"
   },
   "devDependencies": {
