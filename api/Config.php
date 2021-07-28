@@ -479,6 +479,11 @@ class Config
             'libraries' => $libraries
         ];
         if ($this->googleTagManagerUA) $frontEndConfig['gTagUA'] = $this->googleTagManagerUA;
+        //if non-gsuites mode, return config for Apps Script
+        if (!$this->canSetAutoExpiration()) {
+            $frontEndConfig['notifyOnAutoReturn'] = $this->notifications['emailOnAutoReturn']['enable'];
+
+        }
         return $frontEndConfig;
     }
 
@@ -667,6 +672,11 @@ class Config
         unset($this->libraries[$libKey]);
         $result = $this->_updatePropsAll();
         return $result;
+    }
+
+    function canSetAutoExpiration()
+    {
+        return !(bool)$this->itemsCurrentlyOutSheetId;
     }
 
     private function _createField($key, &$props = null, &$propsInfo = null, $isRecursive = false)
