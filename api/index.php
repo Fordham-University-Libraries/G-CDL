@@ -95,13 +95,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
         die();
     }
 }
+//everything below this user has to be authenticated
+$user = new User();
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $action = $_GET['action'] ?? null;
+    if ($action == 'auth') { 
+        respondWithData($user->serialize());
+        die();
+    }
+}
 
-//everything below this needs to have library setup and user authenticated
+//everything below this needs to have library setup
 if (!count($config->libraries)) {
     respondWithFatalError(500, 'No Library');
 }
 $sheetService = new Google_Service_Sheets($client);
-$user = new User();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $target = $_GET['target'] ?? null;

@@ -35,7 +35,7 @@ class User
             }
 
             if (isset($_SESSION['gUserName']) && $_SESSION['gExpire'] > time()) {
-                $this->userName = str_replace('@' . $config->gSuitesDomain, '', $_SESSION['gEmail']);
+                $this->userName = $config->gSuitesDomain ? str_replace('@' . $config->gSuitesDomain, '', $_SESSION['gEmail']) : $_SESSION['gEmail'];
                 $this->email = $_SESSION['gEmail'];
                 if ($_SESSION["photoUrl"]) $this->photoUrl = $_SESSION["photoUrl"];
                 if (!Config::$isProd) {

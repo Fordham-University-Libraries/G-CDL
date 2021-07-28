@@ -19,6 +19,7 @@ class Config
     public $accessibleUsersSheetId;
     public $gSuitesDomain;
     public $driveOwner;
+    public $itemsCurrentlyOutSheetId; //for non-gsuites account (can't set auto expire), track checkout item in sheet, then use AppScript to 'auto' return items
     public $timeZone = null; //https://www.php.net/manual/en/timezones.america.php
     public $appName = 'My Library CDL APP';
     public $appSuperAdmins = []; //can change everything and will get email when there's a problem
@@ -415,7 +416,7 @@ class Config
     public function updatePropsDeep($chagedProperties, $libKey = null)
     {
         global $user;
-        if (!count($user->isAdminOfLibraries)) {
+        if (!count($user->isAdminOfLibraries) && !$user->isSuperAdmin) {
             respondWithError(401, 'Not Authorized');
         }
         //if update library

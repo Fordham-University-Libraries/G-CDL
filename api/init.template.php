@@ -246,6 +246,32 @@
             </div>
         <?php endif ?>
 
+         <!-- step 2B, only for non GSuites account -->
+         <?php if ($step == '2b') : ?>
+            <div class="row align-items-start step">
+                <h2>Step 2.5: Manually set which account email domain can login to the CDL app</h2>
+                <div class="container-fluid justify-content-center">
+                    <div class="col-12">
+                        <p>G-APP isdesigned to be used with institution that has Google's GSuites / Workspace, but since you've set up the app with a normal @gmail (<em><?= $driveOwner ?></em>) account, please enter an email domain you'd like to be able to log in the to app e.g. @myuniversity.edu</p>
+                        <form method="post">
+                            <div class="mb-3">
+                                <input type="hidden" name="step" value="2b">
+                                <label for="hd" class="form-label">Your GSuites Domain</label>
+                                <input required type="text" class="form-control" id="hd" name="hd" placeholder="@myuniversity.edu">
+                                <small class="form-text text-muted">e.g. if you login to your institution Gmail, Google Docs, and etc. with jdoe@myuniversity.edu enter: @myuniversity.edu</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="superAdmin" class="form-label">Super Admin Account</label>
+                                <input required type="text" class="form-control" id="superAdmin" name="superAdmin" placeholder="yourUsername@myuniversity.edu">
+                                <small class="form-text text-muted">you'll use this account the login to the G-CDL app, as the super admin, so, if you login to your institution Gmail, Google Docs, and etc. with jdoe@myuniversity.edu enter: jdoe@myuniversity.edu</small>
+                            </div>
+                            <button <?= $libKey && $libName ? 'disabled' : '' ?> class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        <?php endif ?>
+
         <!-- step 3 -->
         <?php if ($step == 3) : ?>
             <div class="row align-items-start step">

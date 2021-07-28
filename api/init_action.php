@@ -166,10 +166,40 @@ function init($step = 1, $authCode = null)
           $view->data['scopes'] = $authUrlInfo['scopes'];
           $view->data['showNext'] = false;
       } 
+    } else if ($step == '2b') { 
+        $view->data['driveOwner'] = $config->driveOwner;
+        if ($_POST['hd'] && $_POST['superAdmin']) {
+            global $user;
+            $user = new User(true);
+            $config = new Config();
+            $hd = str_replace('@', '', $_POST['hd']);
+            $superAdmin = str_replace('@'.$hd, '', $_POST['superAdmin']);
+            //create sheet
+            $sheetId = createItemsCurrentlyOutSheet($config->mainFolderId);
+            $data = [
+                'gSuitesDomain' => $hd,
+                'appSuperAdmins' => [$superAdmin],
+                'itemsCurrentlyOutSheetId' => $sheetId
+            ];
+
+            //save
+            try {
+                $config->updatePropsDeep($data);
+            } catch(Exception $e) {
+                die('nope, that did not work');
+            }
+            header("location: ./?action=init&step=3");
+            die();
+        }
     } else if ($step == 3) { //add first library
         global $user;
         try {
             $config = new Config();
+            if (!$config->gSuitesDomain) {
+                //no gSuitesDomain (using normal gmail account, redirect to set hostedDomain manually)
+                header("location: ./?action=init&step=2b");
+                die();
+            }
             $client = getClient();
             $oauth2 = new \Google_Service_Oauth2($client);    
             $userInfo = $oauth2->userinfo->get();
@@ -274,18 +304,15 @@ function initMainFolder($client)
             $jwt::$leeway = 5;
             $tokenData = $client->verifyIdToken();
             $tokenOwner = $tokenData['email'];
-            $hostedDomain = $tokenData['hd'];
+            $hostedDomain = $tokenData['hd'] ?? '';
         } catch (Google_Service_Exception $e) {
             $errMsg = json_decode($e->getMessage());
             die('ERROR: cannot verify token - Error is: ' . $errMsg->error->message );
         }
-        //get user info
-        $oauth2 = new \Google_Service_Oauth2($client);
-        $userInfo = $oauth2->userinfo->get();
 
-        //only allow GSuites account
-        if ($tokenOwner != $userInfo->email || !$hostedDomain) {
-            return false;
+        //if NOT GSuites account
+        if (!$hostedDomain) {
+            logError('no hostedDomain');
         }
 
         $driveService = new Google_Service_Drive($client);
@@ -335,4 +362,25 @@ function initMainFolder($client)
     //redirect
     header("location: ./?action=init&step=3");
     die();
+}
+
+function createItemsCurrentlyOutSheet($mainFolderId) {
+    try {
+        $client = getClient();
+        $driveService = new Google_Service_Drive($client);
+    } catch (Exception $e) {
+        die('failed to create items currently out sheet (cannot get client/service)');
+    }
+    $driveFile = new Google_Service_Drive_DriveFile;
+    $driveFile->setName("Items Currently Checked Out");
+    $driveFile->setParents([$mainFolderId]);
+    $driveFile->setDescription("Spreadsheet for CDL Application to track all the items currently checked out by users. Do NO touch it directly");
+    $driveFile->setMimeType("application/vnd.google-apps.spreadsheet");
+    try {
+        $itemsCurrentlyOutSheet = $driveService->files->create($driveFile);
+        return $itemsCurrentlyOutSheet->getId();
+    } catch (Exception $e) {
+        die('failed to create items currently out sheet');
+    }
+
 }
