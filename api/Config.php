@@ -416,7 +416,7 @@ class Config
     public function updatePropsDeep($chagedProperties, $libKey = null)
     {
         global $user;
-        if (!count($user->isAdminOfLibraries) && !$user->isSuperAdmin) {
+        if ((!$user->isAdminOfLibraries || !count($user->isAdminOfLibraries)) && !$user->isSuperAdmin) {
             respondWithError(401, 'Not Authorized');
         }
         //if update library
@@ -503,7 +503,7 @@ class Config
     public function getAdminConfig()
     {
         global $user;
-        if (!count($user->isAdminOfLibraries)) {
+        if (!$user->isAdminOfLibraries || !count($user->isAdminOfLibraries)) {
             respondWithError(401, 'Not Authorized - Read Config');
         }
 

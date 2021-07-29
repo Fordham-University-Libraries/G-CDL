@@ -166,11 +166,19 @@ function init($step = 1, $authCode = null)
           $view->data['scopes'] = $authUrlInfo['scopes'];
           $view->data['showNext'] = false;
       } 
-    } else if ($step == '2b') { 
+    } else if ($step == '2b') {
+        global $user;
+        try {
+            $user = new User(true);
+            if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
+        } catch (Exception $e) {
+            //not login
+            endUserGoogleLogin(null,null,'init&step=2b');
+            die();
+        }
+        $view->data['user'] = $user->userName;
         $view->data['driveOwner'] = $config->driveOwner;
         if ($_POST['hd'] && $_POST['superAdmin']) {
-            global $user;
-            $user = new User(true);
             $config = new Config();
             $hd = str_replace('@', '', $_POST['hd']);
             $superAdmin = str_replace('@'.$hd, '', $_POST['superAdmin']);

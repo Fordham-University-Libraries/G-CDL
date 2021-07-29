@@ -252,6 +252,7 @@
                 <h2>Step 2.5: Manually set which account email domain can login to the CDL app</h2>
                 <div class="container-fluid justify-content-center">
                     <div class="col-12">
+                        <p>Hi! <?= $user ?></p>
                         <p>G-APP isdesigned to be used with institution that has Google's GSuites / Workspace, but since you've set up the app with a normal @gmail (<em><?= $driveOwner ?></em>) account, please enter an email domain you'd like to be able to log in the to app e.g. @myuniversity.edu</p>
                         <form method="post">
                             <div class="mb-3">
