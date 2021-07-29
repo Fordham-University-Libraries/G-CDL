@@ -257,7 +257,7 @@ class CdlItem
             }
 
             //auto return notification
-            if ($config->notifications['emailOnAutoReturn']['enable']) {
+            if ($config->notifications['emailOnAutoReturn']['enable'] && $config->canSetAutoExpiration()) {
                 //write it to file so we can look at later
                 $this->due = $expTime;
                 $fileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
@@ -419,7 +419,7 @@ class CdlItem
                 email('return', $user, $this);
             }
             //remove it from cron watch list since it has been manually returned
-            if ($emailOnAutoReturn) {
+            if ($emailOnAutoReturn && $config->canSetAutoExpiration()) {
                 $cronDataFileName = Config::getLocalFilePath($config->notifications['emailOnAutoReturn']['dataFile']);
                 if (file_exists($cronDataFileName)) {
                     $cronDataFile = file_get_contents('nette.safe://' . $cronDataFileName);
