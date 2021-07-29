@@ -479,11 +479,7 @@ class Config
             'libraries' => $libraries
         ];
         if ($this->googleTagManagerUA) $frontEndConfig['gTagUA'] = $this->googleTagManagerUA;
-        //if non-gsuites mode, return config for Apps Script
-        if (!$this->canSetAutoExpiration()) {
-            $frontEndConfig['notifyOnAutoReturn'] = $this->notifications['emailOnAutoReturn']['enable'];
 
-        }
         return $frontEndConfig;
     }
 

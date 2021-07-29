@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
@@ -93,13 +94,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
         $libKey = $_GET['libKey'] ?? $configs['defaultLibrary'];
         checkAvailability($key, $keyType, $libKey);
         die();
+    } else if ($action == 'get_appsScript_config') {
+        getAppsScriptConfig();
+        die();
     }
 }
 //everything below this user has to be authenticated
 $user = new User();
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $action = $_GET['action'] ?? null;
-    if ($action == 'auth') { 
+    if ($action == 'auth') {
         respondWithData($user->serialize());
         die();
     }
@@ -125,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         //if in dev, redirect to local Angular (running on diff port -- 4200)
         if (!Config::$isProd) $host .= ':4200';
         header('Location: ' . $host . $target);
-    } else if ($action == 'auth') { 
+    } else if ($action == 'auth') {
         respondWithData($user->serialize());
     } else if (!isset($action) || $action == '' || $action == 'view_all') {
         require 'view_all_action.php';
@@ -134,25 +138,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     } else if ($action == 'view_items_with_copies') {
         require 'search_action.php';
         checkMulti($libKey);
-    } else if ($action == 'view_borrowed'){
+    } else if ($action == 'view_borrowed') {
         require 'view_borrowed_action.php';
         getFilesForViewer();
-    } else if ($action == 'get_items'){
+    } else if ($action == 'get_items') {
         require 'get_items_action.php';
         getItems($key, $keyType, $libKey);
-    } else if ($action == 'search'){
+    } else if ($action == 'search') {
         require 'search_action.php';
         $field = $_GET['field'] ?? 'title';
         $term = $_GET['term'] ?? '';
         search($field, $term, $libKey, false);
-    } else if ($action == 'get_about'){
+    } else if ($action == 'get_about') {
         require_once('Lang.php');
         $langObj = new Lang();
         respondWithHtml($langObj->getAbout($libKey));
-    } else if ($action == 'admin'){
+    } else if ($action == 'admin') {
         require 'admin_action.php';
         getItemsAdmin($libKey);
-    } else if ($action == 'admin_upload'){
+    } else if ($action == 'admin_upload') {
         require 'upload_action.php';
         adminUploadGet($libKey);
     } else if ($action == 'get_config_admin') {
@@ -164,11 +168,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     } else if ($action == 'get_lang_admin') {
         getLangAdmin();
         die();
-    } else if ($action == 'search_by_bib_ids'){
+    } else if ($action == 'search_by_bib_ids') {
         require 'search_action.php';
         $bibIds = $_GET['bibIds'];
         searchByBibIds($libKey, $bibIds);
-    } else if ($action == 'get_ils_bib'){ //get data from ILS
+    } else if ($action == 'get_ils_bib') { //get data from ILS
         if ($keyType == 'itemId') {
             $data = getIlsBibByItemId($libKey, $key);
             respondWithData((array) $data);
@@ -200,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $response['name'] = $driveFile->getName();
             $response['version'] = $driveFile->getVersion();
             $response['lastModified'] = $driveFile->getModifiedTime();
-            $revList = $service->revisions->listRevisions($driveFile->getId(),['fields' => 'revisions(id,mimeType,modifiedTime,size)']);
+            $revList = $service->revisions->listRevisions($driveFile->getId(), ['fields' => 'revisions(id,mimeType,modifiedTime,size)']);
             if ($revList) $response['revisions'] = $revList->getRevisions();
             respondWithData($response);
         }
@@ -226,16 +230,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $author = $_GET['author'] ?? null;
         $ebook = searchIlsForEbook($libKey, $title, $author);
         respondWithData($ebook);
-    } else if($action == 'get_ils_locations') {
+    } else if ($action == 'get_ils_locations') {
         getIlsLocationsDefinition($libKey);
-    } else if ($action == 'test'){
+    } else if ($action == 'test') {
         $fileName = $_GET['fileName'] ?? null;
         if (!Config::$isProd) test($service, $fileName, $user->email);
-    } 
+    }
     ///// POST /////
 } else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_SERVER["CONTENT_LENGTH"])) {
-        if (stripos(ini_get('post_max_size'),'M') && (int)$_SERVER["CONTENT_LENGTH"] > ((int)ini_get('post_max_size') * 1024 * 1024)) {
+        if (stripos(ini_get('post_max_size'), 'M') && (int)$_SERVER["CONTENT_LENGTH"] > ((int)ini_get('post_max_size') * 1024 * 1024)) {
             respondWithFatalError(413, 'File is too large');
             die();
         }
@@ -249,18 +253,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($action == 'borrow') {
         require 'borrow_action.php';
         borrowItem($fileId);
-    } else if ($action == 'return'){
+    } else if ($action == 'return') {
         require 'return_action.php';
         returnItem($fileId);
-    } else if ($action == 'place_hold'){
+    } else if ($action == 'place_hold') {
         //addHoldToFileProperties($fileId);
-    } else if ($action == 'suspend'){
+    } else if ($action == 'suspend') {
         require 'admin_action.php';
         suspendItem($fileId, true);
-    } else if ($action == 'unsuspend'){
+    } else if ($action == 'unsuspend') {
         require 'admin_action.php';
         suspendItem($fileId, false);
-    } else if ($action == 'trash'){ //sorry REST god
+    } else if ($action == 'trash') { //sorry REST god
         require 'admin_action.php';
         trashItem($fileId, false);
     } else if ($action == 'edit_item_admin') {
@@ -269,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $part = $_POST['part'];
         $partTotal = $_POST['partTotal'];
         postItemEditAdmin($fileId, $partDesc, $part, $partTotal);
-    } else if ($action == 'upload'){
+    } else if ($action == 'upload') {
         require 'upload_action.php';
         $libKey = $_POST['libKey'] ?? null;
         $uploadedFile = $_FILES['uploaded_file'];
@@ -297,7 +301,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $libKey = $_POST['libKey'] ?? null;
         require 'admin_action.php';
         updateLangAdmin($properties, $libKey);
-    } else if ($action == 'update_about_admin'){
+    } else if ($action == 'update_about_admin') {
         $html = $_POST['html'] ?? null;
         $libKey = $_POST['libKey'] ?? null;
         respondWithData($langObj->editAbout($libKey, $html));
@@ -317,24 +321,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         removeLibrary($libKey);
     } else if ($action == 'test') {
         if (!Config::$isProd) test();
-    } 
+    }
 } else {
     die();
 }
 
 //for front-end
-function getConfig() {
+function getConfig()
+{
     global $config;
     respondWithData($config->getFrontendConfig());
     die();
 }
-function getCustomizations() {
+function getCustomizations()
+{
     require_once('Customization.php');
     $customization = new Customization();
     respondWithData($customization->serialize());
     die();
 }
-function getLanguages() {
+function getLanguages()
+{
     require_once('Lang.php');
     $langObj = new Lang();
     $lang = $langObj->serialize();
@@ -342,21 +349,52 @@ function getLanguages() {
 }
 
 //for admin config
-function getConfigAdmin() {
+function getConfigAdmin()
+{
     global $config;
     respondWithData($config->getAdminConfig());
 }
-function getCustomizationsAdmin() {
+function getCustomizationsAdmin()
+{
     require_once('Customization.php');
     $custom = new Customization();
     respondWithData($custom->getAdminCustomization());
 }
-function getLangAdmin() {
+function getLangAdmin()
+{
     require_once('Lang.php');
     $langObj = new Lang();
     $lang = $langObj->getAdminLang();
     respondWithData($lang);
     die();
+}
+
+//for Apps Script (non-gsuites)
+function getAppsScriptConfig($internal = false)
+{
+    global $config;
+
+    //if non-gsuites mode, return config for Apps Script
+    if (!$config->canSetAutoExpiration()) {
+        $appsScriptConfig = [
+            'notifyOnAutoReturn' => $config->notifications['emailOnAutoReturn']['enable'],
+        ];
+
+        if ($appsScriptConfig['notifyOnAutoReturn']) {
+            $lang = getLanguages();
+            foreach ($lang['libraries'] as $libKey => $libLangs) {
+                $appsScriptConfig['libraries'][$libKey]['lang'] = $libLangs['emails'];
+            }
+        }
+
+        if (!$internal) {
+            respondWithData($appsScriptConfig);
+            die();
+        }
+        return $appsScriptConfig;
+    }
+
+    respondWithFatalError(401);
 }
 
 function compliantBreachNotify(string $error, string $errorId = null)
@@ -378,10 +416,10 @@ function logout()
     $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
     if (!Config::$isProd) $host = str_replace(':8080', ':4200', $host);
     if (!Config::$frontEndHost) {
-        $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
+        $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'), "/");
         $baseDir = str_replace('/api', '', $baseDir);
     } else {
-        $host = rtrim(Config::$frontEndHost,'/');
+        $host = rtrim(Config::$frontEndHost, '/');
         $baseDir = '';
     }
 
@@ -391,22 +429,23 @@ function logout()
             if ($user) phpCAS::logout();
         } catch (Exception $e) {
             //already logged out
-         }
-    } 
+        }
+    }
 
     $_SESSION = [];
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000,$params["path"], $params["domain"],$params["secure"], $params["httponly"]);
+        setcookie(session_name(), '', time() - 42000, $params["path"], $params["domain"], $params["secure"], $params["httponly"]);
     }
     session_destroy();
-    setcookie('cdlLogin','0',time(),'/');
+    setcookie('cdlLogin', '0', time(), '/');
 
     //redirect to log out frontend message page
     header("Location: " . $host . $baseDir . "/logged-out");
 }
 
-function logError($error) {
+function logError($error)
+{
     $logFilePath = Config::getLocalFilePath('error.log');
     if (is_array($error) || is_object($error)) {
         error_log(time() . ': ' . print_r($error, true), 3, $logFilePath);
@@ -415,7 +454,7 @@ function logError($error) {
     }
 }
 
-function test() {
+function test()
+{
     //echo "hello, I'm a quick function for testing";
 }
- 

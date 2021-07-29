@@ -397,7 +397,7 @@ class CdlItem
                 respondWithError(500, "Internal Error - on update lastReturn");
             }
 
-            //if non-gsuites account, remove it form sheet
+            //if non-gsuites account, also remove it form sheet
             if (!$config->canSetAutoExpiration()) {
                 //track due time manually
                 $tempFile = new Google_Service_Drive_DriveFile;
@@ -523,7 +523,7 @@ class CdlItem
         $valueInputOption = 'RAW'; //['USER_ENTERED', 'RAW']
         $values = [
             [
-                (string)time(), $this->id, $dueTimestamp, $user->email
+                (string)time(), $this->id, $dueTimestamp, $user->email, $this->library
             ]
         ];
         $body = new Google_Service_Sheets_ValueRange([
