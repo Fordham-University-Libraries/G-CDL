@@ -378,6 +378,29 @@ function createItemsCurrentlyOutSheet($mainFolderId) {
     $driveFile->setMimeType("application/vnd.google-apps.spreadsheet");
     try {
         $itemsCurrentlyOutSheet = $driveService->files->create($driveFile);
+        
+        //add sheet headers
+        $sheetService = new Google_Service_Sheets($client);
+        $valueInputOption = 'RAW'; //['USER_ENTERED', 'RAW']
+        $range = 'Sheet1!A:H';
+        $values = [
+            [
+                'borrow','file ID','due','user email','item library'
+            ]
+        ];
+        $body = new Google_Service_Sheets_ValueRange([
+            'values' => $values
+        ]);
+        $params = [
+            'valueInputOption' => $valueInputOption
+        ];
+        try {
+            $sheetService->spreadsheets_values->append($itemsCurrentlyOutSheet->getId(), $range, $body, $params);
+        } catch (Google_Service_Exception $e) {
+            die('failed to write header tp sheet');
+            logError($e->getMessage());
+        }
+
         return $itemsCurrentlyOutSheet->getId();
     } catch (Exception $e) {
         die('failed to create items currently out sheet');
