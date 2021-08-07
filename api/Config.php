@@ -49,6 +49,10 @@ class Config
     ];
     public $emails = [
         'method' => 'gMail', //'gMail' Or 'SMTP'
+        'gMail' => [
+            'fromName' => '',
+            'replyTo' => ''
+        ],
         'SMTP' => [
             //no auth
             'host' => 'smtp.someuniv.edu',
@@ -109,6 +113,10 @@ class Config
         ],
         'emails' => [
             'method' => ['How to email users. if choose: gMail, the app will send email with the drive owner GMail account ', 1, ['gMail', 'SMTP']],
+            'gMail' => [
+                'fromName' => ['cutom name to use as a sender (leave blank to use default Gmail user name)', 1],
+                'replyTo' => ['use different email address when user click "reply" to the notification emails', 1],
+            ],
             'SMTP' => [
                 'host' => ['hostname of your SMTP server (currently set for SMTP relay with NO authentication)', 1],
                 'port' => ['Standard port: 25, 587, 465', 1],
@@ -140,7 +148,7 @@ class Config
                     'clientId' => ['clientId (for Sirsi only)', 1],
                     'appId' => ['appId (for Sirsi only)', 1],
                     'courseCacheFile' => ["file name of cache file of all the courses", -2],
-                    'courseCacheFileRefreshMinutes' => ['how long should the app cache course reserves data pulled form the ILS (minutes)', 1],
+                    'courseCacheFileRefreshMinutes' => ['how long should the app caches course reserves data pulled form the ILS (minutes)', 1],
                     'changeItemStatusOnBorrowReturn' => ['should the app change item\'s status in the ILS when user borrow/return item in the app (Sierra only)', 1],
                     'itemStatus' => [
                         'borrow' => ['item status code in ILS to change to when item is borrowed', 1],

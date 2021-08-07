@@ -114,7 +114,7 @@ function init($step = 1, $authCode = null)
         if(!initMainFolder($client)) {
             die('Error: this application is designed to be used with G Suite (now Google Workspace) only i.e. you log in to your work Gmail as jdoe@myinstitution.edu. Looks like you tried to login with @gmail.com account?');
         }
-    } else if ($step == 1) { //create creds - only allow annon access when there's no token (to be able to setup the first time)
+    } else if ($step == '1') { //create creds - only allow annon access when there's no token (to be able to setup the first time)
         if ($hasToken) {
             //will show token info, so make sure user is logged in
             try {
@@ -127,7 +127,7 @@ function init($step = 1, $authCode = null)
             }
         }
         if (!$hasCreds) $view->data['showRefresh'] = true;
-    } else if ($step == 2) { //gen token
+    } else if ($step == '2') { //gen token
         if ($hasToken) {
             //will show token info, so make sure user is logged in
             try {
@@ -178,6 +178,7 @@ function init($step = 1, $authCode = null)
         }
         $view->data['user'] = $user->userName;
         $view->data['driveOwner'] = $config->driveOwner;
+        $view->data['showNext'] = false;
         if ($_POST['hd'] && $_POST['superAdmin']) {
             $config = new Config();
             $hd = str_replace('@', '', $_POST['hd']);
@@ -199,7 +200,7 @@ function init($step = 1, $authCode = null)
             header("location: ./?action=init&step=3");
             die();
         }
-    } else if ($step == 3) { //add first library
+    } else if ($step == '3') { //add first library
         global $user;
         try {
             $config = new Config();
@@ -257,7 +258,7 @@ function init($step = 1, $authCode = null)
             header("location: ./?action=init&step=3");
             die();
         } 
-    } else if ($step == 4) { //next step info
+    } else if ($step == '4') { //next step info
         global $user;
         try {
             $user = new User(true);
@@ -408,6 +409,23 @@ function createItemsCurrentlyOutSheet($mainFolderId) {
             die('failed to write header tp sheet');
             logError($e->getMessage());
         }
+        
+        //add new sheet(tab) to sheets
+        // try {
+        //     $body = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest(array(
+        //         'requests' => array(
+        //             'addSheet' => array(
+        //                 'properties' => array(
+        //                     'title' => 'Lang'
+        //                 )
+        //             )
+        //         )
+        //     ));
+        //     $sheetService->spreadsheets->batchUpdate($itemsCurrentlyOutSheet->getId(),$body);
+        // } catch(Exception $errMsg) {
+        //     die('cannot add sheet to sheets');
+        //     logError($e->getMessage());
+        // }
 
         return $itemsCurrentlyOutSheet->getId();
     } catch (Exception $e) {

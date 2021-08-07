@@ -60,7 +60,7 @@
         <?php if ($userName) : ?>
             Hello <?= $userName ?>!
         <?php endif ?>
-        <?php if ($step == 1) : ?>
+        <?php if ($step == '1') : ?>
             <div class="row align-items-start step">
                 <div class="col-8">
                     <h2>Step 1: Setup Credentials for Google API</h2>
@@ -182,7 +182,7 @@
         <?php endif; ?>
 
         <!-- step 2 -->
-        <?php if ($step == 2) : ?>
+        <?php if ($step == '2') : ?>
             <div class="row align-items-start step">
                 <h2>Step 2: Generate OAuth Token</h2>
                 <div class="container-fluid justify-content-center">
@@ -274,7 +274,7 @@
         <?php endif ?>
 
         <!-- step 3 -->
-        <?php if ($step == 3) : ?>
+        <?php if ($step == '3') : ?>
             <div class="row align-items-start step">
                 <h2>Step 3: Add Main (Default) Library</h2>
                 <div class="container-fluid justify-content-center">
@@ -326,7 +326,7 @@
         <?php endif ?>
 
         <!-- step 4 -->
-        <?php if ($step == 4) : ?>
+        <?php if ($step == '4') : ?>
             <div class="row align-items-start step">
                 <h2>Step 4: Next Steps</h2>
                 <div class="container-fluid justify-content-center">

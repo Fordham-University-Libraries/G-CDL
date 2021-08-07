@@ -33,7 +33,7 @@ export class CheckedOutItemComponent implements OnInit {
   usersLibrary:string;
   isAccessibleUser: boolean;
   shouldHide: boolean;
-  expirationCheckDelayMS = 45000; //wait extra x millsecs after item is auto returned since Google API is not as in sync
+  expirationCheckDelayMS = 125000; //wait extra x millsecs since AppsScript event trigger runs every minute
   private readClickedEventSubscription: Subscription;
   private refreshEventSubscription: Subscription;
   private timeOut: any;
@@ -130,7 +130,7 @@ export class CheckedOutItemComponent implements OnInit {
       if (due > now) {
         let diffTime = Math.abs(due - now); //millisecs         
         if (diffTime) {
-          diffTime += this.expirationCheckDelayMS; //wait extra x secs since Google API is not as in sync
+          diffTime += this.expirationCheckDelayMS; //wait extra x m.secs since Google API is not as in sync
           this.timeOut = setTimeout(()=>{
             this._getUserCheckedOutItem(true);
             this.refreshParent.emit('return');

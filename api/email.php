@@ -26,6 +26,13 @@ function email(string $kind, User $user, CdlItem $cdlItem)
         $sender = 'me'; //The special value **me** can be used to indicate the authenticated user. (in this case, the driveOwner)
         $toName = isset($user->fullName) ? $user->fullName : $user->userName;
         $toEmail = $user->email;
+
+        $oauth2 = new \Google_Service_Oauth2($client);
+        $userInfo = $oauth2->userinfo->get();
+        $fromName = $config->emails['gMail']['fromName'] ?? $config->appName;
+        $fromEmail = $userInfo->email;
+        $replyToEmail = $config->emails['gMail']['replyTo'] ?? null;
+
         $strSubject = '';
         $strBody = '';
         if ($kind == 'borrow') {
@@ -44,11 +51,9 @@ function email(string $kind, User $user, CdlItem $cdlItem)
             die();
         }
 
-        $oauth2 = new \Google_Service_Oauth2($client);
-        $userInfo = $oauth2->userinfo->get();
-        $fromEmail = $userInfo->email;
-        $strRawMessage = "From: \"$config->appName\"<$fromEmail>\r\n";
+        $strRawMessage = "From: \"$fromName\"<$fromEmail>\r\n";
         $strRawMessage .= "To: \"$toName\"<$toEmail>\r\n";
+        if ($replyToEmail) $strRawMessage .= "Reply-To: \"$fromName\"<$replyToEmail>\r\n";
         $strRawMessage .= 'Subject: =?utf-8?B?' . base64_encode($strSubject) . "?=\r\n";
         $strRawMessage .= "MIME-Version: 1.0\r\n";
         $strRawMessage .= "Content-Type: text/html; charset=utf-8\r\n";
