@@ -81,6 +81,15 @@ foreach ($currentOutItems as $key => $item) {
 if ($itemsRemoved) {
     echo "total items $totalItems ($itemsRemoved removed), emailed $itemsEmail item(s)! ";
     file_put_contents("nette.safe://$fileName", serialize($newCurrentOutItems));
+    //the itemscurrentlyout file needs to be read/writable by the server e.g. Apache
+    //if cron runs as diff usr e.g. root, it might change the file permission
+    //uncomment below to set file perms
+    
+    //--set group--//
+    //chgrp($fileName,"www-data");
+    //--set perms - rw-rw----//
+    //chmod($filename, 0660) ;
+
 } else {
     echo "total items $totalItems, no changes";
 }
