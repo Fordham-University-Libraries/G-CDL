@@ -401,7 +401,7 @@ class Customization
     {
         $this->serialize();
         if (isset($this->appGlobal['externalCss']) && $this->appGlobal['externalCss']) {
-            $this->cssStr .= "@import url('" . $this->appGlobal['externalCss'] . "')\n";
+            $this->cssStr .= "@import url('" . $this->appGlobal['externalCss'] . "');\n";
         }
         $this->_extractCssRecursive($this->appGlobal, $this->csses);
         $this->_extractCssRecursive($this->libraries, $this->csses);
