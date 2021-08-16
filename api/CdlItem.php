@@ -238,7 +238,7 @@ class CdlItem
                 $tempFile->setAppProperties(['manualDueTime' =>  date('Y-m-d\TH:i:s\Z', (int)$expTimeTimeStamp)]);
                 try {
                     $service->files->update($this->id, $tempFile);
-                } catch (Google_Service_Exception) {
+                } catch (Google_Service_Exception $e) {
                     logError('cannot update appProps manualDueTime, this is bad!');
                 }
                 //then log is to sheet
@@ -404,7 +404,7 @@ class CdlItem
                 $tempFile->setAppProperties(['manualDueTime' =>  '']);
                 try {
                     $service->files->update($this->id, $tempFile);
-                } catch (Google_Service_Exception) {
+                } catch (Google_Service_Exception $e) {
                     logError('cannot update appProps manualDueTime, this is bad!');
                 }
                 $this->removeItemFromCurrentItemsOutSheet();
