@@ -119,7 +119,11 @@ function init($step = 1, $authCode = null)
             //will show token info, so make sure user is logged in
             try {
                 $user = new User(true);
-                if (!$user->isDriveOwner) die("only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner);
+                if (!$user->isDriveOwner) {
+                    echo "<p>only drive owner can init stuff! you are logged in as $user->userName please log in with the account " . $config->driveOwner . "</p>";
+                    echo "<p>Let's try <a href='./?action=logout'>LOGOUT of G-CDL</a> and Also from <a href='https://support.google.com/mail/answer/8154'>Google</a>?</p>";
+                    die();
+                }
             } catch (Exception $e) {
                 //not login
                 endUserGoogleLogin(null,null,'init&step=1');
