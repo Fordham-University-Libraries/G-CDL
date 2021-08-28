@@ -27,7 +27,7 @@ function getClient($authCode = null, $state = null)
 
     $tokenPath = Config::getLocalFilePath('token.json', 'creds');
     //if no token
-    if (!file_exists($tokenPath)) {
+    if (!file_exists($tokenPath) || $authCode || $state == 'reAuth') {
         $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
         $baseDir = rtrim(strtok($_SERVER["REQUEST_URI"], '?'),"/");
         $redirectUri = $host .  $baseDir . '/?action=login';
@@ -40,7 +40,7 @@ function getClient($authCode = null, $state = null)
         }
 
         $client->setRedirectUri($redirectUri);
-        if ($state && $state == 'init') {
+        if ($state && $state == 'init' && !$authCode) {
             // Return authorization URL
             $client->setState($state);
             return [
@@ -53,7 +53,8 @@ function getClient($authCode = null, $state = null)
             $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
             // Check accessToken to see if there was an error.
             if (array_key_exists('error', $accessToken)) {
-                throw new Exception("\$client->fetchAccessTokenWithAuthCode() ERROR: [" . join(', ', $accessToken) . "]. Tried to fetch with authCode: $authCode");
+                logError($accessToken);
+                respondWithFatalError(401, "\$client->fetchAccessTokenWithAuthCode() ERROR: [" . join(', ', $accessToken) . "]. Tried to fetch with authCode: $authCode");
             }
 
             $client->setAccessToken($accessToken);
@@ -119,34 +120,32 @@ function getClient($authCode = null, $state = null)
                 logError('cat\'t write isRefreshingToken note to file');
             }
 
+   
+
             // Refresh the token
-            if ($client->getRefreshToken()) {
-                $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
-            }
-
-            //check that the refreshed token is valid p.s. default JWT leeway is 1, increase it in case clocks are not quite synced
-            $jwt = new \Firebase\JWT\JWT;
-            $jwt::$leeway = 5;
-            if(!$client->verifyIdToken()) {
-                unlink($isRefreshingTokenPath);
-                logError('Cannot Refresh OAuth Token, most likely its been revolked / app is disconnected from GDrive');
-                respondWithFatalError('401', 'Cannot Refresh Token');
-            }
-
-            // Save the token to a file.
-            if (!file_exists(dirname($tokenPath))) {
-                mkdir(dirname($tokenPath), 0700, true);
-            }
-            $_token = json_encode($client->getAccessToken());
-            if (json_last_error() === JSON_ERROR_NONE) {
-                try {
-                    file_put_contents("nette.safe://$tokenPath", $_token);
-                } catch (Exception $e) {
-                    logError("can't write refreshed token to file");
-                    logError($e->getMessage());
+            if ($refreshToken = $client->getRefreshToken()) {
+                $newAccessToken = $client->fetchAccessTokenWithRefreshToken($refreshToken);
+                if ($newAccessToken && !isset($newAccessToken)) {
+                    // Save the token to a file.
+                    if (!file_exists(dirname($tokenPath))) {
+                        mkdir(dirname($tokenPath), 0700, true);
+                    }
+                    $_token = json_encode($client->getAccessToken());
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        try {
+                            file_put_contents("nette.safe://$tokenPath", $_token);
+                        } catch (Exception $e) {
+                            logError("can't write refreshed token to file");
+                            logError($e->getMessage());
+                        }
+                    } else {
+                        logError("can't encode refresed token to json");
+                    }
+                } else {
+                    $error = true;
                 }
             } else {
-                logError("can't encode refresed token to json");
+                $error = true;
             }
 
             //refreshed (or fail) - remove the isRefreshingToken note file
@@ -157,7 +156,21 @@ function getClient($authCode = null, $state = null)
             }
         }
 
-        return $client;
+        if (!$error) {
+            return $client;
+        } else {
+            if (isset($newAccessToken['error'])) {
+                logError('cannot refresh token, redirect to login');
+                $client->setState('reAuth');
+                $auth_url = $client->createAuthUrl();
+                logError($auth_url);
+                header('Location: ' . filter_var($auth_url, FILTER_SANITIZE_URL));
+                //respondWithFatalError(401, 'cannot refresh token: ' . $newAccessToken['error'] . ' - state: ' . $state);
+            } else {
+                logError('cannot refresh token, try re-authenticate by going to {{G-CDL}}/api/?action=init');
+                respondWithFatalError(401, 'cannot refresh token');
+            }
+        }
     }
 }
 

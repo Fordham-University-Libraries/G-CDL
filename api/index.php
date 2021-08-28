@@ -37,7 +37,7 @@ try {
 }
 
 //init wizard (if no token and etc.)
-if (!file_exists($credsPath) || !file_exists($tokenPath) || $_GET['state'] == 'init' || $_GET['action'] == 'init' || !$config->mainFolderId) {
+if (!file_exists($credsPath) || !file_exists($tokenPath) || $_GET['state'] == 'init' || $_GET['state'] == 'reAuth' || $_GET['action'] == 'init' || !$config->mainFolderId) {
     //if front end try to access
     if ($_GET['action'] == 'auth') {
         respondWithFatalError(500, 'API not set up');

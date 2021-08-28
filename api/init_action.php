@@ -20,7 +20,7 @@ function init($step = 1, $authCode = null)
                 require 'view_all_action.php';
                 $configs = $config->getFrontendConfig();
                 $defaultLibrary = $configs['defaultLibrary'] ?? null;
-                $client = getClient();
+                $client = getClient($authCode, 'init');
                 global $service;
                 $service = new Google_Service_Drive($client);
                 if ($defaultLibrary) {
