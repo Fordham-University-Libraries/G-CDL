@@ -125,7 +125,7 @@ function getClient($authCode = null, $state = null)
             // Refresh the token
             if ($refreshToken = $client->getRefreshToken()) {
                 $newAccessToken = $client->fetchAccessTokenWithRefreshToken($refreshToken);
-                if ($newAccessToken && !isset($newAccessToken)) {
+                if ($newAccessToken && !isset($newAccessToken['error'])) {
                     // Save the token to a file.
                     if (!file_exists(dirname($tokenPath))) {
                         mkdir(dirname($tokenPath), 0700, true);
@@ -143,9 +143,12 @@ function getClient($authCode = null, $state = null)
                     }
                 } else {
                     $error = true;
+                    logError("can't fetchAccessTokenWithRefreshToken() with refreshToekn $refreshToken");
+                    logError($newAccessToken['error']);
                 }
             } else {
                 $error = true;
+                logError("can't get refreshToken");
             }
 
             //refreshed (or fail) - remove the isRefreshingToken note file
