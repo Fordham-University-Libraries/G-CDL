@@ -185,6 +185,9 @@ class Customization
                 'color' => '',
             ]
         ],
+        'upload' => [
+            'showDontRemoveOcrOption' => true,
+        ]
     ];
 
 
@@ -338,6 +341,9 @@ class Customization
                 'color' => ['text color', 1],
             ]
         ],
+        'upload' => [
+            'showDontRemoveOcrOption' => ['Should library staff see the option to NOT remove OCR data from uploaded PDF - DEFAULT = show', 1],
+        ]
     ];
 
     private $sectionDefinitions = [
@@ -351,6 +357,7 @@ class Customization
         'borrowing' => 'The current item user is borrowing snippet',
         'item-card' => 'The item card on home/item page',
         'reserves' => 'The course reserves search section of the app',
+        'upload' => 'Item Upload page for library staff'
     ];
 
 

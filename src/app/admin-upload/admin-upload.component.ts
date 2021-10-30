@@ -6,6 +6,7 @@ import { User } from '../models/user.model';
 //import { Item } from '../models/item.model';
 import { Config } from '../models/config.model';
 import { Language } from '../models/language.model';
+import { Customization } from '../models/customization.model';
 import { AuthenticationService } from '../auth.service';
 import { DriveService } from '../drive.service';
 import { ConfigService } from '../config.service';
@@ -31,6 +32,7 @@ export class AdminUploadComponent implements OnInit {
   admins: string[];
   config: Config;
   lang: Language;
+  customization: Customization;
   uploadLang: any;
   uploadUrl: string;
   pdfItem: {
@@ -118,6 +120,10 @@ export class AdminUploadComponent implements OnInit {
           return;
         }
       });
+    });
+
+    this.configService.getCustomization(false).subscribe(res => {
+      this.customization = res; 
     });
 
     //debouce model change
