@@ -111,6 +111,10 @@ export class AppCustomizationComponent implements OnInit {
   }
 
   private _processConfigField(filed, keysOrder) {
+    if (!filed) { 
+      return {};
+    }
+
     let i = 0;
     let field = {};
     for (const [key, value] of Object.entries(filed)) {

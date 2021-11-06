@@ -136,6 +136,7 @@ class Customization
                 'color' => '',
             ],
             'item-card' => [
+                'showDueTimeWithoutHover' => false,
                 'css' => [
                     'background-color' => '',
                     'color' => '',
@@ -292,6 +293,7 @@ class Customization
                 'color' => ['text color', 1],
             ],
             'item-card' => [
+                'showDueTimeWithoutHover' => ['if item is check out to other user, show due date/time without user having to hover above the not available icon', 1],
                 'css' => [
                     'background-color' => ['background color of each items shown on the homepage', 1],
                     'color' => ['text color', 1],
