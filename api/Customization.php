@@ -496,6 +496,7 @@ class Customization
             $cust['libraries'][$library->key]['item'] = $this->_createField('item');
             $cust['libraries'][$library->key]['borrowing'] = $this->_createField('borrowing');
             $cust['libraries'][$library->key]['reserves'] = $this->_createField('reserves');
+            $cust['libraries'][$library->key]['upload'] = $this->_createField('upload');
         }
         $cust['sectionDefinitions'] = $this->sectionDefinitions;
         return $cust;
