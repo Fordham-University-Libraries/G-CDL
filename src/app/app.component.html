@@ -86,8 +86,8 @@
             <a [href]="customization.libraries[library].bread.libHomeLink" class="bread-link">{{ customization.libraries[library].bread.libName }}</a>
         </li>
         <li>
-            <a *ngIf="appPath == 'home'" class="active" aria-current="true">{{ config?.appName ?? 'Digital Reserves' }}</a>
-            <a *ngIf="appPath != 'home'" [routerLink]="isDefaultLibraryRoute ? '/' : '/library/' + library" class="bread-link">{{ config?.appName ?? 'Digital Reserves' }}</a>
+            <a *ngIf="appPath == 'home'" class="active" aria-current="true">{{ config.appName ? config.appName : 'Digital Reserves' }}</a>
+            <a *ngIf="appPath != 'home'" [routerLink]="isDefaultLibraryRoute ? '/' : '/library/' + library" class="bread-link">{{ config.appName ? config.appName : 'Digital Reserves' }}</a>
         </li>
     <li *ngIf="appPath == 'item'">
         <span class="active" aria-current="page">Item</span>
