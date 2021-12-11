@@ -108,7 +108,7 @@ export class AccessibleUsersComponent implements OnInit {
         if (filteredArray.length) {
           this.firstRowWithDataIndex = r + 1;
           for (let hCol of filteredArray) {            
-            switch (hCol.toLowerCase()) {
+            switch (hCol.toLowerCase().trim()) {
               case 'username':
                 this.userNameColIndex = row.indexOf(hCol);
                 break;
